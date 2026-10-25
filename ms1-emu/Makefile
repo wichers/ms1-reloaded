@@ -49,6 +49,7 @@ build:
 
 # CAN master on the emulator's bus, from the ms1-master library
 MS1_MASTER ?= ../ms1-master
-build/master_bridge: tools/master_bridge.c src/canbus.c src/canbus.h | build
+build/master_bridge: tools/master_bridge.c src/canbus.c src/canbus.h $(MS1_MASTER)/src/ms1_master.c \
+		$(MS1_MASTER)/src/ms1_types.c $(wildcard $(MS1_MASTER)/include/ms1_*.h) | build
 	$(CC) $(CFLAGS) -I$(MS1_MASTER)/include -o $@ tools/master_bridge.c src/canbus.c \
 		$(MS1_MASTER)/src/ms1_master.c $(MS1_MASTER)/src/ms1_types.c

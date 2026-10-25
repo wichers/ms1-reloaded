@@ -10,10 +10,9 @@ menu (`NEUE LOK`) — probes the CAN bus and generates the track signal (MM and 
 used interactively in a terminal (`-i`) or driven from a script, and attached to a CAN bus
 (SocketCAN or a local UDP bus shared with other processes), and given locomotive decoders on
 the track (`-D`): MM decoders that act on its packets, and mfx decoders that answer through the
-modelled feedback receiver, so the firmware registers them and reads their configuration. Not
-there yet: slave registration
-with the `ms1-master` library completes only its first step (see *CAN*), EEPROM persistence
-across runs.
+modelled feedback receiver, so the firmware registers them and reads their configuration. As a
+CAN slave it works with the `ms1-master` library as master (see *CAN*). Not there yet: EEPROM
+persistence across runs.
 
 ## Usage
 
@@ -340,23 +339,40 @@ the signal ([docs/decoders.md](docs/decoders.md)).
 - **Master or slave.** `app_main_init` measures the track voltage (ATD0 channel 0, scaled by
   `flash_adc0_scale`, default `0x6C4F`/65536) once at start-up: above 5000 the MS1 is the central —
   it sets the flag imported as `is_master`, starts the signal generator, sends
-  eight `0x380` probes when MSCAN comes up (about 9.3 s after reset) and handles registrations
-  from slaves (`mcan_process`, command `0x7E`). Otherwise it is a slave: no track signal,
+  eight `0x380` probes when MSCAN comes up (about 9.3 s after reset; to a slave registered
+  with master node 0 they are a reset, so a slave left from an earlier session registers
+  again) and handles registrations from slaves (`mcan_process`, command `0x7E`). Otherwise it is a slave: no track signal,
   and a registration request `1C00007E` every ~5 s until a master answers. The default analog
   inputs (512) make it the central; `-a 0=0` makes it a slave.
 - **Locomotive discovery.** The routine imported as `mfx_registration_start` is the mfx
   discovery over the track (a 32-step UID search using the track feedback capture), not CAN.
   With `-D mfx:UID` a decoder answers and the registration completes.
 - **`master_bridge`** (`make build/master_bridge`, `MS1_MASTER` = path to `../ms1-master`) runs
-  that library's M-CAN master on a bus with one locomotive, and prints the protocol events:
+  that library's M-CAN master on a bus, in real time, with two locomotives (`BR 44`: speed,
+  light, a function; `V 200 TEST LOK`: speed, a momentary function), assigns both to every slave
+  that connects, and prints the frames and the protocol events (connected, took/released,
+  speed, function, STOP/GO, disconnected):
 
   ```sh
+  build/master_bridge [-n NODE_BASE] BUS [SECONDS [SCRIPT]]
   build/master_bridge udp:47112 60 &
   build/ms1emu -q -r -t 40 -a 0=0 -C udp:47112 -c - build/ms1_4011.s19
   ```
 
-  The emulated slave sends its request, the library answers with its UID (`1C00047E`), and the
-  slave repeats the request: the two implementations disagree on the next step.
+  `-n` sets the master node of the first slave (default 42, as an ECoS; 0 as an MS1 master).
+  `SCRIPT` acts as the master's operator, lines `SECONDS ACTION` in time order: `stop`, `go`,
+  `speed LOK VALUE` (hex, bit 7 reverse), `function LOK NUMBER 0|1`, `assign SLAVE LOK`,
+  `unassign SLAVE LOK`, `rename SLAVE NAME`.
+
+  With the emulated slave (`-a 0=0`) the slave registers (about 9.4 s after reset), fetches
+  both locomotives, takes the first one and shows `BR 44`; its knob, light key (function 2),
+  PA0 (function 3) and knob push (direction) reach the library's callbacks; STOP/GO work from
+  both sides (STOP icon); the master's speed and functions show on the slave; on the second
+  locomotive the momentary function is on PA7 (the MS1 puts icon 2 there). After `unplug` the
+  library gives the slave up 5.1 s after its last frame; after `plug` the slave, which has
+  restarted meanwhile, registers again. Two slaves (the second from a copy of the image with
+  another UID at `0xFF10`–`0xFF13`, which the bootloader's CRC does not cover) register one after
+  the other, about 5 s apart.
 
 ### Checks
 

@@ -15,13 +15,13 @@ uint32_t ms1_id_encode_reg(const ms1_reg_id_t *id)
     uint16_t handle = 0;
     handle |= (uint16_t)(id->uid_byte  & MS1_REG_UID_MASK)   << MS1_REG_UID_SHIFT;
     handle |= (uint16_t)(id->stage     & MS1_REG_STAGE_MASK)  << MS1_REG_STAGE_SHIFT;
-    handle |= (uint16_t)(id->direction & MS1_REG_DIR_MASK)    << MS1_REG_DIR_SHIFT;
+    handle |= (uint16_t)(id->mid       & MS1_REG_MID_MASK)    << MS1_REG_MID_SHIFT;
 
-    /* Encode into the operational CAN ID layout: prio | handle | cmd=0 | node */
+    /* Encode into the operational CAN ID layout: prio | handle | direction | node */
     uint32_t can_id = 0;
     can_id |= ((uint32_t)(id->priority & MS1_REG_PRIO_MASK)) << MS1_REG_PRIO_SHIFT;
     can_id |= ((uint32_t)(handle & MS1_REG_HANDLE_MASK))      << MS1_REG_HANDLE_SHIFT;
-    /* command bits 9-7 are always 0 for registration */
+    can_id |= ((uint32_t)(id->direction & MS1_REG_DIR_MASK)) << MS1_REG_DIR_SHIFT;
     can_id |= ((uint32_t)(id->node & MS1_REG_NODE_MASK))      << MS1_REG_NODE_SHIFT;
     return can_id;
 }
@@ -30,6 +30,7 @@ void ms1_id_decode_reg(uint32_t can_id, ms1_reg_id_t *id)
 {
     /* Decode CAN ID level fields (same as operational layout) */
     id->priority  = (uint8_t)((can_id >> MS1_REG_PRIO_SHIFT) & MS1_REG_PRIO_MASK);
+    id->direction = (uint8_t)((can_id >> MS1_REG_DIR_SHIFT)  & MS1_REG_DIR_MASK);
     id->node      = (uint8_t)((can_id >> MS1_REG_NODE_SHIFT) & MS1_REG_NODE_MASK);
 
     /* Extract the 16-bit handle */
@@ -38,7 +39,7 @@ void ms1_id_decode_reg(uint32_t can_id, ms1_reg_id_t *id)
     /* Decode handle sub-fields */
     id->uid_byte  = (uint8_t)((handle >> MS1_REG_UID_SHIFT)   & MS1_REG_UID_MASK);
     id->stage     = (uint8_t)((handle >> MS1_REG_STAGE_SHIFT) & MS1_REG_STAGE_MASK);
-    id->direction = (uint8_t)((handle >> MS1_REG_DIR_SHIFT)   & MS1_REG_DIR_MASK);
+    id->mid       = (uint8_t)((handle >> MS1_REG_MID_SHIFT)   & MS1_REG_MID_MASK);
 }
 
 /* ========================================================================
