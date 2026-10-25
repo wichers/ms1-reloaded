@@ -1,0 +1,6 @@
+# mfx registration faults: the first decoder's block 01 has version 2, so the MS1 assigns it
+# another address and drops it; the second never answers a CV read, so the MS1 gives up the
+# read-out, deletes it (ping with UID 0, registration counter up) and finds it again. No
+# inputs.
+# run: -t 30 -D mfx:00000011,cv=000/02:02 -D mfx:00000022,noread
+30 text

@@ -1,0 +1,13 @@
+# HCS12 (MC9S12) instruction semantics over the 16-bit CPU-visible address space.
+# The stock HC-12 variant exports indexed operands as addresses instead of memory, and the
+# stock 24-bit HCS-12 variant remaps low and paged addresses to global ones that do not
+# match the MC9S12D64 map; with SIZE 2 the HCS12 paging macros reduce to plain addresses.
+# Paged flash is modelled in the program as overlay blocks over the 0x8000-0xBFFF window.
+
+@define HCS12 "1"
+
+@define SIZE "2"
+
+@define MAXFLASHPage "0xFF"
+
+@include "HCS_HC12.sinc"

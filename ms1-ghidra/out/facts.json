@@ -1,0 +1,4112 @@
+{
+  "program": "ms1_4011.xml",
+  "functions": [
+    {
+      "entry": "4000",
+      "name": "FUN_4000",
+      "source": "DEFAULT",
+      "bytes": 60,
+      "calls": [],
+      "access": {
+        "0010": "w",
+        "0011": "w",
+        "0012": "w",
+        "0013": "w",
+        "0030": "w",
+        "0034": "w",
+        "0035": "w",
+        "0039": "w"
+      }
+    },
+    {
+      "entry": "403c",
+      "name": "FUN_403c",
+      "source": "DEFAULT",
+      "bytes": 59,
+      "calls": [
+        "main_loop"
+      ],
+      "access": {
+        "0008": "rw",
+        "0040": "rw",
+        "004c": "rw"
+      }
+    },
+    {
+      "entry": "407c",
+      "name": "enter_bootloader",
+      "source": "USER_DEFINED",
+      "bytes": 39,
+      "calls": [],
+      "access": {
+        "0008": "rw",
+        "0040": "rw",
+        "004c": "rw",
+        "ff70": "r"
+      }
+    },
+    {
+      "entry": "40a3",
+      "name": "lok_packets_next",
+      "source": "USER_DEFINED",
+      "bytes": 2175,
+      "calls": [
+        "lok_check_conflict",
+        "lok_recheck_conflicts",
+        "mfx_cmd_syncs",
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_frame_ping",
+        "mfx_frame_write_cv",
+        "mfx_put_drive",
+        "mfx_put_estop",
+        "mfx_put_functions",
+        "mm_write_direction",
+        "mm_write_packet",
+        "mm_write_reverse",
+        "str_len",
+        "track_cmd_pause",
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "1031": "rw",
+        "1032": "rw",
+        "1033": "rw",
+        "1034": "rw",
+        "13a9": "rw",
+        "13bf": "rw",
+        "1bb7": "r",
+        "1bb8": "w"
+      }
+    },
+    {
+      "entry": "4922",
+      "name": "lok_packets_refresh",
+      "source": "USER_DEFINED",
+      "bytes": 366,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_drive",
+        "mfx_put_functions",
+        "mm_write_packet"
+      ],
+      "access": {
+        "1035": "rw",
+        "1036": "w",
+        "1bb7": "r",
+        "1bb8": "w"
+      }
+    },
+    {
+      "entry": "4a90",
+      "name": "mfx_registration_start",
+      "source": "USER_DEFINED",
+      "bytes": 73,
+      "calls": [],
+      "access": {
+        "080c": "r",
+        "080e": "r",
+        "1039": "w",
+        "103a": "w",
+        "1045": "w",
+        "1047": "w",
+        "1059": "w",
+        "13a9": "rw",
+        "13bf": "rw",
+        "1bab": "w"
+      }
+    },
+    {
+      "entry": "4ad9",
+      "name": "mfx_icon_lookup",
+      "source": "USER_DEFINED",
+      "bytes": 33,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "4afa",
+      "name": "mfx_registration_abort",
+      "source": "USER_DEFINED",
+      "bytes": 98,
+      "calls": [
+        "lok_release_current",
+        "ui_enter_mode"
+      ],
+      "access": {
+        "1038": "r",
+        "1039": "w",
+        "103c": "w",
+        "1045": "w",
+        "1046": "w",
+        "1047": "w",
+        "1048": "w",
+        "13b4": "r",
+        "13bd": "rw"
+      }
+    },
+    {
+      "entry": "4b5c",
+      "name": "mfx_reassign",
+      "source": "USER_DEFINED",
+      "bytes": 31,
+      "calls": [],
+      "access": {
+        "1000": "rw",
+        "1039": "w",
+        "103c": "w"
+      }
+    },
+    {
+      "entry": "4b7b",
+      "name": "mfx_set_state",
+      "source": "USER_DEFINED",
+      "bytes": 10,
+      "calls": [],
+      "access": {
+        "1039": "w",
+        "103a": "w",
+        "103b": "w"
+      }
+    },
+    {
+      "entry": "4b85",
+      "name": "mfx_next_state",
+      "source": "USER_DEFINED",
+      "bytes": 10,
+      "calls": [
+        "mfx_set_state"
+      ],
+      "access": {
+        "1039": "r"
+      }
+    },
+    {
+      "entry": "4b8f",
+      "name": "mfx_registration_process",
+      "source": "USER_DEFINED",
+      "bytes": 3523,
+      "calls": [
+        "lok_assign_functions",
+        "lok_release_current",
+        "lok_state_clear",
+        "mfx_cmd_feedback",
+        "mfx_cmd_syncs",
+        "mfx_feedback_bit",
+        "mfx_feedback_data",
+        "mfx_frame_assign",
+        "mfx_frame_ping",
+        "mfx_frame_read_cv",
+        "mfx_frame_search",
+        "mfx_icon_lookup",
+        "mfx_next_state",
+        "mfx_reassign",
+        "mfx_registration_abort",
+        "mfx_set_state",
+        "ui_enter_mode",
+        "util_shift_right_32"
+      ],
+      "access": {
+        "1000": "r",
+        "1037": "rw",
+        "1038": "rw",
+        "1039": "rw",
+        "103a": "rw",
+        "103b": "rw",
+        "103c": "rw",
+        "103d": "rw",
+        "103e": "rw",
+        "103f": "r",
+        "1040": "r",
+        "1041": "rw",
+        "1042": "rw",
+        "1043": "rw",
+        "1045": "rw",
+        "1046": "w",
+        "1047": "rw",
+        "1048": "w",
+        "1049": "rw",
+        "104b": "rw",
+        "104d": "rw",
+        "104f": "rw",
+        "1051": "rw",
+        "1052": "rw",
+        "1053": "rw",
+        "1054": "rw",
+        "1055": "rw",
+        "1056": "rw",
+        "1057": "rw",
+        "1058": "rw",
+        "1059": "rw",
+        "13a9": "rw",
+        "13b4": "rw",
+        "13b5": "r",
+        "13b6": "r",
+        "13b7": "r",
+        "13bd": "rw",
+        "13bf": "rw",
+        "1bab": "rw",
+        "1bac": "w",
+        "1bae": "r",
+        "1bb7": "rw",
+        "1bb8": "w"
+      }
+    },
+    {
+      "entry": "5952",
+      "name": "track_filler",
+      "source": "USER_DEFINED",
+      "bytes": 59,
+      "calls": [
+        "mfx_frame_central",
+        "mm_write_idle"
+      ],
+      "access": {
+        "105a": "rw",
+        "105b": "r",
+        "13c1": "r",
+        "ff10": "r",
+        "ff12": "r"
+      }
+    },
+    {
+      "entry": "598d",
+      "name": "track_scheduler",
+      "source": "USER_DEFINED",
+      "bytes": 110,
+      "calls": [
+        "lok_packets_next",
+        "lok_packets_refresh",
+        "mfx_registration_process",
+        "track_filler"
+      ],
+      "access": {
+        "1020": "r",
+        "1036": "r",
+        "103c": "r",
+        "105b": "r",
+        "13a8": "r"
+      }
+    },
+    {
+      "entry": "59fb",
+      "name": "lok_slot_of_object",
+      "source": "USER_DEFINED",
+      "bytes": 60,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "5a37",
+      "name": "mcan_object_kind",
+      "source": "USER_DEFINED",
+      "bytes": 138,
+      "calls": [
+        "lok_slot_of_object"
+      ],
+      "access": {
+        "1002": "r",
+        "1004": "r",
+        "105d": "r",
+        "13a8": "r",
+        "13c5": "r"
+      }
+    },
+    {
+      "entry": "5ac1",
+      "name": "mcan_kind_class",
+      "source": "USER_DEFINED",
+      "bytes": 51,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "5af4",
+      "name": "mcan_object_class",
+      "source": "USER_DEFINED",
+      "bytes": 6,
+      "calls": [
+        "mcan_kind_class",
+        "mcan_object_kind"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "5afa",
+      "name": "mcan_object_change_count",
+      "source": "USER_DEFINED",
+      "bytes": 72,
+      "calls": [],
+      "access": {
+        "105d": "r",
+        "105f": "r"
+      }
+    },
+    {
+      "entry": "5b42",
+      "name": "mcan_object_controller",
+      "source": "USER_DEFINED",
+      "bytes": 67,
+      "calls": [],
+      "access": {
+        "105d": "r"
+      }
+    },
+    {
+      "entry": "5b85",
+      "name": "mcan_next_object",
+      "source": "USER_DEFINED",
+      "bytes": 141,
+      "calls": [
+        "mcan_object_kind"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "5c12",
+      "name": "lok_assign_functions",
+      "source": "USER_DEFINED",
+      "bytes": 356,
+      "calls": [
+        "FUN_e0f1",
+        "mcan_request_advance",
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "13a8": "r"
+      }
+    },
+    {
+      "entry": "5d76",
+      "name": "lok_state_clear",
+      "source": "USER_DEFINED",
+      "bytes": 64,
+      "calls": [
+        "lok_assign_functions"
+      ],
+      "access": {
+        "1bb7": "rw"
+      }
+    },
+    {
+      "entry": "5db6",
+      "name": "lok_check_conflict",
+      "source": "USER_DEFINED",
+      "bytes": 123,
+      "calls": [
+        "lok_find_address",
+        "show_message"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "5e31",
+      "name": "mcan_request_advance",
+      "source": "USER_DEFINED",
+      "bytes": 63,
+      "calls": [],
+      "access": {
+        "13a8": "r"
+      }
+    },
+    {
+      "entry": "5e70",
+      "name": "mcan_receive",
+      "source": "USER_DEFINED",
+      "bytes": 53,
+      "calls": [
+        "can_rx_dequeue_frame",
+        "util_shift_right_32"
+      ],
+      "access": {
+        "106f": "r",
+        "1071": "r",
+        "1072": "r",
+        "107c": "w",
+        "107e": "w",
+        "107f": "w"
+      }
+    },
+    {
+      "entry": "5ea5",
+      "name": "mcan_send",
+      "source": "USER_DEFINED",
+      "bytes": 76,
+      "calls": [
+        "FUN_e0c9",
+        "can_tx_enqueue_frame"
+      ],
+      "access": {
+        "105c": "r"
+      }
+    },
+    {
+      "entry": "5ef1",
+      "name": "mcan_slave_release_all",
+      "source": "USER_DEFINED",
+      "bytes": 40,
+      "calls": [],
+      "access": {
+        "105d": "w",
+        "105e": "w"
+      }
+    },
+    {
+      "entry": "5f19",
+      "name": "mcan_slave_lost",
+      "source": "USER_DEFINED",
+      "bytes": 21,
+      "calls": [
+        "mcan_slave_release_all"
+      ],
+      "access": {
+        "105c": "w",
+        "1063": "w",
+        "1064": "w",
+        "1065": "w",
+        "1066": "w",
+        "1068": "w"
+      }
+    },
+    {
+      "entry": "5f2e",
+      "name": "mcan_send_string",
+      "source": "USER_DEFINED",
+      "bytes": 116,
+      "calls": [
+        "mcan_send",
+        "str_len"
+      ],
+      "access": {
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "5fa2",
+      "name": "mcan_send_data",
+      "source": "USER_DEFINED",
+      "bytes": 120,
+      "calls": [
+        "mcan_send"
+      ],
+      "access": {
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "601a",
+      "name": "mcan_master_request",
+      "source": "USER_DEFINED",
+      "bytes": 864,
+      "calls": [
+        "lok_check_conflict",
+        "lok_slot_of_object",
+        "lok_state_clear",
+        "mcan_next_object",
+        "mcan_object_change_count",
+        "mcan_object_class",
+        "mcan_object_controller",
+        "mcan_send",
+        "mcan_slave_release_all",
+        "ui_enter_mode"
+      ],
+      "access": {
+        "105d": "rw",
+        "105f": "rw",
+        "1073": "r",
+        "1074": "r",
+        "1075": "r",
+        "1077": "r",
+        "1079": "r",
+        "107b": "r",
+        "107f": "r",
+        "13b4": "r",
+        "1bb7": "rw",
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "637a",
+      "name": "mcan_object_request",
+      "source": "USER_DEFINED",
+      "bytes": 1819,
+      "calls": [
+        "lok_slot_of_object",
+        "mcan_object_class",
+        "mcan_request_advance",
+        "mcan_send_data",
+        "mcan_send_string",
+        "str_len"
+      ],
+      "access": {
+        "105d": "r",
+        "1073": "r",
+        "1074": "r",
+        "1075": "r",
+        "1076": "r",
+        "1077": "r",
+        "1078": "r",
+        "1079": "r",
+        "107b": "rw",
+        "107c": "r",
+        "13a8": "r",
+        "13bd": "rw",
+        "13bf": "rw",
+        "13c5": "r",
+        "13c7": "r",
+        "191e": "w",
+        "1bb7": "rw",
+        "f700": "r",
+        "f702": "r",
+        "f704": "r",
+        "f706": "r",
+        "f708": "r",
+        "f70a": "r",
+        "f70c": "r",
+        "f70e": "r",
+        "f720": "r",
+        "ff14": "r",
+        "ff16": "r",
+        "ff18": "r",
+        "ff1a": "r",
+        "ff1c": "r",
+        "ff1e": "r",
+        "ff20": "r",
+        "ff22": "r",
+        "ff24": "r",
+        "ff26": "r",
+        "ff28": "r",
+        "ff2a": "r",
+        "ff50": "r"
+      }
+    },
+    {
+      "entry": "6a95",
+      "name": "mcan_send_status",
+      "source": "USER_DEFINED",
+      "bytes": 478,
+      "calls": [
+        "mcan_send"
+      ],
+      "access": {
+        "1002": "r",
+        "1006": "r",
+        "1007": "r",
+        "1008": "r",
+        "1009": "r",
+        "13a8": "r",
+        "13a9": "rw",
+        "13bf": "rw",
+        "13c7": "r",
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "6c73",
+      "name": "mcan_receive_status",
+      "source": "USER_DEFINED",
+      "bytes": 760,
+      "calls": [
+        "mcan_send"
+      ],
+      "access": {
+        "1006": "rw",
+        "1007": "rw",
+        "1008": "rw",
+        "1009": "rw",
+        "1068": "rw",
+        "106b": "rw",
+        "106c": "w",
+        "106d": "rw",
+        "1073": "r",
+        "1074": "r",
+        "1075": "r",
+        "107b": "r",
+        "13a8": "r",
+        "13a9": "rw",
+        "13bf": "rw",
+        "1bb7": "rw",
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "6f6b",
+      "name": "mcan_send_device_name",
+      "source": "USER_DEFINED",
+      "bytes": 192,
+      "calls": [
+        "mcan_send",
+        "str_len"
+      ],
+      "access": {
+        "106e": "rw",
+        "13bf": "rw",
+        "13c0": "r",
+        "13c5": "r",
+        "13c7": "r",
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "702b",
+      "name": "mcan_receive_control",
+      "source": "USER_DEFINED",
+      "bytes": 272,
+      "calls": [
+        "lok_slot_of_object",
+        "mcan_request_advance"
+      ],
+      "access": {
+        "105d": "r",
+        "1073": "r",
+        "1074": "r",
+        "1075": "r",
+        "1079": "r",
+        "107b": "r",
+        "107c": "r",
+        "13a8": "r"
+      }
+    },
+    {
+      "entry": "713b",
+      "name": "lok_function_of_object",
+      "source": "USER_DEFINED",
+      "bytes": 37,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "7160",
+      "name": "lok_highest_object",
+      "source": "USER_DEFINED",
+      "bytes": 37,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "7185",
+      "name": "lok_find_free_slot",
+      "source": "USER_DEFINED",
+      "bytes": 65,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "71c6",
+      "name": "mcan_answer_object",
+      "source": "USER_DEFINED",
+      "bytes": 48,
+      "calls": [
+        "mcan_send"
+      ],
+      "access": {
+        "1073": "r",
+        "107c": "r",
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "71f6",
+      "name": "mcan_receive_lok_state",
+      "source": "USER_DEFINED",
+      "bytes": 1100,
+      "calls": [
+        "lok_assign_functions",
+        "lok_function_of_object",
+        "lok_highest_object",
+        "mcan_answer_object",
+        "mcan_request_advance",
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "105d": "r",
+        "1073": "r",
+        "1074": "r",
+        "1075": "r",
+        "1076": "r",
+        "1077": "r",
+        "107b": "r",
+        "107c": "r",
+        "13a8": "r",
+        "1bb7": "rw"
+      }
+    },
+    {
+      "entry": "7642",
+      "name": "mcan_lokstack_sync",
+      "source": "USER_DEFINED",
+      "bytes": 2506,
+      "calls": [
+        "lok_check_conflict",
+        "lok_make_name_unique",
+        "lok_recheck_conflicts",
+        "lok_release_current",
+        "lok_state_clear",
+        "mcan_send",
+        "show_message",
+        "str_len"
+      ],
+      "access": {
+        "1004": "r",
+        "105d": "r",
+        "13a8": "r",
+        "13b4": "r",
+        "13b5": "r",
+        "13b6": "r",
+        "13b7": "r",
+        "13bd": "rw",
+        "13c1": "rw",
+        "13c5": "r",
+        "13c7": "r",
+        "17f6": "rw",
+        "1bb7": "r",
+        "1bb8": "w",
+        "1bbd": "rw"
+      }
+    },
+    {
+      "entry": "8000",
+      "name": "FUN_8000",
+      "source": "DEFAULT",
+      "bytes": 11,
+      "calls": [
+        "ui_enter_mode"
+      ],
+      "access": {
+        "cc00": "r"
+      }
+    },
+    {
+      "entry": "801a",
+      "name": "mcan_process",
+      "source": "USER_DEFINED",
+      "bytes": 3480,
+      "calls": [
+        "FUN_403c",
+        "can_tx_enqueue_frame",
+        "enter_bootloader",
+        "lok_find_free_slot",
+        "lok_slot_of_object",
+        "lok_state_clear",
+        "mcan_lokstack_sync",
+        "mcan_master_request",
+        "mcan_object_request",
+        "mcan_receive",
+        "mcan_receive_control",
+        "mcan_receive_lok_state",
+        "mcan_receive_status",
+        "mcan_send",
+        "mcan_send_device_name",
+        "mcan_send_status",
+        "mcan_slave_lost",
+        "ui_enter_mode"
+      ],
+      "access": {
+        "1002": "rw",
+        "1004": "rw",
+        "1006": "w",
+        "1007": "w",
+        "1008": "w",
+        "1009": "w",
+        "105c": "rw",
+        "105d": "rw",
+        "105e": "w",
+        "105f": "w",
+        "1061": "rw",
+        "1063": "rw",
+        "1064": "w",
+        "1065": "rw",
+        "1066": "w",
+        "1067": "rw",
+        "1068": "rw",
+        "1069": "rw",
+        "106b": "rw",
+        "106c": "rw",
+        "106d": "rw",
+        "1073": "r",
+        "1074": "r",
+        "1075": "r",
+        "1077": "r",
+        "1079": "r",
+        "107a": "r",
+        "107b": "r",
+        "107c": "r",
+        "107d": "r",
+        "107e": "r",
+        "107f": "r",
+        "13a8": "r",
+        "13a9": "rw",
+        "13ac": "r",
+        "13b4": "r",
+        "13c5": "rw",
+        "13c7": "rw",
+        "1bb7": "rw",
+        "1bb8": "w",
+        "1bbd": "rw",
+        "f700": "r",
+        "f702": "r",
+        "f704": "r",
+        "f706": "r",
+        "f70c": "r",
+        "f70e": "r",
+        "ff10": "r",
+        "ff12": "r",
+        "ff14": "r",
+        "ff16": "r",
+        "ff18": "r",
+        "ff1a": "r",
+        "ff24": "r",
+        "ff26": "r"
+      }
+    },
+    {
+      "entry": "8db2",
+      "name": "eeprom_write_finish",
+      "source": "USER_DEFINED",
+      "bytes": 38,
+      "calls": [
+        "eeprom_program_word"
+      ],
+      "access": {
+        "1082": "rw",
+        "1083": "w",
+        "1084": "r",
+        "1086": "r"
+      }
+    },
+    {
+      "entry": "8dd8",
+      "name": "eeprom_write_byte",
+      "source": "USER_DEFINED",
+      "bytes": 64,
+      "calls": [
+        "eeprom_erase_sector"
+      ],
+      "access": {
+        "1082": "w",
+        "1084": "rw",
+        "1086": "rw"
+      }
+    },
+    {
+      "entry": "8e18",
+      "name": "eeprom_write_word",
+      "source": "USER_DEFINED",
+      "bytes": 64,
+      "calls": [
+        "eeprom_erase_sector"
+      ],
+      "access": {
+        "1082": "w",
+        "1084": "rw",
+        "1086": "rw"
+      }
+    },
+    {
+      "entry": "8e58",
+      "name": "eeprom_write_record",
+      "source": "USER_DEFINED",
+      "bytes": 47,
+      "calls": [
+        "eeprom_erase_sector"
+      ],
+      "access": {
+        "1082": "w",
+        "1084": "w",
+        "1086": "w"
+      }
+    },
+    {
+      "entry": "8e87",
+      "name": "eeprom_save_task",
+      "source": "USER_DEFINED",
+      "bytes": 701,
+      "calls": [
+        "eeprom_erase_sector",
+        "eeprom_program_word",
+        "eeprom_write_byte",
+        "eeprom_write_finish",
+        "eeprom_write_record",
+        "eeprom_write_word"
+      ],
+      "access": {
+        "0808": "r",
+        "1030": "r",
+        "1045": "r",
+        "1047": "r",
+        "1080": "rw",
+        "1081": "rw",
+        "1088": "rw",
+        "108a": "rw",
+        "108b": "w",
+        "13a8": "r",
+        "13b4": "r",
+        "13ba": "r",
+        "13bd": "rw",
+        "13be": "r",
+        "13c1": "r",
+        "13c8": "rw",
+        "13d5": "rw",
+        "1bb7": "rw"
+      }
+    },
+    {
+      "entry": "9144",
+      "name": "lcd_scroll_step",
+      "source": "USER_DEFINED",
+      "bytes": 82,
+      "calls": [],
+      "access": {
+        "10ac": "rw",
+        "1bb7": "rw"
+      }
+    },
+    {
+      "entry": "9196",
+      "name": "lcd_text_layout",
+      "source": "USER_DEFINED",
+      "bytes": 99,
+      "calls": [
+        "lcd_scroll_step",
+        "lcd_text_width"
+      ],
+      "access": {
+        "10ac": "w",
+        "13ba": "r"
+      }
+    },
+    {
+      "entry": "9229",
+      "name": "p3d_lok_db_validate_range",
+      "source": "IMPORTED",
+      "bytes": 18,
+      "calls": [
+        "lcd_scroll_step"
+      ],
+      "access": {
+        "10ac": "w",
+        "10ad": "w"
+      }
+    },
+    {
+      "entry": "9239",
+      "name": "menu_enter",
+      "source": "USER_DEFINED",
+      "bytes": 37,
+      "calls": [
+        "ui_knob_reset"
+      ],
+      "access": {
+        "13b7": "rw",
+        "13b8": "rw",
+        "13b9": "w"
+      }
+    },
+    {
+      "entry": "925e",
+      "name": "menu_back",
+      "source": "USER_DEFINED",
+      "bytes": 25,
+      "calls": [
+        "ui_knob_reset"
+      ],
+      "access": {
+        "13b7": "w",
+        "13b8": "rw",
+        "13b9": "rw"
+      }
+    },
+    {
+      "entry": "9277",
+      "name": "ui_enter_mode",
+      "source": "USER_DEFINED",
+      "bytes": 188,
+      "calls": [
+        "lok_next_used_slot",
+        "lok_release_current",
+        "lok_take_current",
+        "ui_knob_reset"
+      ],
+      "access": {
+        "10ae": "w",
+        "10af": "w",
+        "10b0": "w",
+        "13a8": "r",
+        "13a9": "rw",
+        "13b4": "rw",
+        "13b5": "w",
+        "13b6": "w",
+        "13b7": "w"
+      }
+    },
+    {
+      "entry": "9333",
+      "name": "track_current_monitor",
+      "source": "USER_DEFINED",
+      "bytes": 621,
+      "calls": [
+        "counter_inc_24bit"
+      ],
+      "access": {
+        "0040": "rw",
+        "0096": "r",
+        "0098": "r",
+        "100a": "rw",
+        "100b": "rw",
+        "10ae": "rw",
+        "10f2": "rw",
+        "10f3": "w",
+        "10f4": "r",
+        "10f6": "rw",
+        "10f8": "rw",
+        "10fa": "rw",
+        "10fb": "rw",
+        "13a4": "r",
+        "13a8": "r",
+        "13a9": "rw",
+        "13b5": "r",
+        "13bf": "rw",
+        "1bb7": "rw",
+        "ff66": "r",
+        "ff68": "r",
+        "ff7a": "r"
+      }
+    },
+    {
+      "entry": "95a0",
+      "name": "ui_task",
+      "source": "USER_DEFINED",
+      "bytes": 5605,
+      "calls": [
+        "FUN_403c",
+        "FUN_e0b0",
+        "FUN_e0f1",
+        "charset_index_lookup",
+        "charset_to_utf8",
+        "delay_short",
+        "eeprom_erase_sector",
+        "eeprom_program_word",
+        "enter_bootloader",
+        "lok_assign_functions",
+        "lok_next_used_slot",
+        "lok_release_current",
+        "lokdb_count",
+        "lokdb_read",
+        "menu_back",
+        "menu_enter",
+        "show_message",
+        "str_format",
+        "str_len",
+        "ui_enter_mode",
+        "ui_knob_adjust",
+        "ui_knob_speed",
+        "utf8_to_charset",
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "0040": "rw",
+        "004c": "rw",
+        "1030": "rw",
+        "10ae": "rw",
+        "10af": "w",
+        "10b0": "rw",
+        "10b1": "rw",
+        "10b2": "rw",
+        "10b3": "rw",
+        "10b4": "rw",
+        "10b5": "r",
+        "10b6": "rw",
+        "10b8": "w",
+        "10ba": "rw",
+        "10bb": "w",
+        "10bc": "r",
+        "10bd": "r",
+        "10be": "r",
+        "10f2": "r",
+        "10f4": "rw",
+        "10f5": "w",
+        "10fd": "r",
+        "10ff": "r",
+        "13a8": "r",
+        "13a9": "rw",
+        "13aa": "rw",
+        "13ab": "rw",
+        "13ae": "r",
+        "13af": "r",
+        "13b0": "r",
+        "13b1": "r",
+        "13b2": "r",
+        "13b3": "r",
+        "13b4": "rw",
+        "13b5": "r",
+        "13b6": "rw",
+        "13b7": "rw",
+        "13b8": "rw",
+        "13ba": "r",
+        "13bd": "rw",
+        "13bf": "rw",
+        "13c1": "r",
+        "13c5": "r",
+        "13d1": "w",
+        "13d3": "w",
+        "17a7": "w",
+        "17a8": "w",
+        "17a9": "w",
+        "17ab": "w",
+        "17ad": "w",
+        "17ae": "w",
+        "17af": "w",
+        "17b0": "w",
+        "17b1": "w",
+        "17b2": "w",
+        "17b3": "w",
+        "17b6": "w",
+        "17b7": "w",
+        "17b8": "w",
+        "17b9": "w",
+        "17ba": "w",
+        "17ef": "w",
+        "17f5": "w",
+        "17f6": "rw",
+        "1bb7": "rw",
+        "1bb8": "rw"
+      }
+    },
+    {
+      "entry": "ac8e",
+      "name": "lcd_mfx_icon",
+      "source": "USER_DEFINED",
+      "bytes": 99,
+      "calls": [],
+      "access": {
+        "1117": "rw",
+        "13a9": "r",
+        "13ac": "r",
+        "13b4": "r",
+        "13b5": "r"
+      }
+    },
+    {
+      "entry": "acf1",
+      "name": "lcd_lok_icons",
+      "source": "USER_DEFINED",
+      "bytes": 849,
+      "calls": [
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "1119": "rw",
+        "111b": "rw",
+        "1123": "rw",
+        "113b": "rw",
+        "1143": "rw",
+        "1151": "rw",
+        "13ac": "r",
+        "13b4": "r",
+        "13b5": "r",
+        "13c5": "r"
+      }
+    },
+    {
+      "entry": "b042",
+      "name": "lcd_status_icons",
+      "source": "USER_DEFINED",
+      "bytes": 330,
+      "calls": [
+        "lcd_clear_segments",
+        "lcd_lok_icons",
+        "lcd_mfx_icon"
+      ],
+      "access": {
+        "10b4": "r",
+        "1119": "rw",
+        "113b": "rw",
+        "1143": "rw",
+        "1151": "rw",
+        "13a9": "r",
+        "13ac": "r",
+        "13b4": "r",
+        "13b5": "r",
+        "13b6": "r",
+        "13b7": "r",
+        "13b8": "r"
+      }
+    },
+    {
+      "entry": "b18c",
+      "name": "lcd_speed_bar",
+      "source": "USER_DEFINED",
+      "bytes": 326,
+      "calls": [
+        "lcd_set_bar"
+      ],
+      "access": {
+        "10b0": "r",
+        "13a9": "r",
+        "13ac": "r",
+        "13b4": "r",
+        "13b5": "r",
+        "13b6": "r",
+        "13b7": "r",
+        "13b8": "r",
+        "1bb7": "r",
+        "1bb8": "w"
+      }
+    },
+    {
+      "entry": "b2d2",
+      "name": "ui_screen_text",
+      "source": "USER_DEFINED",
+      "bytes": 1765,
+      "calls": [
+        "FUN_e0b0",
+        "lcd_text_layout",
+        "lcd_text_width",
+        "str_format",
+        "utf8_to_charset"
+      ],
+      "access": {
+        "1030": "r",
+        "10ac": "w",
+        "10b0": "r",
+        "10b2": "r",
+        "10b4": "r",
+        "10b6": "r",
+        "10b8": "r",
+        "10be": "r",
+        "10f2": "r",
+        "13a4": "r",
+        "13a6": "r",
+        "13a9": "r",
+        "13ab": "r",
+        "13ac": "r",
+        "13ad": "r",
+        "13ae": "r",
+        "13b4": "r",
+        "13b5": "r",
+        "13b6": "r",
+        "13b7": "r",
+        "13b8": "r",
+        "13ba": "r",
+        "1bb7": "rw",
+        "f702": "r",
+        "f704": "r",
+        "f73a": "r",
+        "ff10": "r",
+        "ff12": "r",
+        "ff18": "r",
+        "ff1a": "r",
+        "ff24": "r",
+        "ff7a": "r"
+      }
+    },
+    {
+      "entry": "b9b7",
+      "name": "lcd_draw_text",
+      "source": "USER_DEFINED",
+      "bytes": 31,
+      "calls": [
+        "lcd_render_text"
+      ],
+      "access": {
+        "10ac": "r",
+        "13ac": "r"
+      }
+    },
+    {
+      "entry": "b9d6",
+      "name": "main_loop",
+      "source": "USER_DEFINED",
+      "bytes": 136,
+      "calls": [
+        "adc_read_and_scale_voltages",
+        "app_main_init",
+        "button_scan",
+        "eeprom_save_task",
+        "encoder_sample",
+        "lcd_draw_text",
+        "lcd_speed_bar",
+        "lcd_status_icons",
+        "mcan_process",
+        "signal_gen_cmd_buf_consumer",
+        "signal_gen_send_buf_executor",
+        "track_current_monitor",
+        "track_scheduler",
+        "ui_screen_text",
+        "ui_task",
+        "wait_for_next_ms_tick"
+      ],
+      "access": {
+        "13a8": "r",
+        "13ac": "r"
+      }
+    },
+    {
+      "entry": "ba5e",
+      "name": "timer_atd_init",
+      "source": "USER_DEFINED",
+      "bytes": 56,
+      "calls": [],
+      "access": {
+        "0001": "rw",
+        "0003": "rw",
+        "000c": "rw",
+        "0046": "w",
+        "004a": "rw",
+        "004c": "rw",
+        "0082": "w",
+        "0083": "w",
+        "0084": "w",
+        "0085": "w",
+        "100f": "w",
+        "ff64": "r"
+      }
+    },
+    {
+      "entry": "ba96",
+      "name": "encoder_set_count",
+      "source": "USER_DEFINED",
+      "bytes": 27,
+      "calls": [],
+      "access": {
+        "100d": "w",
+        "1101": "w",
+        "1102": "w"
+      }
+    },
+    {
+      "entry": "bab1",
+      "name": "encoder_sample",
+      "source": "USER_DEFINED",
+      "bytes": 143,
+      "calls": [],
+      "access": {
+        "0240": "r",
+        "100d": "r",
+        "100f": "r",
+        "1010": "r",
+        "1011": "r",
+        "10fd": "rw",
+        "10ff": "rw",
+        "1101": "rw",
+        "1102": "r",
+        "1103": "rw",
+        "1105": "rw",
+        "1107": "rw"
+      }
+    },
+    {
+      "entry": "bb60",
+      "name": "str_len",
+      "source": "USER_DEFINED",
+      "bytes": 21,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "bb75",
+      "name": "str_cmp",
+      "source": "USER_DEFINED",
+      "bytes": 48,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "bba5",
+      "name": "str_ncpy",
+      "source": "USER_DEFINED",
+      "bytes": 48,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "bbd5",
+      "name": "str_cat",
+      "source": "USER_DEFINED",
+      "bytes": 25,
+      "calls": [
+        "str_ncpy"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "bbee",
+      "name": "str_append_char",
+      "source": "USER_DEFINED",
+      "bytes": 22,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "bc04",
+      "name": "str_skip_ctrl",
+      "source": "USER_DEFINED",
+      "bytes": 16,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "bc14",
+      "name": "str_itoa",
+      "source": "USER_DEFINED",
+      "bytes": 320,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "bd54",
+      "name": "str_format",
+      "source": "USER_DEFINED",
+      "bytes": 750,
+      "calls": [
+        "str_append_char",
+        "str_cat",
+        "str_itoa",
+        "str_len"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "c0ca",
+      "name": "charset_to_utf8",
+      "source": "USER_DEFINED",
+      "bytes": 1,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c15d",
+      "name": "utf8_to_charset",
+      "source": "USER_DEFINED",
+      "bytes": 1,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c237",
+      "name": "sprintf_finish",
+      "source": "IMPORTED",
+      "bytes": 10,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c23e",
+      "name": "isr_spi0_lcd",
+      "source": "USER_DEFINED",
+      "bytes": 42,
+      "calls": [],
+      "access": {
+        "00db": "r",
+        "00dd": "rw",
+        "0250": "rw",
+        "1012": "rw"
+      }
+    },
+    {
+      "entry": "c268",
+      "name": "lcd_init",
+      "source": "USER_DEFINED",
+      "bytes": 36,
+      "calls": [
+        "lcd_buf_load"
+      ],
+      "access": {
+        "0008": "rw",
+        "0009": "rw",
+        "00d8": "w",
+        "00da": "w",
+        "00dd": "w",
+        "0250": "rw",
+        "0252": "rw",
+        "0257": "rw"
+      }
+    },
+    {
+      "entry": "c28c",
+      "name": "lcd_buf_load",
+      "source": "USER_DEFINED",
+      "bytes": 18,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c29e",
+      "name": "lcd_render_text",
+      "source": "USER_DEFINED",
+      "bytes": 257,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c39f",
+      "name": "lcd_set_bar",
+      "source": "USER_DEFINED",
+      "bytes": 171,
+      "calls": [],
+      "access": {
+        "1113": "rw",
+        "1115": "rw",
+        "1123": "rw"
+      }
+    },
+    {
+      "entry": "c44a",
+      "name": "lcd_clear_segments",
+      "source": "USER_DEFINED",
+      "bytes": 27,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c465",
+      "name": "lcd_text_width",
+      "source": "USER_DEFINED",
+      "bytes": 136,
+      "calls": [],
+      "access": {
+        "effd": "r"
+      }
+    },
+    {
+      "entry": "c4ed",
+      "name": "isr_timer_ch4_signal_gen",
+      "source": "IMPORTED",
+      "bytes": 161,
+      "calls": [
+        "timer_capture_start_adc_mode",
+        "timer_capture_start_bit_mode",
+        "timer_capture_stop_and_align",
+        "timer_capture_stop_and_count"
+      ],
+      "access": {
+        "0048": "rw",
+        "0049": "rw",
+        "0056": "w",
+        "0058": "w",
+        "005a": "w",
+        "1014": "rw",
+        "1021": "rw",
+        "129c": "rw",
+        "129d": "rw",
+        "129e": "w"
+      }
+    },
+    {
+      "entry": "c58e",
+      "name": "signal_gen_init",
+      "source": "IMPORTED",
+      "bytes": 121,
+      "calls": [
+        "signal_gen_cmd_buf_consumer",
+        "signal_gen_send_buf_executor",
+        "track_cmd_pause"
+      ],
+      "access": {
+        "0040": "rw",
+        "0046": "w",
+        "0048": "rw",
+        "0049": "rw",
+        "004c": "rw",
+        "004d": "w",
+        "0056": "w",
+        "0058": "w",
+        "005a": "w",
+        "0240": "rw",
+        "0242": "rw"
+      }
+    },
+    {
+      "entry": "c614",
+      "name": "signal_gen_send_buf_executor",
+      "source": "IMPORTED",
+      "bytes": 376,
+      "calls": [
+        "signal_gen_fullbit_entry",
+        "signal_gen_halfbit_pair",
+        "signal_gen_idle_pulse",
+        "signal_gen_staging_buf_write"
+      ],
+      "access": {
+        "1014": "r",
+        "1016": "r",
+        "1018": "rw",
+        "101a": "r",
+        "129c": "rw",
+        "129d": "w",
+        "12a0": "r"
+      }
+    },
+    {
+      "entry": "c66f",
+      "name": "signal_gen_staging_buf_write",
+      "source": "IMPORTED",
+      "bytes": 41,
+      "calls": [],
+      "access": {
+        "1016": "rw",
+        "12a0": "w"
+      }
+    },
+    {
+      "entry": "c6fb",
+      "name": "signal_gen_fullbit_entry",
+      "source": "IMPORTED",
+      "bytes": 14,
+      "calls": [
+        "signal_gen_staging_buf_write"
+      ],
+      "access": {
+        "12a0": "r",
+        "12a1": "w"
+      }
+    },
+    {
+      "entry": "c709",
+      "name": "signal_gen_halfbit_pair",
+      "source": "IMPORTED",
+      "bytes": 10,
+      "calls": [
+        "signal_gen_halfbit_entry"
+      ],
+      "access": {
+        "12a1": "rw"
+      }
+    },
+    {
+      "entry": "c713",
+      "name": "signal_gen_halfbit_entry",
+      "source": "IMPORTED",
+      "bytes": 9,
+      "calls": [
+        "signal_gen_staging_buf_write"
+      ],
+      "access": {
+        "12a0": "r"
+      }
+    },
+    {
+      "entry": "c71c",
+      "name": "signal_gen_idle_pulse",
+      "source": "IMPORTED",
+      "bytes": 6,
+      "calls": [
+        "signal_gen_fullbit_entry",
+        "signal_gen_halfbit_entry"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "c81d",
+      "name": "signal_gen_cmd_buf_consumer",
+      "source": "IMPORTED",
+      "bytes": 386,
+      "calls": [
+        "FUN_c898",
+        "FUN_c8b5",
+        "FUN_c8d7",
+        "signal_gen_filter_aux_cmds"
+      ],
+      "access": {
+        "1018": "r",
+        "101a": "r",
+        "101c": "rw",
+        "1020": "rw",
+        "1298": "rw",
+        "129b": "rw"
+      }
+    },
+    {
+      "entry": "c898",
+      "name": "FUN_c898",
+      "source": "DEFAULT",
+      "bytes": 1,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "c8b5",
+      "name": "FUN_c8b5",
+      "source": "DEFAULT",
+      "bytes": 17,
+      "calls": [],
+      "access": {
+        "101a": "rw"
+      }
+    },
+    {
+      "entry": "c8c6",
+      "name": "signal_gen_filter_aux_cmds",
+      "source": "IMPORTED",
+      "bytes": 17,
+      "calls": [
+        "FUN_c8b5"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "c8d7",
+      "name": "FUN_c8d7",
+      "source": "DEFAULT",
+      "bytes": 18,
+      "calls": [
+        "FUN_c8b5"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ca46",
+      "name": "track_cmd_pause",
+      "source": "USER_DEFINED",
+      "bytes": 24,
+      "calls": [
+        "track_cmd_advance"
+      ],
+      "access": {
+        "101e": "r"
+      }
+    },
+    {
+      "entry": "ca5e",
+      "name": "track_cmd_write_type2",
+      "source": "USER_DEFINED",
+      "bytes": 13,
+      "calls": [],
+      "access": {
+        "101e": "r"
+      }
+    },
+    {
+      "entry": "ca6b",
+      "name": "track_cmd_advance",
+      "source": "USER_DEFINED",
+      "bytes": 21,
+      "calls": [],
+      "access": {
+        "101e": "rw",
+        "1020": "rw"
+      }
+    },
+    {
+      "entry": "ca80",
+      "name": "mfx_put_bits",
+      "source": "USER_DEFINED",
+      "bytes": 142,
+      "calls": [
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "101e": "r",
+        "12a2": "rw",
+        "12a3": "rw",
+        "12a4": "rw"
+      }
+    },
+    {
+      "entry": "cb0e",
+      "name": "mfx_put_command",
+      "source": "USER_DEFINED",
+      "bytes": 126,
+      "calls": [
+        "mfx_put_bits"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "cb8c",
+      "name": "mfx_cmd_syncs",
+      "source": "USER_DEFINED",
+      "bytes": 21,
+      "calls": [
+        "track_cmd_advance"
+      ],
+      "access": {
+        "101e": "r"
+      }
+    },
+    {
+      "entry": "cba1",
+      "name": "mfx_cmd_feedback",
+      "source": "USER_DEFINED",
+      "bytes": 30,
+      "calls": [
+        "track_cmd_advance"
+      ],
+      "access": {
+        "101e": "r",
+        "129e": "w",
+        "129f": "w"
+      }
+    },
+    {
+      "entry": "cbbf",
+      "name": "mfx_frame_begin",
+      "source": "USER_DEFINED",
+      "bytes": 114,
+      "calls": [
+        "mfx_put_bits"
+      ],
+      "access": {
+        "12a2": "w",
+        "12a3": "w",
+        "12a4": "w"
+      }
+    },
+    {
+      "entry": "cc31",
+      "name": "mfx_put_estop",
+      "source": "USER_DEFINED",
+      "bytes": 39,
+      "calls": [
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "cc58",
+      "name": "mfx_put_drive",
+      "source": "USER_DEFINED",
+      "bytes": 101,
+      "calls": [
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ccbd",
+      "name": "mfx_put_functions",
+      "source": "USER_DEFINED",
+      "bytes": 80,
+      "calls": [
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "cd0d",
+      "name": "mfx_frame_end",
+      "source": "USER_DEFINED",
+      "bytes": 98,
+      "calls": [
+        "mfx_put_bits",
+        "track_cmd_advance",
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "101e": "r",
+        "12a2": "r",
+        "12a3": "r",
+        "12a4": "rw"
+      }
+    },
+    {
+      "entry": "cd6f",
+      "name": "mfx_frame_read_cv",
+      "source": "USER_DEFINED",
+      "bytes": 72,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "cdb7",
+      "name": "mfx_frame_write_cv",
+      "source": "USER_DEFINED",
+      "bytes": 116,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ce2b",
+      "name": "mfx_frame_search",
+      "source": "USER_DEFINED",
+      "bytes": 51,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ce5e",
+      "name": "mfx_frame_assign",
+      "source": "USER_DEFINED",
+      "bytes": 51,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ce91",
+      "name": "mfx_frame_ping",
+      "source": "USER_DEFINED",
+      "bytes": 35,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ceb4",
+      "name": "mfx_frame_central",
+      "source": "USER_DEFINED",
+      "bytes": 55,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "ceeb",
+      "name": "mfx_frame_cmd20",
+      "source": "USER_DEFINED",
+      "bytes": 31,
+      "calls": [
+        "mfx_frame_begin",
+        "mfx_frame_end",
+        "mfx_put_bits",
+        "mfx_put_command"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "cf0a",
+      "name": "mfx_feedback_bit",
+      "source": "USER_DEFINED",
+      "bytes": 157,
+      "calls": [],
+      "access": {
+        "129e": "r",
+        "1bb7": "rw"
+      }
+    },
+    {
+      "entry": "cfa7",
+      "name": "mfx_feedback_read_bit",
+      "source": "USER_DEFINED",
+      "bytes": 61,
+      "calls": [],
+      "access": {
+        "13a0": "rw",
+        "13a2": "rw",
+        "13a3": "rw"
+      }
+    },
+    {
+      "entry": "cfe4",
+      "name": "mfx_feedback_data",
+      "source": "USER_DEFINED",
+      "bytes": 302,
+      "calls": [
+        "mfx_feedback_read_bit"
+      ],
+      "access": {
+        "129e": "r",
+        "13a0": "w",
+        "13a2": "w",
+        "1bb7": "w",
+        "1bb8": "r"
+      }
+    },
+    {
+      "entry": "d112",
+      "name": "mm_write_idle",
+      "source": "USER_DEFINED",
+      "bytes": 20,
+      "calls": [
+        "mm_write_packet"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "d126",
+      "name": "mm_write_direction",
+      "source": "USER_DEFINED",
+      "bytes": 142,
+      "calls": [
+        "track_cmd_advance"
+      ],
+      "access": {
+        "101e": "r",
+        "1bb7": "r",
+        "1bb8": "w"
+      }
+    },
+    {
+      "entry": "d1b4",
+      "name": "mm_write_packet",
+      "source": "USER_DEFINED",
+      "bytes": 291,
+      "calls": [
+        "track_cmd_advance",
+        "util_shift_left_d_by_x"
+      ],
+      "access": {
+        "101e": "r"
+      }
+    },
+    {
+      "entry": "d2d7",
+      "name": "mm_write_reverse",
+      "source": "USER_DEFINED",
+      "bytes": 120,
+      "calls": [
+        "track_cmd_advance"
+      ],
+      "access": {
+        "101e": "r",
+        "1bb7": "r",
+        "1bb8": "w"
+      }
+    },
+    {
+      "entry": "d34f",
+      "name": "app_main_init",
+      "source": "IMPORTED",
+      "bytes": 1007,
+      "calls": [
+        "adc_read_and_scale_voltages",
+        "can_controller_full_init",
+        "delay_short",
+        "eeprom_erase_sector",
+        "eeprom_program_word",
+        "lcd_buf_init",
+        "lcd_buf_load",
+        "lcd_init",
+        "lcd_pump_all",
+        "mfx_registration_start",
+        "signal_gen_init",
+        "str_ncpy",
+        "timer_atd_init",
+        "timer_modulus_init",
+        "timer_modulus_read",
+        "ui_enter_mode"
+      ],
+      "access": {
+        "0008": "rw",
+        "0800": "r",
+        "0801": "r",
+        "0804": "r",
+        "0808": "r",
+        "080c": "r",
+        "080e": "r",
+        "0be0": "r",
+        "0be4": "r",
+        "0be6": "r",
+        "1010": "w",
+        "1030": "w",
+        "10fd": "w",
+        "10ff": "w",
+        "13a4": "r",
+        "13a8": "rw",
+        "13a9": "w",
+        "13b4": "w",
+        "13ba": "w",
+        "13bd": "rw",
+        "13c1": "rw",
+        "13c2": "r",
+        "13c3": "w",
+        "13c5": "w",
+        "13c8": "w",
+        "13d1": "r",
+        "13d3": "r",
+        "13d5": "rw",
+        "17f6": "w",
+        "1bb7": "rw",
+        "ff10": "r",
+        "ff12": "r",
+        "ff18": "r",
+        "ff2c": "r"
+      }
+    },
+    {
+      "entry": "d73e",
+      "name": "wait_for_next_ms_tick",
+      "source": "IMPORTED",
+      "bytes": 18,
+      "calls": [],
+      "access": {
+        "13ac": "rw",
+        "1bb5": "r"
+      }
+    },
+    {
+      "entry": "d750",
+      "name": "adc_read_and_scale_voltages",
+      "source": "IMPORTED",
+      "bytes": 31,
+      "calls": [],
+      "access": {
+        "0090": "r",
+        "0092": "r",
+        "13a4": "w",
+        "13a6": "w",
+        "ff60": "r",
+        "ff62": "r"
+      }
+    },
+    {
+      "entry": "d76f",
+      "name": "button_scan",
+      "source": "USER_DEFINED",
+      "bytes": 113,
+      "calls": [
+        "gpio_read_porta_active_low",
+        "gpio_read_portb_active_low"
+      ],
+      "access": {
+        "13ae": "rw",
+        "13af": "rw",
+        "13b0": "rw",
+        "13b1": "rw",
+        "13b2": "rw",
+        "13b3": "rw"
+      }
+    },
+    {
+      "entry": "d7e0",
+      "name": "ui_knob_speed",
+      "source": "USER_DEFINED",
+      "bytes": 184,
+      "calls": [
+        "ui_knob_adjust"
+      ],
+      "access": {
+        "13ba": "r"
+      }
+    },
+    {
+      "entry": "d898",
+      "name": "lok_take_current",
+      "source": "USER_DEFINED",
+      "bytes": 30,
+      "calls": [],
+      "access": {
+        "13b4": "r"
+      }
+    },
+    {
+      "entry": "d8b6",
+      "name": "lok_release_current",
+      "source": "USER_DEFINED",
+      "bytes": 27,
+      "calls": [],
+      "access": {
+        "13b4": "r"
+      }
+    },
+    {
+      "entry": "d8d1",
+      "name": "lok_find_address",
+      "source": "USER_DEFINED",
+      "bytes": 146,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "d963",
+      "name": "lok_next_used_slot",
+      "source": "USER_DEFINED",
+      "bytes": 106,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "d9cd",
+      "name": "lok_recheck_conflicts",
+      "source": "USER_DEFINED",
+      "bytes": 132,
+      "calls": [
+        "lok_find_address"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "da51",
+      "name": "lok_make_name_unique",
+      "source": "USER_DEFINED",
+      "bytes": 174,
+      "calls": [
+        "str_cmp",
+        "str_format",
+        "str_ncpy"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "daff",
+      "name": "charset_index_lookup",
+      "source": "IMPORTED",
+      "bytes": 38,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "db25",
+      "name": "ui_knob_reset",
+      "source": "USER_DEFINED",
+      "bytes": 23,
+      "calls": [
+        "encoder_set_count"
+      ],
+      "access": {
+        "191f": "w",
+        "1920": "w"
+      }
+    },
+    {
+      "entry": "db3c",
+      "name": "ui_knob_adjust",
+      "source": "USER_DEFINED",
+      "bytes": 365,
+      "calls": [
+        "encoder_set_count",
+        "ui_knob_reset"
+      ],
+      "access": {
+        "1101": "r",
+        "191f": "rw"
+      }
+    },
+    {
+      "entry": "dca9",
+      "name": "show_message",
+      "source": "USER_DEFINED",
+      "bytes": 38,
+      "calls": [],
+      "access": {
+        "13a9": "rw",
+        "13aa": "rw",
+        "13ab": "w"
+      }
+    },
+    {
+      "entry": "dccf",
+      "name": "eeprom_erase_sector",
+      "source": "IMPORTED",
+      "bytes": 25,
+      "calls": [],
+      "access": {
+        "0110": "rw",
+        "0115": "w",
+        "0116": "w"
+      }
+    },
+    {
+      "entry": "dce8",
+      "name": "eeprom_program_word",
+      "source": "IMPORTED",
+      "bytes": 22,
+      "calls": [],
+      "access": {
+        "0115": "rw",
+        "0116": "w"
+      }
+    },
+    {
+      "entry": "dcfe",
+      "name": "lokdb_count",
+      "source": "USER_DEFINED",
+      "bytes": 9,
+      "calls": [
+        "bb08"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "dd07",
+      "name": "lokdb_read",
+      "source": "USER_DEFINED",
+      "bytes": 9,
+      "calls": [
+        "bb0c"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "dd10",
+      "name": "can0_error_isr",
+      "source": "USER_DEFINED",
+      "bytes": 11,
+      "calls": [],
+      "access": {
+        "0144": "rw"
+      }
+    },
+    {
+      "entry": "dd1b",
+      "name": "can0_tx_isr",
+      "source": "USER_DEFINED",
+      "bytes": 70,
+      "calls": [],
+      "access": {
+        "0146": "rw",
+        "0147": "rw",
+        "014a": "w",
+        "1925": "rw",
+        "1927": "r"
+      }
+    },
+    {
+      "entry": "dd61",
+      "name": "can0_rx_isr",
+      "source": "USER_DEFINED",
+      "bytes": 55,
+      "calls": [],
+      "access": {
+        "0144": "w",
+        "0160": "r",
+        "0162": "r",
+        "0164": "r",
+        "0166": "r",
+        "0168": "r",
+        "016a": "r",
+        "016c": "r",
+        "1923": "rw"
+      }
+    },
+    {
+      "entry": "dd98",
+      "name": "can_poll",
+      "source": "USER_DEFINED",
+      "bytes": 14,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "dda6",
+      "name": "can_poll_tx",
+      "source": "USER_DEFINED",
+      "bytes": 14,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "ddb5",
+      "name": "can_controller_full_init",
+      "source": "IMPORTED",
+      "bytes": 142,
+      "calls": [],
+      "access": {
+        "0140": "rw",
+        "0141": "rw",
+        "0142": "w",
+        "0143": "w",
+        "0145": "w",
+        "0148": "w",
+        "0150": "w",
+        "0152": "w",
+        "0154": "w",
+        "0156": "w",
+        "0158": "w",
+        "015a": "w",
+        "015c": "w",
+        "015e": "w",
+        "1921": "w",
+        "1923": "w",
+        "1925": "w",
+        "1927": "w"
+      }
+    },
+    {
+      "entry": "de43",
+      "name": "can_tx_enqueue_frame",
+      "source": "IMPORTED",
+      "bytes": 105,
+      "calls": [],
+      "access": {
+        "0147": "rw",
+        "1925": "r",
+        "1927": "rw"
+      }
+    },
+    {
+      "entry": "deac",
+      "name": "can_rx_dequeue_frame",
+      "source": "IMPORTED",
+      "bytes": 103,
+      "calls": [],
+      "access": {
+        "1921": "rw",
+        "1923": "r"
+      }
+    },
+    {
+      "entry": "df13",
+      "name": "isr_feedback_capture",
+      "source": "USER_DEFINED",
+      "bytes": 84,
+      "calls": [],
+      "access": {
+        "0001": "r",
+        "004b": "rw",
+        "004c": "rw",
+        "0050": "r",
+        "0094": "r",
+        "0240": "r",
+        "1bab": "rw",
+        "1bad": "rw",
+        "1bae": "r"
+      }
+    },
+    {
+      "entry": "df67",
+      "name": "timer_capture_start_bit_mode",
+      "source": "IMPORTED",
+      "bytes": 40,
+      "calls": [],
+      "access": {
+        "004b": "rw",
+        "004c": "rw",
+        "0050": "r",
+        "1bab": "w",
+        "1bad": "w",
+        "1bae": "w"
+      }
+    },
+    {
+      "entry": "df8f",
+      "name": "timer_capture_start_adc_mode",
+      "source": "IMPORTED",
+      "bytes": 11,
+      "calls": [],
+      "access": {
+        "004b": "rw",
+        "1bae": "w"
+      }
+    },
+    {
+      "entry": "df9a",
+      "name": "timer_capture_stop_and_align",
+      "source": "IMPORTED",
+      "bytes": 48,
+      "calls": [],
+      "access": {
+        "004b": "rw",
+        "004c": "rw",
+        "1bab": "r",
+        "1bad": "rw",
+        "1bae": "w"
+      }
+    },
+    {
+      "entry": "dfca",
+      "name": "timer_capture_stop_and_count",
+      "source": "IMPORTED",
+      "bytes": 18,
+      "calls": [],
+      "access": {
+        "004b": "rw",
+        "004c": "rw",
+        "1bab": "r",
+        "1bae": "w"
+      }
+    },
+    {
+      "entry": "dfdc",
+      "name": "gpio_read_porta_active_low",
+      "source": "USER_DEFINED",
+      "bytes": 7,
+      "calls": [],
+      "access": {
+        "0000": "r"
+      }
+    },
+    {
+      "entry": "dfe3",
+      "name": "gpio_read_portb_active_low",
+      "source": "IMPORTED",
+      "bytes": 9,
+      "calls": [],
+      "access": {
+        "0001": "r"
+      }
+    },
+    {
+      "entry": "dfec",
+      "name": "isr_ms_tick",
+      "source": "USER_DEFINED",
+      "bytes": 60,
+      "calls": [],
+      "access": {
+        "0076": "r",
+        "1baf": "rw",
+        "1bb1": "rw",
+        "1bb3": "rw",
+        "1bb5": "rw"
+      }
+    },
+    {
+      "entry": "e028",
+      "name": "timer_modulus_init",
+      "source": "IMPORTED",
+      "bytes": 22,
+      "calls": [],
+      "access": {
+        "0046": "w",
+        "0066": "w",
+        "0076": "w"
+      }
+    },
+    {
+      "entry": "e03e",
+      "name": "timer_modulus_read",
+      "source": "IMPORTED",
+      "bytes": 8,
+      "calls": [],
+      "access": {
+        "0066": "rw",
+        "0076": "r"
+      }
+    },
+    {
+      "entry": "e046",
+      "name": "lcd_buf_init",
+      "source": "USER_DEFINED",
+      "bytes": 18,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e058",
+      "name": "lcd_pump_start",
+      "source": "USER_DEFINED",
+      "bytes": 9,
+      "calls": [
+        "isr_spi0_lcd"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "e061",
+      "name": "lcd_pump_all",
+      "source": "USER_DEFINED",
+      "bytes": 17,
+      "calls": [
+        "delay_short",
+        "lcd_pump_start"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "e072",
+      "name": "delay_long",
+      "source": "IMPORTED",
+      "bytes": 18,
+      "calls": [
+        "delay_short"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "e084",
+      "name": "delay_short",
+      "source": "IMPORTED",
+      "bytes": 19,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e097",
+      "name": "counter_inc_24bit",
+      "source": "IMPORTED",
+      "bytes": 13,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e0b0",
+      "name": "FUN_e0b0",
+      "source": "DEFAULT",
+      "bytes": 1,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e0c9",
+      "name": "FUN_e0c9",
+      "source": "DEFAULT",
+      "bytes": 20,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e0dd",
+      "name": "util_shift_right_32",
+      "source": "IMPORTED",
+      "bytes": 20,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e0f1",
+      "name": "FUN_e0f1",
+      "source": "DEFAULT",
+      "bytes": 24,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "e109",
+      "name": "util_shift_left_d_by_x",
+      "source": "IMPORTED",
+      "bytes": 18,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f740",
+      "name": "isr_tramp_reserved63",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f743",
+      "name": "isr_tramp_reserved62",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f746",
+      "name": "isr_tramp_reserved61",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f749",
+      "name": "isr_tramp_reserved60",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f74c",
+      "name": "isr_tramp_reserved59",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f74f",
+      "name": "isr_tramp_reserved58",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f752",
+      "name": "isr_tramp_pwmesdn",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f755",
+      "name": "isr_tramp_portp",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f758",
+      "name": "isr_tramp_reserved55",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f75b",
+      "name": "isr_tramp_reserved54",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f75e",
+      "name": "isr_tramp_reserved53",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f761",
+      "name": "isr_tramp_reserved52",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f764",
+      "name": "isr_tramp_reserved51",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f767",
+      "name": "isr_tramp_reserved50",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f76a",
+      "name": "isr_tramp_reserved49",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f76d",
+      "name": "isr_tramp_reserved48",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f770",
+      "name": "isr_tramp_reserved47",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f773",
+      "name": "isr_tramp_reserved46",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f776",
+      "name": "isr_tramp_reserved45",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f779",
+      "name": "isr_tramp_reserved44",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f77c",
+      "name": "isr_tramp_reserved43",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f77f",
+      "name": "isr_tramp_reserved42",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f782",
+      "name": "isr_tramp_reserved41",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f785",
+      "name": "isr_tramp_reserved40",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f788",
+      "name": "isr_tramp_can0tx",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "can0_tx_isr",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f78b",
+      "name": "isr_tramp_can0rx",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "can0_rx_isr",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f78e",
+      "name": "isr_tramp_can0err",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "can0_error_isr",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f791",
+      "name": "isr_tramp_can0wkup",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f794",
+      "name": "isr_tramp_flash",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f797",
+      "name": "isr_tramp_eeprom",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f79a",
+      "name": "isr_tramp_reserved33",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f79d",
+      "name": "isr_tramp_reserved32",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7a0",
+      "name": "isr_tramp_iic",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7a3",
+      "name": "isr_tramp_reserved30",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7a6",
+      "name": "isr_tramp_crgscm",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7a9",
+      "name": "isr_tramp_crgplllck",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7ac",
+      "name": "isr_tramp_timpabovf",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7af",
+      "name": "isr_tramp_timmdcu",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "isr_ms_tick",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f7b2",
+      "name": "isr_tramp_porth",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7b5",
+      "name": "isr_tramp_portj",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7b8",
+      "name": "isr_tramp_atd1",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7bb",
+      "name": "isr_tramp_atd0",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7be",
+      "name": "isr_tramp_sci1",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7c1",
+      "name": "isr_tramp_sci0",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7c4",
+      "name": "isr_tramp_spi0",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "isr_spi0_lcd",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f7c7",
+      "name": "isr_tramp_timpaie",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7ca",
+      "name": "isr_tramp_timpaaovf",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7cd",
+      "name": "isr_tramp_timovf",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7d0",
+      "name": "isr_tramp_timch7",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7d3",
+      "name": "isr_tramp_timch6",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7d6",
+      "name": "isr_tramp_timch5",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7d9",
+      "name": "isr_tramp_timch4",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "isr_timer_ch4_signal_gen",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f7dc",
+      "name": "isr_tramp_timch3",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7df",
+      "name": "isr_tramp_timch2",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7e2",
+      "name": "isr_tramp_timch1",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7e5",
+      "name": "isr_tramp_timch0",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "thunk_of": "isr_feedback_capture",
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "f7e8",
+      "name": "isr_tramp_rti",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7eb",
+      "name": "isr_tramp_irq",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7ee",
+      "name": "isr_tramp_xirq",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7f1",
+      "name": "isr_tramp_swi",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7f4",
+      "name": "isr_tramp_trap",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7f7",
+      "name": "isr_tramp_cop",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f7fa",
+      "name": "isr_tramp_clkmon",
+      "source": "IMPORTED",
+      "bytes": 3,
+      "calls": [
+        "e0a4"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "f800",
+      "name": "bootloader_hw_init",
+      "source": "IMPORTED",
+      "bytes": 119,
+      "calls": [
+        "bootloader_crc_check_and_dispatch"
+      ],
+      "access": {
+        "0008": "rw",
+        "0010": "w",
+        "0011": "w",
+        "0012": "w",
+        "0013": "w",
+        "0030": "w",
+        "0034": "w",
+        "0035": "w",
+        "0039": "w",
+        "0040": "rw",
+        "004c": "rw"
+      }
+    },
+    {
+      "entry": "f877",
+      "name": "bootloader_crc_check_and_dispatch",
+      "source": "IMPORTED",
+      "bytes": 75,
+      "calls": [
+        "FUN_4000",
+        "crc16_ccitt_update"
+      ],
+      "access": {
+        "0030": "w",
+        "1c85": "rw",
+        "f73c": "r",
+        "ff1a": "r",
+        "ff1b": "r"
+      }
+    },
+    {
+      "entry": "f8bf",
+      "name": "crc16_ccitt_update",
+      "source": "IMPORTED",
+      "bytes": 36,
+      "calls": [],
+      "access": {
+        "1c85": "rw"
+      }
+    },
+    {
+      "entry": "f8e3",
+      "name": "bootloader_flash_page_align",
+      "source": "IMPORTED",
+      "bytes": 19,
+      "calls": [],
+      "access": {
+        "1c66": "w",
+        "1c68": "rw"
+      }
+    },
+    {
+      "entry": "f8f6",
+      "name": "bootloader_flash_handler",
+      "source": "IMPORTED",
+      "bytes": 526,
+      "calls": [
+        "bootloader_can_flash_protocol",
+        "bootloader_can_tx_frame",
+        "bootloader_flash_page_align"
+      ],
+      "access": {
+        "0140": "rw",
+        "0141": "rw",
+        "0142": "w",
+        "0143": "w",
+        "0144": "rw",
+        "0145": "w",
+        "0148": "w",
+        "0150": "w",
+        "0152": "w",
+        "0154": "w",
+        "0156": "w",
+        "0158": "w",
+        "015a": "w",
+        "015c": "w",
+        "015e": "w",
+        "0160": "r",
+        "0162": "r",
+        "0164": "r",
+        "0166": "r",
+        "0168": "r",
+        "016a": "r",
+        "016c": "r",
+        "1c66": "rw",
+        "1c68": "rw",
+        "1c69": "rw",
+        "1c6a": "w",
+        "1c6b": "rw",
+        "1c6d": "rw",
+        "1c6f": "rw",
+        "1c70": "rw",
+        "1c71": "rw",
+        "1c72": "w",
+        "1c73": "rw",
+        "1c75": "rw",
+        "1c77": "w",
+        "1c79": "w",
+        "1c7b": "rw",
+        "ff10": "r",
+        "ff12": "r",
+        "ff14": "r",
+        "ff16": "r",
+        "ff18": "r",
+        "ff1a": "r",
+        "ff24": "r",
+        "ff26": "r"
+      }
+    },
+    {
+      "entry": "fb04",
+      "name": "bootloader_flash_crc_byte",
+      "source": "IMPORTED",
+      "bytes": 21,
+      "calls": [
+        "crc16_ccitt_update"
+      ],
+      "access": {
+        "1c7d": "r"
+      }
+    },
+    {
+      "entry": "fb19",
+      "name": "bootloader_can_flash_protocol",
+      "source": "IMPORTED",
+      "bytes": 450,
+      "calls": [
+        "1000",
+        "bootloader_flash_crc_byte",
+        "bootloader_flash_page_align",
+        "bootloader_hw_init",
+        "crc16_ccitt_update"
+      ],
+      "access": {
+        "1810": "r",
+        "1811": "r",
+        "1812": "r",
+        "1c69": "r",
+        "1c6a": "r",
+        "1c6b": "rw",
+        "1c6c": "r",
+        "1c6d": "rw",
+        "1c6f": "r",
+        "1c70": "r",
+        "1c72": "r",
+        "1c73": "r",
+        "1c75": "rw",
+        "1c7b": "r",
+        "1c7c": "rw",
+        "1c7d": "w",
+        "1c7f": "rw",
+        "1c81": "rw",
+        "1c82": "rw",
+        "1c83": "rw",
+        "1c85": "rw"
+      }
+    },
+    {
+      "entry": "fcdb",
+      "name": "bootloader_can_tx_frame",
+      "source": "IMPORTED",
+      "bytes": 86,
+      "calls": [],
+      "access": {
+        "0146": "rw",
+        "014a": "w",
+        "0170": "w",
+        "0172": "w",
+        "0173": "w",
+        "0174": "w",
+        "0176": "w",
+        "0178": "w",
+        "017a": "w",
+        "017c": "w",
+        "1c6a": "r",
+        "1c70": "r",
+        "1c71": "r",
+        "1c72": "r",
+        "1c73": "r",
+        "1c75": "r",
+        "1c77": "r",
+        "1c79": "r"
+      }
+    },
+    {
+      "entry": "fd31",
+      "name": "bootloader_delay_outer",
+      "source": "IMPORTED",
+      "bytes": 18,
+      "calls": [
+        "bootloader_delay_inner"
+      ],
+      "access": {}
+    },
+    {
+      "entry": "fd43",
+      "name": "bootloader_delay_inner",
+      "source": "IMPORTED",
+      "bytes": 19,
+      "calls": [],
+      "access": {}
+    },
+    {
+      "entry": "fd56",
+      "name": "counter_inc_24bit_bootloader",
+      "source": "IMPORTED",
+      "bytes": 13,
+      "calls": [],
+      "access": {}
+    }
+  ],
+  "labels_below_0x4000": {
+    "0000": "PORTA",
+    "0001": "PORTB",
+    "0002": "DDRA",
+    "0003": "DDRB",
+    "0008": "PORTE",
+    "0009": "DDRE",
+    "000a": "PEAR",
+    "000b": "MODE",
+    "000c": "PUCR",
+    "000d": "RDRIV",
+    "000e": "EBICTL",
+    "0010": "INITRM",
+    "0011": "INITRG",
+    "0012": "INITEE",
+    "0013": "MISC",
+    "0014": "MTST0",
+    "0015": "ITCR",
+    "0016": "ITEST",
+    "0017": "MTST1",
+    "001a": "PARTIDH",
+    "001b": "PARTIDL",
+    "001c": "MEMSIZ0",
+    "001d": "MEMSIZ1",
+    "001e": "INTCR",
+    "001f": "HPRIO",
+    "0028": "BKPCT0",
+    "0029": "BKPCT1",
+    "002a": "BKP0X",
+    "002b": "BKP0H",
+    "002c": "BKP0L",
+    "002d": "BKP1X",
+    "002e": "BKP1H",
+    "002f": "BKP1L",
+    "0030": "PPAGE",
+    "0032": "PORTK",
+    "0033": "DDRK",
+    "0034": "SYNR",
+    "0035": "REFDV",
+    "0036": "CTFLG",
+    "0037": "CRGFLG",
+    "0038": "CRGINT",
+    "0039": "CLKSEL",
+    "003a": "PLLCTL",
+    "003b": "RTICTL",
+    "003c": "COPCTL",
+    "003e": "CTCTL",
+    "003f": "ARMCOP",
+    "0040": "TIOS",
+    "0041": "CFORC",
+    "0042": "OC7M",
+    "0043": "OC7D",
+    "0044": "TCNTHi",
+    "0045": "TCNTLo",
+    "0046": "TSCR1",
+    "0047": "TTOV",
+    "0048": "TCTL1",
+    "0049": "TCTL2",
+    "004a": "TCTL3",
+    "004b": "TCTL4",
+    "004c": "TIE",
+    "004d": "TSCR2",
+    "004e": "TFLG1",
+    "004f": "TFLG2",
+    "0050": "TC0Hi",
+    "0051": "TC0Lo",
+    "0052": "TC1Hi",
+    "0053": "TC1Lo",
+    "0054": "TC2Hi",
+    "0055": "TC2Lo",
+    "0056": "TC3Hi",
+    "0057": "TC3Lo",
+    "0058": "TC4Hi",
+    "0059": "TC4Lo",
+    "005a": "TC5Hi",
+    "005b": "TC5Lo",
+    "005c": "TC6Hi",
+    "005d": "TC6Lo",
+    "005e": "TC7Hi",
+    "005f": "TC7Lo",
+    "0060": "PACTL",
+    "0061": "PAFLG",
+    "0062": "PACN3",
+    "0063": "PACN2",
+    "0064": "PACN1",
+    "0065": "PACN0",
+    "0066": "MCCTL",
+    "0067": "MCFLG",
+    "0068": "ICPAR",
+    "0069": "DLYCT",
+    "006a": "ICOVW",
+    "006b": "ICSYS",
+    "006d": "TIMTST",
+    "0070": "PBCTL",
+    "0071": "PBFLG",
+    "0072": "PA3H",
+    "0073": "PA2H",
+    "0074": "PA1H",
+    "0075": "PA0H",
+    "0076": "MCCNThi",
+    "0077": "MCCNTlo",
+    "0078": "TC0Hhi",
+    "0079": "TC0Hlo",
+    "007a": "TC1Hhi",
+    "007b": "TC1Hlo",
+    "007c": "TC2Hhi",
+    "007d": "TC2Hlo",
+    "007e": "TC3Hhi",
+    "007f": "TC3Hlo",
+    "0082": "ATD0CTL2",
+    "0083": "ATD0CTL3",
+    "0084": "ATD0CTL4",
+    "0085": "ATD0CTL5",
+    "0086": "ATD0STAT0",
+    "008b": "ATD0STAT1",
+    "008d": "ATD0DIEN",
+    "008f": "PORTAD0",
+    "0090": "ATD0DR0H",
+    "0091": "ATD0DR0L",
+    "0092": "ATD0DR1H",
+    "0093": "ATD0DR1L",
+    "0094": "ATD0DR2H",
+    "0095": "ATD0DR2L",
+    "0096": "ATD0DR3H",
+    "0097": "ATD0DR3L",
+    "0098": "ATD0DR4H",
+    "0099": "ATD0DR4L",
+    "009a": "ATD0DR5H",
+    "009b": "ATD0DR5L",
+    "009c": "ATD0DR6H",
+    "009d": "ATD0DR6L",
+    "009e": "ATD0DR7H",
+    "009f": "ATD0DR7L",
+    "00a0": "PWME",
+    "00a1": "PWMPOL",
+    "00a2": "PWMCLK",
+    "00a3": "PWMPRCLK",
+    "00a4": "PWMCAE",
+    "00a5": "PWMCTL",
+    "00a8": "PWMSCLA",
+    "00a9": "PWMSCLB",
+    "00ac": "PWMCNT0",
+    "00ad": "PWMCNT1",
+    "00ae": "PWMCNT2",
+    "00af": "PWMCNT3",
+    "00b0": "PWMCNT4",
+    "00b1": "PWMCNT5",
+    "00b2": "PWMCNT6",
+    "00b3": "PWMCNT7",
+    "00b4": "PWMPER0",
+    "00b5": "PWMPER1",
+    "00b6": "PWMPER2",
+    "00b7": "PWMPER3",
+    "00b8": "PWMPER4",
+    "00b9": "PWMPER5",
+    "00ba": "PWMPER6",
+    "00bb": "PWMPER7",
+    "00bc": "PWMDTY0",
+    "00bd": "PWMDTY1",
+    "00be": "PWMDTY2",
+    "00bf": "PWMDTY3",
+    "00c0": "PWMDTY4",
+    "00c1": "PWMDTY5",
+    "00c2": "PWMDTY6",
+    "00c3": "PWMDTY7",
+    "00c4": "PWMSDN",
+    "00c8": "SCI0BDH",
+    "00c9": "SCI0BDL",
+    "00ca": "SCI0CR1",
+    "00cb": "SCI0CR2",
+    "00cc": "SCI0SR1",
+    "00cd": "SCI0SR2",
+    "00ce": "SCI0DRH",
+    "00cf": "SCI0DRL",
+    "00d0": "SCI1BDH",
+    "00d1": "SCI1BDL",
+    "00d2": "SCI1CR1",
+    "00d3": "SCI1CR2",
+    "00d4": "SCI1SR1",
+    "00d5": "SCI1SR2",
+    "00d6": "SCI1DRH",
+    "00d7": "SCI1DRL",
+    "00d8": "SPI0CR1",
+    "00d9": "SPI0CR2",
+    "00da": "SPI0BR",
+    "00db": "SPI0SR",
+    "00dd": "SPI0DR",
+    "00e0": "IBAD",
+    "00e1": "IBFD",
+    "00e2": "IBCR",
+    "00e3": "IBSR",
+    "00e4": "IBDR",
+    "00f6": "reserved_reg_F6",
+    "0100": "FCLKDIV",
+    "0101": "FSEC",
+    "0103": "FCNFG",
+    "0104": "FPROT",
+    "0105": "FSTAT",
+    "0106": "FCMD",
+    "0110": "ECLKDIV",
+    "0113": "ECNFG",
+    "0114": "EPROT",
+    "0115": "ESTAT",
+    "0116": "ECMD",
+    "0122": "ATD1CTL2",
+    "0123": "ATD1CTL3",
+    "0124": "ATD1CTL4",
+    "0125": "ATD1CTL5",
+    "0126": "ATD1STAT0",
+    "012b": "ATD1STAT1",
+    "012d": "ATD1DIEN",
+    "012f": "PORTAD1",
+    "0130": "ATD1DR0H",
+    "0131": "ATD1DR0L",
+    "0132": "ATD1DR1H",
+    "0133": "ATD1DR1L",
+    "0134": "ATD1DR2H",
+    "0135": "ATD1DR2L",
+    "0136": "ATD1DR3H",
+    "0137": "ATD1DR3L",
+    "0138": "ATD1DR4H",
+    "0139": "ATD1DR4L",
+    "013a": "ATD1DR5H",
+    "013b": "ATD1DR5L",
+    "013c": "ATD1DR6H",
+    "013d": "ATD1DR6L",
+    "013e": "ATD1DR7H",
+    "013f": "ATD1DR7L",
+    "0140": "CAN0CTL0",
+    "0141": "CAN0CTL1",
+    "0142": "CAN0BTR0",
+    "0143": "CAN0BTR1",
+    "0144": "CAN0RFLG",
+    "0145": "CAN0RIER",
+    "0146": "CAN0TFLG",
+    "0147": "CAN0TIER",
+    "0148": "CAN0TARQ",
+    "0149": "CAN0TAAK",
+    "014a": "CAN0TBSEL",
+    "014b": "CAN0IDAC",
+    "014e": "CAN0RXERR",
+    "014f": "CAN0TXERR",
+    "0150": "CAN0IDAR0",
+    "0151": "CAN0IDAR1",
+    "0152": "CAN0IDAR2",
+    "0153": "CAN0IDAR3",
+    "0154": "CAN0IDMR0",
+    "0155": "CAN0IDMR1",
+    "0156": "CAN0IDMR2",
+    "0157": "CAN0IDMR3",
+    "0158": "CAN0IDAR4",
+    "0159": "CAN0IDAR5",
+    "015a": "CAN0IDAR6",
+    "015b": "CAN0IDAR7",
+    "015c": "CAN0IDMR4",
+    "015d": "CAN0IDMR5",
+    "015e": "CAN0IDMR6",
+    "015f": "CAN0IDMR7",
+    "0160": "CAN0RXIDR0",
+    "0161": "CAN0RXIDR1",
+    "0162": "CAN0RXIDR2",
+    "0163": "CAN0RXIDR3",
+    "0164": "CAN0RXDSR0",
+    "0165": "CAN0RXDSR1",
+    "0166": "CAN0RXDSR2",
+    "0167": "CAN0RXDSR3",
+    "0168": "CAN0RXDSR4",
+    "0169": "CAN0RXDSR5",
+    "016a": "CAN0RXDSR6",
+    "016b": "CAN0RXDSR7",
+    "016c": "CAN0RXDLR",
+    "0170": "CAN0TXIDR0",
+    "0171": "CAN0TXIDR1",
+    "0172": "CAN0TXIDR2",
+    "0173": "CAN0TXIDR3",
+    "0174": "CAN0TXDSR0",
+    "0175": "CAN0TXDSR1",
+    "0176": "CAN0TXDSR2",
+    "0177": "CAN0TXDSR3",
+    "0178": "CAN0TXDSR4",
+    "0179": "CAN0TXDSR5",
+    "017a": "CAN0TXDSR6",
+    "017b": "CAN0TXDSR7",
+    "017c": "CAN0TXDLR",
+    "017f": "CAN0TXTBPR",
+    "0240": "PTT",
+    "0241": "PTIT",
+    "0242": "DDRT",
+    "0243": "RDRT",
+    "0244": "PERT",
+    "0245": "PPST",
+    "0248": "PTS",
+    "0249": "PTIS",
+    "024a": "DDRS",
+    "024b": "RDRS",
+    "024c": "PERS",
+    "024d": "PPSS",
+    "024e": "WOMS",
+    "0250": "PTM",
+    "0251": "PTIM",
+    "0252": "DDRM",
+    "0253": "RDRM",
+    "0254": "PERM",
+    "0255": "PPSM",
+    "0256": "WOMM",
+    "0257": "MODRR",
+    "0258": "PTP",
+    "0259": "PTIP",
+    "025a": "DDRP",
+    "025b": "RDRP",
+    "025c": "PERP",
+    "025d": "PPSP",
+    "025e": "PIEP",
+    "025f": "PIFP",
+    "0260": "PTH",
+    "0261": "PTIH",
+    "0262": "DDRH",
+    "0263": "RDRH",
+    "0264": "PERH",
+    "0265": "PPSH",
+    "0266": "PIEH",
+    "0267": "PIFH",
+    "0268": "PTJ",
+    "0269": "PTIJ",
+    "026a": "DDRJ",
+    "026b": "RDRJ",
+    "026c": "PERJ",
+    "026d": "PPSJ",
+    "026e": "PIEJ",
+    "026f": "PIFJ",
+    "0400": "eeprom_data_start",
+    "0406": "eeprom_config_flags",
+    "04b0": "eeprom_offset_4B0",
+    "0800": "EEPROM_BASE",
+    "0801": "eeprom_lok_access_flags",
+    "0808": "eeprom_lok_name_dirty",
+    "080c": "eeprom_can_reg_id_hi",
+    "080e": "eeprom_can_reg_id_lo",
+    "087f": "ram_buf_87F",
+    "0884": "ram_buf_884",
+    "0be0": "eeprom_node_id",
+    "0be4": "lok_db_eeprom_circ_buf",
+    "0be6": "lok_db_eeprom_circ_buf_w1",
+    "1000": "bci_flash_writer_routine",
+    "1002": "lok_validated_address",
+    "1004": "lok_pending_address",
+    "1006": "ui_stop_state",
+    "1007": "encoder_click_state",
+    "1008": "ui_menu_state",
+    "1009": "ui_headlight_state",
+    "100a": "signal_gen_mode",
+    "100b": "signal_gen_countdown",
+    "100d": "timer_interval_count",
+    "100f": "hw_init_flags",
+    "1010": "encoder_debounce_mask",
+    "1012": "signal_gen_spi_buf_ptr",
+    "1014": "signal_gen_staging_read_ptr",
+    "1016": "signal_gen_staging_write_ptr",
+    "1018": "signal_gen_send_buf_read_ptr",
+    "101a": "signal_gen_send_buf_write_ptr",
+    "101c": "signal_gen_render_buf_ptr",
+    "101e": "mfx_cmd_buf_ptr",
+    "1020": "mfx_cmd_count",
+    "1021": "signal_timer_compare_base",
+    "1023": "end_of_data_marker",
+    "1030": "language_index",
+    "1031": "lokstack_current_slot",
+    "1032": "can_sync_pending",
+    "1033": "mfx_cmd_substate",
+    "1034": "mfx_config_index",
+    "1035": "can_sync_slot_index",
+    "1036": "can_pending_tx_count",
+    "1037": "can_decode_retry_count",
+    "1038": "can_active_lok_slot",
+    "1039": "can_protocol_state",
+    "103a": "can_protocol_substate",
+    "103b": "can_object_block_counter",
+    "103c": "can_incoming_msg_flag",
+    "103d": "can_decode_buf_offset",
+    "103e": "can_decode_byte_mode",
+    "103f": "can_decoded_object_type",
+    "1040": "can_decoded_object_param",
+    "1041": "can_object_type_clamped",
+    "1042": "can_object_substate_limit",
+    "1043": "mfx_working_address",
+    "1045": "can_lok_uid_hi",
+    "1047": "can_lok_uid_lo",
+    "1049": "mfx_handle_type_14",
+    "104b": "mfx_handle_type_16",
+    "104d": "mfx_handle_type_17",
+    "104f": "mfx_handle_func_icon",
+    "1051": "obj_decode_field_a",
+    "1052": "obj_func_count",
+    "1053": "obj_name_length",
+    "1054": "obj_decode_field_d",
+    "1055": "obj_func_icon_stride",
+    "1056": "obj_speed_steps_a",
+    "1057": "obj_speed_steps_b",
+    "1058": "obj_decode_field_h",
+    "1059": "can_registration_flag",
+    "105a": "display_render_state",
+    "105b": "display_update_pending",
+    "105c": "lok_db_decode_state",
+    "105d": "last_displayed_lok_addr",
+    "105f": "last_lok_speed",
+    "1061": "unused_1061",
+    "1062": "lok_config_table_base",
+    "1063": "lok_slot_address",
+    "1065": "lok_slot_data",
+    "1067": "lok_current_direction",
+    "1068": "lok_speed_step_count",
+    "1069": "lok_display_timeout",
+    "106b": "lok_db_entry_index",
+    "106d": "lok_db_operation_flags",
+    "106e": "menu_item_count",
+    "106f": "can_rx_frame_buf",
+    "1072": "can_rx_raw_cmd",
+    "1073": "can_rx_lok_address",
+    "1075": "can_rx_lok_data",
+    "1077": "lok_search_address",
+    "1079": "lok_match_address",
+    "107b": "ui_mode",
+    "107c": "encoder_position",
+    "107e": "can_rx_command",
+    "107f": "ui_mode_0",
+    "1080": "lok_db_decode_op_count",
+    "1081": "lok_db_decode_op_type",
+    "1082": "lok_db_flash_write_ptr",
+    "1084": "lok_db_record_word0",
+    "1086": "lok_db_record_word1",
+    "1088": "lok_db_eeprom_threshold",
+    "108a": "lok_db_eeprom_write_count",
+    "108c": "display_format_buf",
+    "10ac": "lok_db_search_index",
+    "10ae": "track_voltage_ramp",
+    "10b0": "lok_db_current_entry",
+    "10b2": "lok_param_count",
+    "10b4": "lok_protocol_type",
+    "10b6": "lok_address",
+    "10b8": "lok_brand_char",
+    "10ba": "lok_name_edit_buf",
+    "10bc": "lok_config_byte1",
+    "10bd": "lok_config_byte2",
+    "10be": "lok_config_flags",
+    "10f2": "signal_period",
+    "10f4": "signal_offset",
+    "10f6": "signal_timing_a",
+    "10f8": "signal_timing_b",
+    "10fa": "signal_waveform_flag",
+    "10fb": "voltage_settle_counter",
+    "10fd": "system_config_word",
+    "10ff": "system_config_byte",
+    "1101": "timer_min_value",
+    "1102": "timer_mode_byte",
+    "1103": "encoder_a_debounce",
+    "1105": "encoder_b_debounce",
+    "1107": "encoder_direction_state",
+    "1108": "display_buffer",
+    "1113": "vfd_grid5_speedbar_segs",
+    "1115": "vfd_grid6_speedbar_segs",
+    "1117": "vfd_grid7_speedbar_segs",
+    "1119": "lok_mode_flags",
+    "111b": "vfd_grid9_speedbar_segs",
+    "1123": "display_icon_flags",
+    "113b": "vfd_decoder_type3_segs",
+    "1143": "vfd_decoder_type2_segs",
+    "1151": "vfd_decoder_type1_segs",
+    "1160": "signal_gen_staging_buffer",
+    "1228": "signal_gen_send_buffer",
+    "1268": "track_cmd_buf",
+    "1298": "signal_gen_display_counter",
+    "129b": "signal_gen_prev_cmd_type",
+    "129c": "track_capture_mode",
+    "129d": "signal_gen_encoder_param",
+    "129e": "track_capture_value",
+    "12a0": "signal_gen_stb_state",
+    "12a1": "signal_gen_spi_wait_count",
+    "12a2": "mfx_bit_pos",
+    "12a3": "mfx_byte_idx",
+    "12a4": "mfx_crc_state",
+    "13a0": "mfx_decode_read_ptr",
+    "13a2": "mfx_decode_bits_remaining",
+    "13a3": "mfx_decode_current_byte",
+    "13a4": "adc_track_voltage",
+    "13a6": "adc_decoder_voltage",
+    "13a8": "lokstack_function_flags",
+    "13a9": "system_status_flags",
+    "13aa": "delay_tick_parameter",
+    "13ab": "delay_countdown_state",
+    "13ac": "protocol_state_word",
+    "13ae": "porta_connector_id",
+    "13af": "porta_edge_detect",
+    "13b0": "button_state_raw",
+    "13b1": "button_state_edge",
+    "13b2": "pb0_debounce_count",
+    "13b3": "button_code",
+    "13b4": "system_tick_count",
+    "13b5": "operating_mode",
+    "13b6": "lok_operation_countdown",
+    "13b7": "lok_db_save_pending",
+    "13b8": "lok_db_page_saved",
+    "13b9": "lok_db_validate_flag",
+    "13ba": "lok_db_access_flags",
+    "13bd": "lok_db_pending_flags",
+    "13bf": "can_master_status_word",
+    "13c1": "system_node_id",
+    "13c3": "can_device_uid",
+    "13c5": "current_lok_address",
+    "13c7": "current_lok_protocol",
+    "13c8": "lok_db_eeprom_bank_idx",
+    "13c9": "signal_gen_tick_counter",
+    "13d1": "saved_config_word",
+    "13d3": "saved_config_byte",
+    "13d5": "lok_db_eeprom_sector_ptr",
+    "13d7": "lokstack_entries_base",
+    "143b": "lokentry1_field_04",
+    "143d": "lokentry1_field_06",
+    "1797": "menu_display_buf",
+    "17a7": "lokedit_protocol",
+    "17a8": "lokedit_speed_steps",
+    "17a9": "lokedit_address",
+    "17ab": "lokedit_icon_id",
+    "17ad": "lokedit_func_f0",
+    "17ae": "lokedit_func_f1",
+    "17af": "lokedit_func_f2",
+    "17b0": "lokedit_func_f3",
+    "17b1": "lokedit_direction",
+    "17b2": "lokedit_func_flags_hi",
+    "17b3": "lokedit_func_flags_lo",
+    "17b6": "lokedit_entry_valid",
+    "17b7": "lokedit_render_page",
+    "17b8": "lokedit_total_fields",
+    "17b9": "lokedit_visible_fields",
+    "17ba": "lokedit_scroll_pos",
+    "17ef": "lokedit_slot_index",
+    "17f5": "lokedit_save_pending",
+    "17f6": "lokedit_init_state",
+    "17f7": "lokstack_display_base",
+    "1800": "boot_rom_copy_dest",
+    "1810": "boot_bss_start",
+    "1815": "bci_payload_buffer",
+    "190b": "lokdisplay_ext_field_14",
+    "190d": "lokdisplay_ext_field_16",
+    "190f": "device_name",
+    "191e": "lok_event_copy_done",
+    "191f": "encoder_last_position",
+    "1921": "can_tx_buf_ptr_0",
+    "1923": "can_tx_buf_ptr_1",
+    "1925": "can_rx_buf_ptr_0",
+    "1927": "can_rx_buf_ptr_1",
+    "1929": "can_tx_ring",
+    "19ab": "can_rx_ring",
+    "1a32": "bci_payload_end",
+    "1a39": "bci_block_received_flags",
+    "1b4b": "track_capture_buffer",
+    "1bab": "timer_capture_ptr",
+    "1bad": "timer_capture_count",
+    "1bae": "timer_capture_mode",
+    "1baf": "rtc_day_counter",
+    "1bb1": "rtc_minute_counter",
+    "1bb3": "rtc_tick_counter",
+    "1bb5": "rtc_ms_counter",
+    "1bb7": "temp_compare_word",
+    "1bbd": "ui_context_ptr",
+    "1c62": "bci_page_complete_flags",
+    "1c66": "bci_flash_buf_ptr",
+    "1c68": "bci_flash_page_addr",
+    "1c69": "bci_flash_mode_flags",
+    "1c6a": "bci_can_prio_field",
+    "1c6b": "bci_block_offset_hi",
+    "1c6d": "bci_block_offset_lo",
+    "1c6f": "bci_rx_flash_handle",
+    "1c70": "bci_can_id_high",
+    "1c71": "bci_can_id_low_and_dlc",
+    "1c73": "bci_can_data_0_1",
+    "1c75": "bci_can_data_2_3",
+    "1c77": "bci_can_data_4_5",
+    "1c79": "bci_can_data_6_7",
+    "1c7b": "bci_uid_match_flag",
+    "1c7c": "bci_descramble_state",
+    "1c7d": "bci_crc_accumulator",
+    "1c7f": "bci_descramble_offset_run",
+    "1c81": "bci_xor_state",
+    "1c82": "bci_xor_key",
+    "1c83": "bci_dest_ram_addr",
+    "1c85": "bci_crc16_state"
+  }
+}

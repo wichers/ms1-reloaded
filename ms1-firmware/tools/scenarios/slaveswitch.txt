@@ -1,0 +1,25 @@
+# Slave, with the original as master running twolok.txt: the master's locomotives 3 and 5 in
+# turn (OK, knob), driving 5, then the CAN cable pulled (unplug): KEIN MASTER.
+# run: -t 40 -a 0=0 -M ORIGINAL -S twolok.txt
+22.0 press esc
+22.15 release esc
+22.5 text
+23.0 press ok
+23.15 release ok
+23.5 text
+24.0 turn 1
+24.5 text
+25.0 press ok
+25.15 release ok
+25.5 text
+26.0 turn 3
+26.8 text
+27.0 press ok
+27.15 release ok
+27.5 turn -1
+28.0 text
+28.2 press ok
+28.35 release ok
+28.8 text
+30.0 unplug
+39.0 text

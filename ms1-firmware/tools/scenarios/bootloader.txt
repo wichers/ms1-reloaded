@@ -1,0 +1,20 @@
+# The bootloader from the menu: OPTIONEN, RESET, then PA3 and PA7 held (enter_bootloader);
+# the bootloader then waits for a firmware download.
+# run: -t 18
+12 turn 1
+12.5 turn 1
+13 turn 1
+13.4 text
+13.5 press knob
+13.65 release knob
+14 text
+14.5 turn 2
+15 text
+15.5 press knob
+15.65 release knob
+16 text
+16.5 press pa3
+16.6 press pa7
+17.0 release pa3
+17.0 release pa7
+17.5 text

@@ -1,0 +1,42 @@
+# Add a locomotive by address (ADRESSE, address 3, symbol), then drive it: speed up with the
+# knob, light, function keys pa0 and pa1, slow down to 0, direction change (knob press),
+# speed in reverse, OK, STOP twice. Text lines print the LCD. The first run also calls the
+# functions no scenario reaches directly at its end (-u); the second has the original as a
+# slave running slave.txt.
+# run: -t 27 -u str_skip_ctrl:200 -u lcd_text_layout_left:200 -u mfx_frame_cmd20:200 -u mcan_object_controller:200
+# run master: -t 27 -M ORIGINAL -A 0=0 -S slave.txt
+12.0 press knob
+12.15 release knob
+13.0 turn 1
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 turn 10
+18 text
+18.0 press light
+18.15 release light
+19.0 press pa0
+19.15 release pa0
+20.0 press pa1
+20.15 release pa1
+21 text
+21.0 turn -12
+22.5 press knob
+22.65 release knob
+23 text
+23.0 turn 6
+24 text
+24.0 press ok
+24.15 release ok
+25 text
+25.0 press stop
+25.15 release stop
+26 text
+26.0 press stop
+26.15 release stop
+26.5 text

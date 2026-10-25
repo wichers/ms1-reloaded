@@ -1,0 +1,13 @@
+ms1-reloaded
+Copyright 2026 The ms1-reloaded authors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository contains only original work. The firmware of the Märklin Mobile Station 1,
+its update files, dumps of it and anything derived from it (disassembly, decompiled code),
+and the vendors' datasheets and protocol documents are not included; README.md describes
+what the tools expect.
+
+Märklin, Mobile Station, Central Station, Trix and mfx are trademarks of Gebr. Märklin &
+Cie. GmbH; ECoS is a trademark of ESU electronic solutions ulm GmbH & Co KG. This project is
+not affiliated with or endorsed by either company.

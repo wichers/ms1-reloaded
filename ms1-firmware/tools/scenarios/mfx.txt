@@ -1,0 +1,21 @@
+# mfx: the MS1 finds the decoder, registers it and reads its configuration (to about 31 s),
+# then drives it: knob, light, pa0, pa1, slower to 0, direction change (emergency stop),
+# reverse, STOP twice.
+# run: -t 42 -D 'mfx:7A3F0012,name=BR 185'
+32 text
+32.0 turn 10
+33.0 press light
+33.15 release light
+34.0 press pa0
+34.15 release pa0
+35.0 press pa1
+35.15 release pa1
+36.0 turn -12
+37.5 press knob
+37.65 release knob
+38.0 turn 6
+39.0 press stop
+39.15 release stop
+40.0 press stop
+40.15 release stop
+41 text

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<language_definitions>
+  <language processor="HCS-12"
+            endian="big"
+            size="16"
+            variant="flat"
+            version="1.0"
+            slafile="HCS12_16.sla"
+            processorspec="HCS12_16.pspec"
+            id="HCS-12:BE:16:flat">
+    <description>HCS12 (MC9S12), 16-bit CPU-visible addresses</description>
+    <compiler name="default" spec="HCS12_16.cspec" id="default"/>
+    <compiler name="MS1 firmware" spec="HCS12_16_ms1.cspec" id="ms1"/>
+  </language>
+</language_definitions>

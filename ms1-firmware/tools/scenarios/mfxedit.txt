@@ -1,0 +1,110 @@
+# mfx locomotive changes: after the registration (to about 31 s), ESC out of the database
+# list and the address entry, then LOKÄNDERN: name, VMAX, ACC, DEC, VOL, each written to the
+# decoder's configuration.
+# run: -t 71 -D 'mfx:7A3F0012,name=BR 185'
+32.00 press esc
+32.15 release esc
+32.85 text
+32.85 press knob
+33.00 release knob
+33.70 text
+33.70 press knob
+33.85 release knob
+34.55 text
+34.55 press esc
+34.70 release esc
+35.40 text
+35.40 turn 1
+36.08 text
+36.08 press knob
+36.23 release knob
+36.93 text
+36.93 press esc
+37.08 release esc
+37.78 text
+37.78 press esc
+37.93 release esc
+38.63 text
+38.63 press esc
+38.78 release esc
+39.48 text
+39.48 press esc
+39.63 release esc
+40.33 turn 1
+41.01 press knob
+41.16 release knob
+41.86 text
+41.86 press knob
+42.01 release knob
+42.71 text
+42.71 turn 1
+43.39 press knob
+43.54 release knob
+44.24 turn -1
+44.92 press knob
+45.07 release knob
+45.77 turn 2
+46.53 text
+46.53 press ok
+46.68 release ok
+47.38 text
+47.38 press esc
+47.53 release esc
+48.23 turn 1
+48.91 press knob
+49.06 release knob
+49.76 turn 1
+50.44 text
+50.44 press knob
+50.59 release knob
+51.29 text
+51.29 turn -3
+52.13 text
+52.13 press ok
+52.28 release ok
+52.98 text
+52.98 press esc
+53.13 release esc
+53.83 turn 1
+54.51 press knob
+54.66 release knob
+55.36 turn 2
+56.12 text
+56.12 press knob
+56.27 release knob
+56.97 text
+56.97 turn 2
+57.73 text
+57.73 press ok
+57.88 release ok
+58.58 text
+58.58 press esc
+58.73 release esc
+59.43 turn 1
+60.11 press knob
+60.26 release knob
+60.96 turn 3
+61.80 text
+61.80 press knob
+61.95 release knob
+62.65 text
+62.65 turn 2
+63.41 text
+63.41 press ok
+63.56 release ok
+64.26 text
+64.26 press esc
+64.41 release esc
+65.11 turn 1
+65.79 press knob
+65.94 release knob
+66.64 turn 4
+67.56 text
+67.56 press knob
+67.71 release knob
+68.41 text
+68.41 turn -2
+69.17 text
+69.17 press ok
+69.32 release ok
+70.02 text

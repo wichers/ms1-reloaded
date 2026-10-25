@@ -1,0 +1,20 @@
+# Third-party material, kept next to the projects but not distributed (README: What you
+# provide): the original firmware (update files, decoded images, device dumps) and the
+# vendors' documents
+/original-firmware/
+/doc/
+
+# What is derived from the original firmware: its instructions, pseudocode and IDA export
+/ms1-ghidra/out/listing.tsv
+/ms1-ghidra/out/ms1_4011_decomp.c
+/ms1-ghidra/ida_export/ms1_firmware.*
+
+# Local: the archive of earlier work, agent and workspace settings
+/old/
+.claude/
+/CLAUDE.md
+/CONVENTIONS.md
+
+# Build output
+build/
+__pycache__/

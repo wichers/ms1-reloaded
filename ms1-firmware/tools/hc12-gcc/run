@@ -1,0 +1,11 @@
+#!/bin/sh
+# Run a command in the GNU 68HC12 toolchain container (image ms1-hc12-gcc, built from this
+# directory's Dockerfile), in the project directory. The repository around the project is
+# mounted at the same path, so the inputs next to it (../original-firmware, ../ms1-ghidra/out,
+# ../tools) are reachable.
+#   tools/hc12-gcc/run make
+set -e
+root=$(cd "$(dirname "$0")/../.." && pwd)
+top=$(dirname "$root")
+docker image inspect ms1-hc12-gcc >/dev/null 2>&1 || docker build -t ms1-hc12-gcc "$root/tools/hc12-gcc"
+exec docker run --rm -i -u "$(id -u):$(id -g)" -v "$top:$top" -w "$root" ms1-hc12-gcc "$@"

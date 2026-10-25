@@ -1,0 +1,9 @@
+# Boot to NEUE LOK, then the menu: 3 knob steps and a press open the language menu (SPRACHE).
+# The second run reads a track current over the limit (overload).
+# run: -t 16
+# run overload: -t 16 -a 3=200
+12 turn 1
+12.5 turn 1
+13 turn 1
+13.5 press knob
+13.65 release knob
