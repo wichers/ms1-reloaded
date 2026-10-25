@@ -216,12 +216,20 @@ first_loop:
                     func_bits = lok_states[slot].functions;
                     func_mask = compiler_shift_left_d_by_x(1, counter);
                     if (func_bits & func_mask) {
-                        /* 3dafd6  Function bit set: also OR second pair */
+                        /* 3dafd6  Function on: also OR the second pair (the "on" variant) */
                         u16 entry2 = *(u16 *)(seg_ptr + 2);
                         if (entry2 != 0) {
                             u8 buf_off2 = (u8)(entry2 >> 8);
                             u8 mask2 = seg_ptr[3];
                             *(u8 *)(DISPLAY_BUF + buf_off2) |= mask2;
+                        }
+                    } else {
+                        /* 3daff0 -> 3dae21  Function off: clear the second pair */
+                        u16 entry2 = *(u16 *)(seg_ptr + 2);
+                        if (entry2 != 0) {
+                            u8 buf_off2 = (u8)(entry2 >> 8);
+                            u8 mask2 = seg_ptr[3];
+                            *(u8 *)(DISPLAY_BUF + buf_off2) &= ~mask2;
                         }
                     }
                     /* Skip to next inner (3dae39 via 3dae37/3daff0) */
