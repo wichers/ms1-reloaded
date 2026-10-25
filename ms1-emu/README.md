@@ -364,7 +364,7 @@ the signal ([docs/decoders.md](docs/decoders.md)).
 |---|---|---|
 | `make check` (`tests/cpu_test.c`) | exception entry/return, RTI chaining into a pending interrupt, the delay after clearing I, WAI, SWI, TRAP, CALL/RTC, X-bit rules | all pass |
 | `make check` (`tests/decode_check.c`) | every instruction in the Ghidra listing (`ms1-ghidra/out/listing.tsv`, written by `ms1-ghidra`'s `ExportListing.java`) against this disassembler: image bytes, length, mnemonic (aliases folded) | 0 mismatches |
-| `make diff` (`tests/diff_sim6812.c`) | each opcode, 20 000 random register/memory states, against sim6812's CPU core (`SIM6812`, default `../sim6812/src/sim6812`, linked in): registers, condition codes (minus bits the manual leaves undefined), memory writes | no difference outside the `known` table |
+| `make diff` (`tests/diff_sim6812.c`) | each opcode, 20 000 random register/memory states, against sim6812's CPU core (`SIM6812`, default `../sim6812/src/sim6812`: a checkout of the sim6812 HC12 simulator, which is not part of this repository and has its own license; linked into the test program only): registers, condition codes (minus bits the manual leaves undefined), memory writes | no difference outside the `known` table |
 
 The `known` table in `tests/diff_sim6812.c` lists the opcodes where sim6812 departs from the
 manual, each with the defect in sim6812's `instr.c` (e.g. `CPS` compares B, `ASR` shifts in 0,

@@ -178,6 +178,4 @@ Tests use real CAN trace data captured from an ECoS (FW 3.0.1) communicating wit
 
 ## License
 
-Apache License 2.0 (`LICENSE`, `NOTICE`). Märklin, Mobile Station, Central Station and mfx are
-trademarks of Gebr. Märklin & Cie. GmbH, ECoS of ESU; this project is not affiliated with
-either.
+Apache License 2.0, as the whole repository (`../LICENSE`, `../NOTICE`).
