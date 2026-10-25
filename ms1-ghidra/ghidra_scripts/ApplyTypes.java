@@ -29,8 +29,8 @@ public class ApplyTypes extends GhidraScript {
 			"CAN0 RX ISR copies CAN0RXIDR0-3, CAN0RXDSR0-7, CAN0RXDLR in this order, 13 bytes per entry; the TX ISR loads CAN0TXIDR/DSR/DLR from the same layout"),
 		new Struct("can_msg_t", "ushort id_high; ushort id_low; byte[8] data; byte dlc",
 			"can_rx_dequeue_frame: 29-bit ID from IDR0-3 into words 0/1 (id_high 0xFFFF for a standard ID), data words at 4..11, dlc & 0xF at 12"),
-		new Struct("pt6547_tx_t", "byte stb; byte data",
-			"isr_spi0_pt6547_pump: per SPI0 interrupt, the first byte sets the PT6547 strobe (PTM bit 3, 0 = low), the second goes to SPI0DR"),
+		new Struct("lcd_pair_t", "byte stb; byte data",
+			"isr_spi0_lcd: per SPI0 interrupt, the first byte sets the PT6547 strobe (PTM bit 3, 0 = low), the second goes to SPI0DR"),
 	};
 
 	private static final Global[] GLOBALS = {
@@ -59,8 +59,8 @@ public class ApplyTypes extends GhidraScript {
 		new Global("1925", "mscan_frame_t *", "can_tx_ring_read", "CAN0 TX ISR reads and advances it (imported as can_rx_buf_ptr_0)"),
 		new Global("1927", "mscan_frame_t *", "can_tx_ring_write", "can_tx_enqueue_frame writes and advances it (imported as can_rx_buf_ptr_1)"),
 		// PT6547 display (SPI0)
-		new Global("1108", "pt6547_tx_t[44]", null, "isr_spi0_pt6547_pump sends pairs from 0x1108 and wraps when the pointer reaches 0x1160"),
-		new Global("1012", "pt6547_tx_t *", "pt6547_tx_ptr", "isr_spi0_pt6547_pump reads and advances it by 2 (imported as signal_gen_spi_buf_ptr)"),
+		new Global("1108", "lcd_pair_t[44]", null, "isr_spi0_lcd sends pairs from 0x1108 and wraps when the pointer reaches 0x1160"),
+		new Global("1012", "lcd_pair_t *", "lcd_pump_ptr", "isr_spi0_lcd reads and advances it by 2 (imported as signal_gen_spi_buf_ptr)"),
 		// EEPROM write staging (see AnnotateFunctions.java: eeprom_write_*)
 		new Global("1082", "ushort *", "eeprom_pending_sector", "sector staged for eeprom_write_finish; 0 when none (imported as lok_db_flash_write_ptr)"),
 		new Global("1084", "ushort[2]", "eeprom_sector_image", "the staged 4-byte sector: eeprom_write_* copy the sector here, patch it and compare (imported as lok_db_record_word0/1)"),

@@ -66,7 +66,11 @@ public class ExportFacts extends GhidraScript {
 		for (Symbol s : currentProgram.getSymbolTable().getAllSymbols(false)) {
 			Address a = s.getAddress();
 			if (a.isMemoryAddress() && !a.getAddressSpace().isOverlaySpace() && a.getOffset() < 0x4000) {
-				labels.putIfAbsent(String.format("%04x", a.getOffset()), s.getName());
+				String key = String.format("%04x", a.getOffset());
+				if (s.isPrimary())
+					labels.put(key, s.getName());
+				else
+					labels.putIfAbsent(key, s.getName());
 			}
 		}
 		Map<String, Object> doc = new LinkedHashMap<>();

@@ -22,7 +22,7 @@ import os, re, sys
 
 BOOTLOADER_START = 0xF800
 PAGE_BOUNDARY = 0xC000  # page 3D ends, fixed page 3F begins
-CROSS_TAIL_END = 0xC23E  # IDA code decoded from PAGE_BOUNDARY runs to here (isr_spi0_pt6547_pump)
+CROSS_TAIL_END = 0xC23E  # IDA code decoded from PAGE_BOUNDARY runs to here (isr_spi0_lcd)
 STEM = "ms1_4011"
 
 

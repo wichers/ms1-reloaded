@@ -131,7 +131,7 @@ python3 -I firmware_map.py                 # write docs/firmware-map.md and docs
 ### Re-exporting the IDA database
 
 ```sh
-cp ../ms1-reverse/firmware_20260317_192757_usbdm.s19.i64 <scratch dir>/ms1_firmware.i64
+cp <IDA database of the device dump> <scratch dir>/ms1_firmware.i64
 <idalib python> -I ida_export/export_ida.py <scratch dir>/ms1_firmware.i64 ida_export \
     "$GHIDRA_INSTALL_DIR/Extensions/IDAPro/Python/9xx/python"
 ```
