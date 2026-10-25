@@ -680,7 +680,7 @@ static void menus(void)
 void ui_task(void)
 {
     u8 st, t, k, sel, keys;
-    u16 *w;
+    lok_state_t *d;
 
     encoder_clicks_rec_hi = encoder_clicks_hi;
     encoder_clicks_rec_lo = HI8(encoder_clicks_lo);
@@ -688,8 +688,8 @@ void ui_task(void)
         if (KEY(KEY_STOP)) {
             system_status_flags ^= 1;
             mcan_status_pending |= 1;
-            for (w = (u16 *)(DISP(0) + 0x10); w <= (u16 *)(DISP(9) + 0x10); w = (u16 *)((u8 *)w + 0x1C))
-                *w = 0;
+            for (d = DISP(0); d <= DISP(9); d++)
+                d->track_functions = 0;
         }
         if ((system_status_flags & 1) && ui_stop_held == 0x2E)
             mcan_status_pending |= 0x200;
