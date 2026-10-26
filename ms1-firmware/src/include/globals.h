@@ -65,12 +65,14 @@ extern volatile u8  track_scheduler_hold;   /* 0x1036: never set: always 0; hold
                                              * lok_packets_next and the mfx registration */
 
 /*--- Track monitor: current, overload, faults (track_current_monitor) ---*/
+#if MS1_RELEASE != 0x4010                   /* version 4010 measures no current */
 extern u16 track_current;                   /* 0x10F2: mA */
 extern u16 track_current_offset;            /* 0x10F4: current sense zero, mA */
 extern u16 overload_slow;                   /* 0x10F6: overload accumulators */
 extern u16 overload_fast;                   /* 0x10F8 */
 extern u8  shutdown_count;                  /* 0x10FA: overload shutdowns since shutdown_ticks reached 1000 */
 extern u16 shutdown_ticks;                  /* 0x10FB: ms since the last overload shutdown */
+#endif
 extern u8  track_fault_prev;                /* 0x100A: system_status_flags & 3 of the last pass */
 extern u16 track_fault_timer;               /* 0x10AE: overload/voltage fault timer; in start-up mode the
                                              * passes STOP and the knob are held (factory reset above 0x1E) */

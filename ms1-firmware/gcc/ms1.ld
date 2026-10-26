@@ -2,14 +2,16 @@
  *
  * The CPU sees one flat 48K code space, 0x4000-0xF7FF: the start-up code maps page $3D into
  * the 0x8000 window once and for all, as the original does. The application's code and its
- * own read-only data take 0x4000-0xE11A, where the original's code and its GCC runtime
- * helpers are; tools/mkimage.py adds what comes from the original image: page $3C (the
- * locomotive database and its accessors), the original's .rodata, build information and
- * configuration area 0xE11B-0xF73F (tables the firmware reads by address: language tables at
- * 0xE250, display maps, trit tables, ...), the bootloader and its metadata 0xF800-0xFFFF; and
- * makes the application CRC valid with the word at 0xF73E.
+ * own read-only data take 0x4000-0xE11A (version 4010: 0x4000-0xDFA0), where the original's
+ * code and its GCC runtime helpers are; tools/mkimage.py adds what comes from the original
+ * image: page $3C (the locomotive database and its accessors), the original's .rodata, build
+ * information and configuration area 0xE11B-0xF73F (4010: 0xDFA1-0xF73F; tables the firmware
+ * reads by address: language tables, display maps, trit tables, ...), the bootloader and its
+ * metadata 0xF800-0xFFFF; and makes the application CRC valid with the word at 0xF73E.
  *
- * This is the template of build/ms1.ld, which tools/ramlayout.py generates from it. */
+ * This is the template of build/ms1.ld, which tools/ramlayout.py generates from it. The
+ * version's part, gcc/<version>/release.ld (the tables' addresses, the end of the
+ * application), is found through the linker's search path (-L gcc/<version>). */
 OUTPUT_FORMAT("elf32-m68hc12", "elf32-m68hc12", "elf32-m68hc12")
 OUTPUT_ARCH(m68hc12)
 ENTRY(_start)
@@ -82,28 +84,8 @@ flash_extra_id2        = 0xFF20;
 flash_compat_flags     = 0xFF2C;
 flash_encoder_step    = 0xFF64;
 
-/* Tables in the original's .rodata the code refers to by name. */
-eeprom_defaults        = 0xE788;
-lang_table             = 0xE250;
-lok_address_range      = 0xEC2F;
-lok_range_ec43         = 0xEC43;
-lok_param_range        = 0xEC57;
-charset_latin1_map     = 0xECD5;
-mfx_icon_map           = 0xEB49;
-rom_func_icon_table    = 0xEB38;
-lok_icon_group_order   = 0xEB6D;
-lok_icon_group_keys    = 0xEB7D;
-lcd_blank_image        = 0xEE07;
-lcd_icon_segments      = 0xEE5F;
-lcd_font               = 0xEF05;
-charset_index_map      = 0xF305;
-lcd_bar_segments       = 0xF450;
-lcd_text_dots          = 0xF46C;
-lcd_start_image        = 0xF5E8;
-mm_trit_table          = 0xF35A;
-lok_id_table           = 0xEC0D;
-mm_data_table          = 0xF3BA;
-mfx_cv1_value          = 0xEB37;
+/* The version's tables in the original's .rodata, and the end of the application */
+INCLUDE release.ld
 
 /* EEPROM fields the code reads by name (EEPROM at 0x0800, INITEE). */
 eeprom_lok_name_dirty  = 0x0808;

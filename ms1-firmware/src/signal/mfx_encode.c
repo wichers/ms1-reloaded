@@ -105,10 +105,18 @@ void mfx_frame_begin(u16 addr)
         mfx_put_bits(0, 1);
         mfx_put_bits(addr, 7);
     } else if (addr <= 0x1FF) {
+#if MS1_RELEASE == 0x4010
+        mfx_put_bits(1, 2);                     /* "101": not the mfx format's "110" */
+#else
         mfx_put_bits(2, 2);
+#endif
         mfx_put_bits(addr, 9);
     } else if (addr <= 0x7FF) {
+#if MS1_RELEASE == 0x4010
+        mfx_put_bits(3, 3);                     /* "1011": not the mfx format's "1110" */
+#else
         mfx_put_bits(6, 3);
+#endif
         mfx_put_bits(addr, 11);
     } else {
         mfx_put_bits(7, 3);

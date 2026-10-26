@@ -17,7 +17,10 @@
  *
  * The LCD is rendered with the firmware's own glass map: the 38x5 dot matrix at 0xF46C (per
  * column, five (display_buffer offset, mask) pairs, top row first) and the 14-segment speed bar
- * at 0xF450, both indexing the 88-byte (strobe, data) transmit buffer the frame is built from. */
+ * at 0xF450, both indexing the 88-byte (strobe, data) transmit buffer the frame is built from.
+ * Those addresses, the font's and the icon table's are application version 4011's; version
+ * 4010 (the word at 0xF73C) has them elsewhere (rom_tables). Its PB6 is an over-current input
+ * (active low), a button here (pb6). */
 #include "board.h"
 
 #include <string.h>
@@ -33,10 +36,33 @@
 static void reschedule(ms1_board_t *b);
 
 #define CCB_ADDRESS 0x45          /* the address byte as the driver reads it (LSB first) */
-#define GLASS_MATRIX 0xF46C
-#define GLASS_BAR 0xF450
-#define FONT 0xEF05               /* glyph c at FONT + 8c: width (low nibble), then column bytes */
-#define ICON_TABLE 0xEE5F         /* icon segments: (transmit-buffer offset, mask) per icon */
+
+/* The firmware tables the LCD is read back with, per application version (the word at 0xF73C);
+ * an unknown version gets 4011's. */
+static const struct rom_tables {
+	uint16_t version;
+	uint16_t matrix;              /* the glass map of the dot matrix */
+	uint16_t bar;                 /* the speed bar's segments */
+	uint16_t font;                /* glyph c at font + 8c: width (low nibble), then column bytes */
+	uint16_t icons;               /* icon segments: (transmit-buffer offset, mask) per icon */
+} rom_tables[] = {
+	{ 0x4011, 0xF46C, 0xF450, 0xEF05, 0xEE5F },
+	{ 0x4010, 0xF2F7, 0xF2DB, 0xED90, 0xECEA },
+};
+
+static const struct rom_tables *tables(const ms1_board_t *b)
+{
+	uint16_t version = (uint16_t)(mcu_peek(b->m, 0xF73C) << 8 | mcu_peek(b->m, 0xF73D));
+	for (size_t i = 0; i < sizeof rom_tables / sizeof rom_tables[0]; i++)
+		if (rom_tables[i].version == version)
+			return &rom_tables[i];
+	return &rom_tables[0];
+}
+
+#define GLASS_MATRIX (tables(b)->matrix)
+#define GLASS_BAR (tables(b)->bar)
+#define FONT (tables(b)->font)
+#define ICON_TABLE (tables(b)->icons)
 #define ICON_COUNT 83
 
 /* Icon names, identified on MS1 hardware by the ms1-firmware project (src/include/lcd_icons.h):

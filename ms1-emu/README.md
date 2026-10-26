@@ -68,7 +68,7 @@ Input script lines, in time order (`#` starts a comment):
 
 | Line | Effect |
 |---|---|
-| `SECONDS press BUTTON` / `SECONDS release BUTTON` | `BUTTON` = `pa0`–`pa7`, `pb0`–`pb4` (the MS1's active-low key inputs), or a name below |
+| `SECONDS press BUTTON` / `SECONDS release BUTTON` | `BUTTON` = `pa0`–`pa7`, `pb0`–`pb7` (active low: the MS1's key inputs; `pb6` is application version 4010's over-current input), or a name below |
 | `SECONDS turn N` | turn the encoder N detents (negative: the other way), one transition per `ENC_TRANSITION_S` (`board.c`): each detent moves a menu one entry (see *Encoder*) |
 | `SECONDS lcd` | print the LCD: text, matrix, speed bar, icons |
 | `SECONDS text` | print only the text on the LCD |
@@ -107,8 +107,9 @@ build/difftest [-t SECONDS] [-s SCRIPT] [-a CH=V] [-e EEPROM] [-n N] [-m MS] [-v
   flash and starts at the rebuild's function. Both run with interrupts held off
   (`mcu_t.irq_block`) until the function returns to its caller, or `-m` emulated ms
   (default 50) pass.
-- Compared: the return value (when the table gives one), RAM `0x1000`–`0x1BB6` (the
-  variables; the GCC soft registers follow) and the stack from the return address up, the
+- Compared: the return value (when the table gives one), RAM from `0x1000` up to the GCC
+  soft registers (`ram_vars_end`: `0x1BB7` in application version 4011, `0x1BAC` when the
+  original's version word at `0xF73C` is 4010) and the stack from the return address up, the
   EEPROM, and the sequence of writes to the I/O registers (`mcu_t.write_hook`).
 - `-r ADDR:COUNT` names a ring of `COUNT` CAN frames at `ADDR`, each as the MSCAN buffers
   hold one (identifier 4 bytes, data 8, length 1; repeatable). The data bytes past a
@@ -160,6 +161,11 @@ dump. Output and dump use the banked S-record layout USBDM writes:
 | S1 | `0x4000`–`0x7FFF` | `$3E` (fixed) |
 | S1 | `0xC000`–`0xFFFF` | `$3F` (fixed) |
 | S2 | `PPAGE:8000`–`PPAGE:BFFF` | `$3C`, `$3D` (PPAGE window) |
+
+The bootloader starts only the application version its flash metadata names, so the dump's
+bootloader (a 4011 device's) refuses release 4010 or c010: compose those with
+`../ms1-firmware/tools/mkimage.py --release 4010 --original <release.bin> <dump.s19> <out.s19>`,
+which adapts that word (see its docstring).
 
 ## Technical description
 
@@ -261,6 +267,7 @@ Wiring, as the firmware uses the pins:
 | rotary encoder A/B | PTT 6/7, active low | `encoder_sample` |
 | LCD driver | SPI0 (MOSI, SCK on port M via MODRR), CE = PM3 | `isr_spi0_lcd` |
 | track output | PT3, PT4, PT5 (timer output compare) | `isr_timer_ch4_signal_gen` |
+| version 4010: booster line, over-current input | PB7 (not in `-T`'s log), PB6 active low (the `pb6` button) | `track_current_monitor` in ms1-firmware |
 | track feedback (RDS receiver: RDCL, RDDA, QUAL) | PT0 (input capture 0), PTT 1, PORTB 5 | `isr_feedback_capture` |
 | track / decoder voltage | ATD0 channels 0 / 1 | `adc_read_and_scale_voltages` |
 | feedback carrier level | ATD0 channel 2 | `isr_feedback_capture`, `mfx_feedback_bit` |
@@ -276,7 +283,9 @@ Icons are named from the firmware's icon table at `0xEE5F` (83 (offset, mask) en
 the firmware indexes from `lcd_encode_char + 0x43`) with the names identified on MS1 hardware
 in ms1-firmware's `src/include/lcd_icons.h` (`*` = the "on" variant of a function icon); the
 direction arrows and markings are the bits `lcd_set_bar` sets. Segments outside all of
-these are listed as block.byte.mask.
+these are listed as block.byte.mask. The table addresses here are application version 4011's;
+for version 4010 the model reads that version's (`rom_tables` in `src/board.c`, chosen by the
+version word at `0xF73C`).
 
 **LCD text.** The matrix is read back as text with the firmware's font at `0xEF05`
 (`lcd_encode_char + 0xE9`): glyph *c* is ASCII *c*, its first byte's low nibble is the width

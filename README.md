@@ -9,7 +9,7 @@ and builds the official release images; it is the base for new firmware for this
 
 | Project | What it is |
 |---|---|
-| [`ms1-firmware/`](ms1-firmware/README.md) | The firmware in C (and the original's hand-written assembly, generated from your copy of the original), built with GCC for the MC9S12D64; the release images 4011 and c011; verification against the original (`tools/regress.py`); [architecture](ms1-firmware/docs/architecture.md) |
+| [`ms1-firmware/`](ms1-firmware/README.md) | The firmware in C (and the original's hand-written assembly, generated from your copy of the original), built with GCC for the MC9S12D64; the release images 4011, c011, 4010 and c010; verification against the original (`tools/regress.py`); [architecture](ms1-firmware/docs/architecture.md) |
 | [`ms1-emu/`](ms1-emu/README.md) | MC9S12D64 + MS1 board emulator: CPU, timers, ATD, SPI/LCD, MSCAN on a real or virtual CAN bus, EEPROM, track output with MM and mfx decoders; `difftest` runs a rebuild against the original |
 | [`ms1-ghidra/`](ms1-ghidra/README.md) | Ghidra project of the original application: HCS12 language fixes, memory model, function boundaries, the rebuild's names; exports the listing and pseudocode the other projects use |
 | [`ms1-master/`](ms1-master/README.md) | C99 CAN master libraries: M-CAN for MS1 handhelds as slaves, and the CS2 protocol |
@@ -26,7 +26,9 @@ and builds the official release images; it is the base for new firmware for this
 | Track | timer-driven H-bridge signal for MM and mfx (as master), mfx feedback receiver |
 
 Firmware releases (update files `<release>_1-8_mobile-station[-2]_A.bci`): 4011 (60652) and
-c011 (60651) are the same code with their own data; 4010 and c010 are an earlier version.
+c011 (60651) are the same code with their own data; 4010 (60652) and c010 (60651) are its
+version for the hardware without track current measurement
+([architecture](ms1-firmware/docs/architecture.md), section 11).
 
 ## What you provide
 
@@ -42,6 +44,7 @@ next to the projects:
 | `doc/` | datasheets (MC9S12D64 and its modules, PT6547), the MS1 manual, the M-CAN (`CAN_Doku_V101_de.pdf`) and CS2 CAN documents, the mfx and MM track formats; page images in `doc/pages/` | reading |
 | `ms1-ghidra/ida_export/ms1_firmware.*` | an IDA export of the device dump (`ms1-ghidra/ida_export/export_ida.py`) | `ms1-ghidra` import |
 | `ms1-ghidra/out/listing.tsv`, `ms1_4011_decomp.c` | the original's instructions and pseudocode (`./ghidra.sh decompile`) | `ms1-firmware` (assembly modules), `ms1-emu` (`make check`) |
+| `ms1-ghidra/out/listing_4010.tsv` | the instructions of release 4010's assembly modules (`./ghidra.sh listing`) | `ms1-firmware` (`make RELEASE=4010`) |
 
 ## Getting started
 
@@ -55,6 +58,10 @@ cd ../ms1-ghidra && ./ghidra.sh import && ./ghidra.sh names && ./ghidra.sh decom
 cd ../ms1-firmware && tools/hc12-gcc/run make       # build/ms1.s19
 tools/hc12-gcc/run make images                      # the release images
 python3 tools/regress.py                            # the rebuild against the original
+../ms1-ghidra/ghidra.sh listing ../original-firmware/4010_1-8_mobile-station_A.bin \
+    asm/4010 ../ms1-ghidra/out/listing_4010.tsv     # version 4010's assembly modules
+tools/hc12-gcc/run make RELEASE=4010 images         # releases 4010, c010 in build/4010/
+python3 tools/regress.py --release 4010
 ```
 
 Requirements: a C compiler, Python 3, Docker (the 68HC12 GCC toolchain runs in a container),

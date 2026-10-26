@@ -224,11 +224,18 @@ void ui_screen_text(void)
                 str_format(buf, (const u8 *)"UD: %2d.%dV", adc_decoder_voltage / 1000, adc_decoder_voltage % 1000 / 100);
             break;
         case 9:
+#if MS1_RELEASE == 0x4010
+            {                                   /* the over-current threshold, every pass */
+                u16 a = flash_current_limit;
+                str_format(buf, (const u8 *)"OVC: %d.%dA", a / 1000, a / 100 % 10);
+            }
+#else
             if (!(ms_tick & 0xE0)) {
                 u16 a = flash_current_limit;
                 str_format(buf, (const u8 *)"IT:\x02%d.%d\x1b%d.%dA", track_current / 1000, track_current % 1000 / 100,
                             a / 1000, a % 1000 / 100);
             }
+#endif
             break;
         }
         lcd_text_layout();

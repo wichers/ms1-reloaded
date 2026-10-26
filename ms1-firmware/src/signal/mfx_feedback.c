@@ -6,7 +6,7 @@
  * after; track_capture_samples is then nonzero when something was captured. A 1-bit window
  * captures the carrier level (ATD0 channel 2) into timer_capture_buffer; a data window
  * captures, per receiver clock, the data bit and the quality bit, packed MSB first from
- * 0x1B50.
+ * timer_capture_buffer + 5.
  *
  * Functions:
  *   mfx_feedback_bit       (0xCF0A) - did a decoder answer in a 1-bit window
@@ -101,7 +101,7 @@ s16 mfx_feedback_data(u8 *decode_buf, u16 data_count)
     if (track_capture_samples == 0) {
         return 0;
     }
-    mfx_decode_read_ptr = 0x1B50;
+    mfx_decode_read_ptr = (u16)timer_capture_buffer + 5;
     mfx_decode_bits_remaining = 0;
 
     crc = 0xFF;

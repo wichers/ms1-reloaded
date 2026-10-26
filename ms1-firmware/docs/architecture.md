@@ -7,9 +7,12 @@ signal, CAN, LCD, EEPROM), and how the code drives the hardware.
 - **Where a function lives:** `tools/functions.tsv` (original entry → function here), the
   `names` of `asm/*.json` (routines of the assembly modules), README *Source Layout* (file →
   subsystem).
-- **Addresses** are the original's. Function entries are as in `tools/functions.tsv`. RAM
-  variables sit at their original addresses (README *RAM layout*, `build/ms1.sym`). Tables in
-  the original image have their symbols in `gcc/ms1.ld`.
+- **Addresses** are the original's, of application version 4011. Function entries are as in
+  `tools/functions.tsv`. RAM variables sit at their original addresses (README *RAM layout*,
+  `build/ms1.sym`). Tables in the original image have their symbols in
+  `gcc/4011/release.ld`.
+- **Version 4010** (releases 4010 and c010) differs in the track current, the booster line, a
+  few functions and its addresses: section 11.
 - **Timer ticks:** the timer runs at 6 MHz (24 MHz bus, prescaler 4 set by `signal_gen_init`),
   so 6 ticks = 1 µs.
 
@@ -69,8 +72,8 @@ signal, CAN, LCD, EEPROM), and how the code drives the hardware.
    - slots (section 1); `ui_enter_mode(0)`; `can_controller_full_init`; `lcd_buf_load` (a blank
      display); `timer_modulus_read`; interrupts on.
 5. `ui_task` in operating mode 0 (the start-up screen) averages `track_current` into
-   `track_current_offset`, the current-sense zero. On the master it then clears STOP, so the
-   track signal starts (4.6), and switches to mode 1.
+   `track_current_offset`, the current-sense zero (not in version 4010, section 11). On the
+   master it then clears STOP, so the track signal starts (4.6), and switches to mode 1.
 
 Leaving the application:
 - `crt_restart` restarts it. Callers: the slave losing its master (`src/can/mcan.c`), and the
@@ -213,6 +216,7 @@ An entry is a 16-bit word: a control byte and a low byte.
 - On the master outside operating mode 0, `track_current_monitor` sets TIOS bit 3 on every pass
   unless STOP (`system_status_flags` bit 0) or an overload shutdown (bit 6) is on.
   `crt_restart`, `enter_bootloader` and the restart paths in `src/ui/ui_control.c` clear it.
+- Version 4010 drives bit 7 on PB7 instead, inverted and at once (section 11).
 
 ### 4.5 What goes on the track: `track_scheduler`
 
@@ -261,6 +265,7 @@ nothing sets either of them, in the original too, so they stay 0.
     sets STOP.
   - Counters: operating minutes every 60000 passes (`minute_countdown`), and the entries into
     overload (`operating_minutes`, `overload_events`, section 9).
+- Version 4010 has no current measurement and a simpler monitor (section 11).
 
 ### 4.7 MM
 
@@ -283,7 +288,7 @@ nothing sets either of them, in the original too, so they stay 0.
 - `mfx_put_bits` (0xCA80) writes plain bits into the entry. The cells, the bit stuffing and
   the sync patterns come from the generator (4.3).
 - A frame entry (header of `src/signal/mfx_encode.c`): a leading 1 outside the CRC, the address
-  (`mfx_frame_begin`: 0 + 7, 10 + 9, 110 + 11 or 111 + 14 bits), the commands
+  (`mfx_frame_begin`: 0 + 7, 10 + 9, 110 + 11 or 111 + 14 bits; version 4010: section 11), the commands
   (`mfx_put_command` and the `mfx_put_*`), then the CRC-8 (polynomial 0x07, start 0xFF,
   `mfx_frame_end`). The bit position is `mfx_bit_pos` / `mfx_byte_idx` (0x12A2 / 0x12A3) and
   the running CRC `mfx_crc_state` (0x12A4).
@@ -449,7 +454,7 @@ the receive ring.
   the start-up image, and `lcd_pump_all` sends it with interrupts masked (`lcd_pump_start` step
   by step, the buffer twice over). `lcd_buf_load` blanks the display at the end of
   `app_main_init`.
-- **Glass maps** in the original image (symbols in `gcc/ms1.ld`, declared in
+- **Glass maps** in the original image (symbols in `gcc/4011/release.ld`, declared in
   `src/include/rom_tables.h`):
 
   | Address | Symbol | Content | Read by |
@@ -485,7 +490,7 @@ the receive ring.
   | 0 | `adc_read_and_scale_voltages` | `adc_track_voltage`: the role (section 1), the voltage window (4.6) |
   | 1 | `adc_read_and_scale_voltages` | `adc_decoder_voltage` |
   | 2 | `isr_feedback_capture` | mfx feedback carrier level (4.8) |
-  | 3, 4 | `track_current_monitor` | track current (4.6) |
+  | 3, 4 | `track_current_monitor` | track current (4.6; not read by version 4010) |
 
 - **Calibration words:** the bootloader's flash metadata at 0xFF60-0xFF7F (`flash_adc*_scale`,
   `flash_current_limit`, `flash_encoder_step` in `gcc/ms1.ld`). `tools/mkimage.py` takes them
@@ -518,7 +523,7 @@ the receive ring.
 | clocks, memory map | `_start` (PLL, INITRG/INITRM/INITEE, PPAGE $3D) | — |
 | timer: TSCR1 | `timer_atd_init`, `timer_modulus_init`, `signal_gen_init` (timer on, fast flag clear) | — |
 | timer: TSCR2 | `signal_gen_init` (prescaler 4) | — |
-| timer channels 3-5 (output compare) | `signal_gen_init` | `isr_timer_ch4_signal_gen`; TIOS bit 3: `track_current_monitor`, `crt_restart`, `enter_bootloader`, the restart paths in `src/ui/ui_control.c` |
+| timer channels 3-5 (output compare) | `signal_gen_init` | `isr_timer_ch4_signal_gen`; TIOS bit 3: `track_current_monitor`, `crt_restart`, `enter_bootloader`, the restart paths in `src/ui/ui_control.c` (version 4010: channels 4 and 5 only, section 11) |
 | timer channel 0 (input capture) | `timer_capture_start_bit_mode`, `timer_capture_start_adc_mode` (TCTL4 edges) | `isr_feedback_capture` |
 | timer channels 6, 7 | `timer_atd_init` (no capture edges) | PT6/PT7 are read as port bits by `encoder_sample` |
 | modulus down-counter | `timer_modulus_init` (1 ms) | `isr_ms_tick`; `timer_modulus_read` reloads it at the end of `app_main_init` |
@@ -527,7 +532,29 @@ the receive ring.
 | MSCAN0 | `can_controller_full_init` | `can0_tx_isr`, `can0_rx_isr`, `can0_error_isr`, `can_tx_enqueue_frame` |
 | EEPROM (ECLKDIV, ECMD, ESTAT) | `eeprom_erase_sector` | `eeprom_program_word` |
 | PORTA | pull-ups (`timer_atd_init`) | function keys |
-| PORTB | PB7 output low, pull-ups (`timer_atd_init`) | PB0-PB4 keys; PB5 feedback quality |
+| PORTB | PB7 output low, pull-ups (`timer_atd_init`) | PB0-PB4 keys; PB5 feedback quality; version 4010: PB6 over-current, PB7 booster line (section 11) |
+| PWM channels 0-3 | version 4010 only: `signal_gen_init` (section 11) | — |
 | PTT | PT3-PT5 outputs (`signal_gen_init`) | PT0 feedback clock, PT1 feedback data, PT3-PT5 track, PT6/PT7 knob |
 | PORTE bit 2 | output, low (`lcd_init`) | high from `app_main_init` once the display is up; low again in `crt_restart` and `enter_bootloader` |
 | SCI0 | `src/hal/serial_debug.c`, only with `DEBUG=1` (`MS1_DEBUG_SERIAL`) | — |
+
+## 11. Version 4010
+
+Releases 4010 and c010 run application version 4010, for the MS1 hardware without track current
+measurement. The source builds it with `MS1_RELEASE` 0x4010 (README *Release images*); its
+function entries are in `tools/functions_4010.tsv`, its module routines in `asm/4010/*.json`,
+its table symbols in `gcc/4010/release.ld`. Everything not listed here is the same code.
+
+| | Version 4011 | Version 4010 |
+|---|---|---|
+| Over-current | track current from ATD0 channels 3 and 4, against `flash_current_limit` in software (4.6) | the booster's comparator pulls PB6 low above a threshold that `signal_gen_init` sets from `flash_current_limit` with PWM channels 2-3 (concatenated, centre-aligned, period 0x0FFF, duty limit × (limit + 1000) / 1550, `pwm23_set_overcurrent_threshold`); PWM channels 0-1 get duty 39 (`pwm01_set_duty`) |
+| Booster line: staging control bit 7 (4.4) | PT3, set at the entry's compare (TCTL2 OL3; channel 3's compare reloaded with each entry) | PB7, set at once by `isr_timer_ch4_signal_gen`, inverted: bit 7 drives PB7 low |
+| `signal_gen_init` | channels 3-5: TIE, TIOS, PTT3 high, DDRT, TC3-TC5, TCTL2 | channels 4 and 5 only; the PWM set-up; PB7 low and an output |
+| Track off on restart (`crt_restart`, `enter_bootloader`, the restart paths in `src/ui/ui_control.c`) | TIOS bit 3 clear | PB7 low (`TRACK_OUTPUT_OFF`) |
+| `track_current_monitor` | 4.6 | overload while PB7 is high and PB6 low, or `adc_track_voltage` outside 12000-25000: bit 1 at once and `track_fault_timer` + 3 per pass; at 4500, or at once outside 10000-27000, STOP (bit 0). Back in range the timer falls by 1 and bit 1 clears at once. No shutdown (bit 6), no TIOS, no current in operating mode 0 |
+| Start-up screen (operating mode 0) | measures the current zero (section 2) | counts `menu_top` down only |
+| INFO item 9 (`ui_screen_text`) | `IT:` the current and the limit, while `ms_tick & 0xE0` is 0 | `OVC:` the limit (`a / 100 % 10` for the tenths), every pass |
+| `mfx_frame_begin`, 9- and 11-bit addresses (4.8) | 10 + 9 and 110 + 11 bits | 01 + 9 and 011 + 11 bits: not the mfx format (`../doc/MFX - Trackprotocol.pdf`, frame structure), kept as the original sends them. The MS1 assigns SIDs from 1, so only SIDs from 128 to 2047 meet it |
+| RAM (`tools/releases.py`) | `src/globals.c` | no variables at 0x10F2-0x10FC (`track_current` … `shutdown_ticks`); every variable from 0x10FD up 0x0B lower, the GCC soft registers at 0x1BAC |
+| Flash | application 0x4000-0xE11A, the original's .rodata from 0xE11B | 0x4000-0xDFA0, from 0xDFA1; the tables hold the same bytes |
+| Assembly modules | `asm/*.json` | the same code at other addresses, except `isr_timer_ch4_signal_gen` and `signal_gen_init` (above) and the two PWM routines; its immediates that point into RAM or the .rodata hold 4010's addresses |

@@ -1,6 +1,8 @@
 {
   "title": "Display driver (PT6547 SPI pump, segment rendering) and track signal generator: the original's hand-written assembly, 0xC23E-0xCA7F",
   "ranges": [["c23e", "ca80"]],
+  "tables": [["c643", 22], ["c87c", 14], ["c899", 14], ["ca1e", 8]],
+  "code": ["c9c8"],
   "names": {
     "c23e": "isr_spi0_lcd",
     "c268": "lcd_init",

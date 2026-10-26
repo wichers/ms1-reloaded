@@ -26,7 +26,8 @@ m68hc1x 3.1 and binutils 2.18 as Debian 7 packaged them, in a container:
 tools/hc12-gcc/run make          # build/ms1.s19: flashable image, bootloader included
 tools/hc12-gcc/run make images   # the release images (RELEASES), each as .s19, .bin and .bci
 tools/hc12-gcc/run make DEBUG=1  # with SCI0 debug output (MS1_DEBUG_SERIAL, SCI0 115200 8N1)
-tools/hc12-gcc/run make clean
+tools/hc12-gcc/run make RELEASE=4010 images  # version 4010 (releases 4010, c010) in build/4010/
+tools/hc12-gcc/run make clean    # all of build/, every version
 ../ms1-emu/build/ms1emu -i build/ms1.s19     # run it in the emulator
 ```
 
@@ -35,15 +36,16 @@ first use and runs the command in it, in this directory, with the repository aro
 at the same path.
 
 **Inputs from the original** (not part of this repository; the workspace README's *What you
-provide*), as `make` variables:
+provide*), as `make` variables; the defaults of the last four depend on `RELEASE`:
 
 | Variable | Default | Used for |
 |---|---|---|
-| `FIRMWARE` | `../original-firmware` | the directory of the next three |
-| `ORIGINAL` | `$(FIRMWARE)/firmware_20260317_192757_usbdm.s19` | a device dump: the bootloader, and for `build/ms1.s19` the original's data |
-| `APP_IMAGE` | `$(FIRMWARE)/4011_1-8_mobile-station-2_A.bin` | the decoded 4011 update: the assembly modules' bytes |
-| `LISTING` | `../ms1-ghidra/out/listing.tsv` | the original's instructions: the assembly modules |
-| `RELEASES` | `4011_1-8_mobile-station-2_A c011_1-8_mobile-station-2_A` | `make images`: `$(FIRMWARE)/<release>.bin` and `.bci` |
+| `RELEASE` | `4011` | the application version built: `4011` in `build/`, `4010` in `build/4010/` (*Release images*) |
+| `FIRMWARE` | `../original-firmware` | the directory of the release images and the device dump |
+| `ORIGINAL` | `$(FIRMWARE)/firmware_20260317_192757_usbdm.s19` | a device dump (a 4011 device's): the bootloader, and for 4011's `build/ms1.s19` the original's data |
+| `APP_IMAGE` | `$(FIRMWARE)/4011_1-8_mobile-station-2_A.bin`; 4010: `$(FIRMWARE)/4010_1-8_mobile-station_A.bin` | the decoded update of the version: the assembly modules' bytes; for 4010 also the original's data of `build/4010/ms1.s19` |
+| `LISTING` | `../ms1-ghidra/out/listing.tsv`; 4010: `../ms1-ghidra/out/listing_4010.tsv` | the original's instructions: the assembly modules. The 4010 one holds the modules only and is made with `../ms1-ghidra/ghidra.sh listing $(APP_IMAGE) asm/4010 $(LISTING)` (Ghidra, see `../ms1-ghidra/README.md`) |
+| `RELEASES` | `4011_1-8_mobile-station-2_A c011_1-8_mobile-station-2_A`; 4010: `4010_1-8_mobile-station_A c010_1-8_mobile-station_A` | `make images`: `$(FIRMWARE)/<release>.bin` and `.bci` |
 
 **Release images.** Releases 4011 (article 60652) and c011 (60651) have the same code and
 differ only in data the build takes from the original (article number and build strings, the
@@ -52,24 +54,47 @@ the application with page $3C and 0xE11B-0xF73F from the release's decoded updat
 bootloader from `ORIGINAL`; `build/<release>.bin` is the same in the update file's page order;
 `build/<release>.bci` is an update file encoded from it with the release's own `.bci` as
 template (`../tools/bci.py`; it decodes back to the image, it has not been tried on a device).
-Releases 4010 and c010 are an earlier version of the code and are not built.
+
+Releases 4010 and c010 are application version 4010, for the MS1 hardware without track
+current measurement, and `make RELEASE=4010 images` builds them the same way into
+`build/4010/`. The version is one source with `#if MS1_RELEASE == 0x4010` points (C) and
+`.ifdef MS1_4010` (`gcc/crt0.s`); `docs/architecture.md` section 11 lists what differs:
+
+| | 4011 | 4010 |
+|---|---|---|
+| code (`MS1_RELEASE`) | the default | `track_current_monitor`, `ui_task` start-up screen and restart paths (`TRACK_OUTPUT_OFF`), INFO item 9 (`OVC:`), `mfx_frame_begin` 9/11-bit address prefixes (not the mfx format, as the original sends them), `crt_restart`/`enter_bootloader` |
+| RAM (`tools/releases.py`) | `src/globals.c` | no variables at 0x10F2-0x10FC; from 0x10FD up 0x0B lower, soft registers at 0x1BAC |
+| application / original's .rodata | 0x4000-0xE11A / 0xE11B-0xF73F | 0x4000-0xDFA0 / 0xDFA1-0xF73F |
+| table symbols | `gcc/4011/release.ld` | `gcc/4010/release.ld` |
+| assembly modules | `asm/*.json` | `asm/4010/*.json` |
+| function table (difftest) | `tools/functions.tsv` | `tools/functions_4010.tsv`, row for row the same functions |
+
+The bootloader starts an application only if the version word at 0xF73C agrees with its flash
+metadata word at 0xFF1A; the device dump is a 4011 device's (0xC011) and refuses 4010. So the
+4010 and c010 `.s19` images (and `build/4010/ms1.s19`) carry the dump's bootloader with the low
+byte at 0xFF1B set to 0x10 (`tools/mkimage.py` does so when the check fails, and says so); a
+4011 image keeps the bootloader as it is. The firmware shows that word in INFO (`HW:`). The
+`.bin` and `.bci` carry no bootloader and are unaffected.
 
 | File | Role |
 |---|---|
 | `Makefile` | sources, flags (`-m68hcs12 -mshort -O1 -fomit-frame-pointer`, per-function sections, `--gc-sections`), `UNCALLED` (functions the original has but nothing calls, kept with `-u`) |
 | `gcc/crt0.s` | start-up: the original's 0x4000-0x4076 (MMC, PLL, then `crt_restart` = the original's 0x403C: .data copy, .bss clear, stack, `main(1, {"main"})`) |
 | `gcc/vectors.s` | interrupt trampolines 0xF740-0xF7FF: the bootloader's vectors point at 0xF740 + 3n; unused vectors stop in `unexpected_interrupt` (BGND) |
-| `gcc/ms1.ld` | linker script template: memory map; symbols for data the code reads from the original image (tables, configuration area, flash metadata, EEPROM fields) |
+| `gcc/ms1.ld` | linker script template: memory map; symbols for data the code reads from the original image (configuration area, flash metadata, EEPROM fields) |
+| `gcc/<version>/release.ld` | the version's symbols for the tables in the original's .rodata, and the end of the application; `gcc/ms1.ld` INCLUDEs it through `-L gcc/<version>` |
+| `tools/releases.py` | the versions: RAM layout, where the original's .rodata starts, the per-version files |
 | `tools/ramlayout.py` | writes `build/ms1.ld` from the template, placing every RAM variable at its address (below) |
 | `gcc/mc9s12d64.h` | register definitions, from the MC9S12DJ64 Device User Guide register map |
 | `tools/mkimage.py` | final image: application + parts of the original + CRC |
-| `tools/regress.py`, `tools/scenarios/`, `tools/functions.tsv`, `tools/calpatch.py` | verification against the original with `../ms1-emu` (*Verification*) |
+| `tools/regress.py`, `tools/scenarios/`, `tools/functions.tsv`, `tools/functions_4010.tsv`, `tools/calpatch.py` | verification against the original with `../ms1-emu` (*Verification*) |
 | `tools/objcmp.py` | two builds compared function by function, for changes meant to keep the code |
-| `asm/*.json` | the original's hand-written assembly modules (below): ranges and entry names; the build generates `build/asm/*.s` from them with `tools/asmgen.py` |
+| `asm/*.json`, `asm/4010/*.json` | the original's hand-written assembly modules (below), of version 4011 and 4010: ranges, entry names, jump tables; the build generates `build/asm/*.s` (`build/4010/asm/*.s`) from them with `tools/asmgen.py` |
 | `gcc/mc9s12d64.inc` | register addresses for assembly sources (`tools/asmgen.py regs`, from `gcc/mc9s12d64.h`) |
 
 **Image layout.** The application (code, its own read-only data, the .data image) takes
-0x4000-0xE11A, the space of the original's code and GCC runtime helpers; page $3D is mapped into
+0x4000-0xE11A (version 4010: 0x4000-0xDFA0, its original's part starts at 0xDFA1), the space of
+the original's code and GCC runtime helpers; page $3D is mapped into
 the 0x8000 window for good, as in the original. `tools/mkimage.py` takes from the original image
 (`ORIGINAL`, default the device dump): page $3C (the
 locomotive database and the accessors reached by `CALL $BB08/$BB0C,$38`), 0xE11B-0xF73F (the
@@ -84,7 +109,10 @@ them with `RAM(addr)` (or `RAM_DATA(addr)` for the original's initialised `.data
 0x1000-0x102F, whose initial values are in the definitions and are copied by `crt_restart`);
 the macros put each variable in a section `.bss.ram.<addr>` / `.data.ram.<addr>`, and
 `tools/ramlayout.py` places those sections, failing on overlaps and on variables outside the
-original's `.data` (0x1000-0x102F) and `.bss` (0x1030-0x1BB6). The GCC soft registers follow
+original's `.data` (0x1000-0x102F) and `.bss` (0x1030-0x1BB6). The addresses in
+`src/globals.c` are version 4011's; for 4010 (`--release 4010`) it places each variable from
+0x10FD up 0x0B lower and fails on one in 0x10F2-0x10FC, which 4010 does not have
+(`tools/releases.py`). The GCC soft registers follow
 at 0x1BB7 (`_.tmp`, `_.z`, `_.xy`, `_.frame`), as in the original; variables without an
 address go after them, and an initialised one without an address fails the link. Names for
 fields inside other variables (e.g. the CAN frame at 0x106F, the display buffer at 0x1108)
@@ -94,19 +122,25 @@ are macros at the end of `src/include/globals.h`.
 tables into the middle of routines, shared tails and register conventions C does not
 express. Their source is assembly too, generated by the build (`tools/asmgen.py gen
 asm/X.json build/asm/X.s`) from the original's instructions (`LISTING`, `APP_IMAGE`): this
-repository holds only the module descriptions (`asm/*.json`: ranges, entry names) and the
-generator. The generated source has labels for branch targets, names for functions (the
-module's `names`, `tools/functions.tsv`, the other modules' entries), RAM variables
-(`src/globals.c`) and I/O registers, data as `.byte`/`.word`.
+repository holds only the module descriptions (`asm/*.json`: ranges, entry names, and the jump
+tables and other code `../ms1-ghidra/ghidra.sh listing` disassembles from) and the generator.
+Version 4010's modules (`asm/4010/*.json`, generated with `RELEASE=4010`) are the same code at
+other addresses, except the timer channel 4 interrupt and `signal_gen_init` (the booster line,
+the over-current threshold) and two routines of their own; immediates that point into RAM or
+the original's .rodata are numbers in the generated source, so each version has its own. The
+generated source has labels for branch targets, names for functions (the module's `names`, the
+version's function table, the other modules' entries), RAM variables (`src/globals.c`, at the
+version's addresses) and I/O registers, data as `.byte`/`.word`.
 `tools/asmgen.py verify asm/X.json build/asm/X.s` assembles a module at its original address
 with every other symbol at its original address and compares the bytes with the original
-image; every module is byte-identical.
+image; every module is byte-identical, of both versions (4010's with `RELEASE=4010` and its
+`LISTING` and `APP_IMAGE` in the environment, as the Makefile runs `gen`).
 
-| Module | Original | Contents |
-|---|---|---|
-| `siggen` | `0xC23E`-`0xCA7F` | PT6547 SPI pump interrupt, display buffer rendering (segments, speed bar, glyphs), track signal generator: timer channel 4 interrupt, staging buffer of compare values, MM/mfx bit encoders, command buffer consumer |
-| `encoder` | `0xBA96`-`0xBB5F` | rotary encoder: counter set-up (value, range, wrap mode) and the quadrature sampling the main loop calls twice per millisecond |
-| `hal` | `0xDCCF`-`0xE0A3` | EEPROM erase/program, page-$3C database accessors (`CALL $BB08/$BB0C,$38`), CAN0 transmit/receive/error interrupts and frame rings, track-feedback capture (timer channel 0), port reads, 1 ms tick interrupt, display pump, delays |
+| Module | Original | Version 4010 | Contents |
+|---|---|---|---|
+| `siggen` | `0xC23E`-`0xCA7F` | `0xC084`-`0xC905` | PT6547 SPI pump interrupt, display buffer rendering (segments, speed bar, glyphs), track signal generator: timer channel 4 interrupt, staging buffer of compare values, MM/mfx bit encoders, command buffer consumer |
+| `encoder` | `0xBA96`-`0xBB5F` | `0xB8DC`-`0xB9A5` | rotary encoder: counter set-up (value, range, wrap mode) and the quadrature sampling the main loop calls twice per millisecond |
+| `hal` | `0xDCCF`-`0xE0A3` | `0xDB55`-`0xDF29` | EEPROM erase/program, page-$3C database accessors (`CALL $BB08/$BB0C,$38`), CAN0 transmit/receive/error interrupts and frame rings, track-feedback capture (timer channel 0), port reads, 1 ms tick interrupt, display pump, delays |
 
 GCC's own libgcc provides what the original has at `0xE0B0`-`0xE11A` (multiply and shift
 helpers), except the left shift `lok_icons.c` calls by name (`src/lib/runtime.c`).
@@ -287,6 +321,23 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   `../ms1-emu/build/ms1emu` with the same scenario on both images, comparing LCD
   text and icons (`-l`, `text` lines), CAN frames (`-c`), track output (`-T`, decoded by
   `../ms1-emu/tools/track_decode.py`), decoder events (`-D`), EEPROM.
+- **Version 4010**: `python3 tools/regress.py --release 4010` (after `tools/hc12-gcc/run make
+  RELEASE=4010`) runs the same scenarios with `build/4010/` against release 4010
+  (`--firmware`, default `../original-firmware`), which `tools/mkimage.py --original` makes
+  bootable with the device dump's bootloader (*Release images*), with
+  `tools/functions_4010.tsv` and the CAN ring at its 4010 address (`-r 191E:10`). ms1-emu reads
+  4010's display tables and difftest its end of RAM variables (0x1BAC) by the version word.
+  The `overload` run sets ATD0 channel 3, which 4010 does not read; its over-current input is
+  PB6 (`press pb6` in a scenario), effective while PB7 is high. By hand:
+
+  ```sh
+  fw=../original-firmware
+  python3 tools/mkimage.py --release 4010 --original $fw/4010_1-8_mobile-station_A.bin \
+      $fw/firmware_20260317_192757_usbdm.s19 orig4010.s19
+  python3 tools/mkimage.py --release 4010 build/4010/app.s19 orig4010.s19 rebuild4010.s19
+  ../ms1-emu/build/difftest -t 16 -r 191E:10 -s tools/scenarios/menu.txt \
+      orig4010.s19 rebuild4010.s19 build/4010/ms1.sym tools/functions_4010.tsv
+  ```
 - **Calibration**: the images carry the device's calibration words at `0xFF60–0xFF7F` (the
   bootloader's area: `flash_adc*_scale`, `flash_current_limit` in `gcc/ms1.ld`; the track
   current sense scale `flash_adc4_scale` is 0 there). `tools/calpatch.py IN.s19 OUT.s19

@@ -45,7 +45,7 @@ static void erase_and_restart(u16 addr)
 {
     IRQ_DISABLE();
     TIE &= ~0x10;
-    TIOS &= ~0x08;
+    TRACK_OUTPUT_OFF();
     eeprom_erase_sector(addr);
     delay_short(0x20);
     crt_restart();
@@ -658,7 +658,7 @@ static void menus(void)
             if (porta_buttons_raw == 0x11) {
                 IRQ_DISABLE();
                 TIE &= ~0x10;
-                TIOS &= ~0x08;
+                TRACK_OUTPUT_OFF();
                 eeprom_erase_sector(EE_MFX_REG_COUNTER);
                 delay_short(0x20);
                 eeprom_program_word(EE_MFX_REG_COUNTER, mfx_reg_counter + 1);
@@ -732,6 +732,10 @@ void ui_task(void)
     case 0:                                     /* start-up */
         if ((button_state_raw & (KEY_STOP | KEY_KNOB)) == (KEY_STOP | KEY_KNOB) && ++track_fault_timer > 0x1E)
             erase_and_restart(EEPROM_BASE_ADDR);
+#if MS1_RELEASE == 0x4010
+        if (--menu_top == 0) {                  /* no current zero to measure */
+            if (is_master != 0) {
+#else
         t = menu_top;
         if (t <= 0x20)
             track_current_offset += track_current;
@@ -741,6 +745,7 @@ void ui_task(void)
                 track_current_offset >>= 5;
                 if (track_current_offset > 0xFA)
                     track_current_offset = 0;
+#endif
                 track_fault_timer = 0;
                 system_status_flags &= ~1;
                 mcan_status_pending |= 1;

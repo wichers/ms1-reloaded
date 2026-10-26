@@ -14,12 +14,18 @@ addresses) and comparing the bytes with the original image.
 
 MODULE.json: {"ranges": [[start, end], ...] (hex strings, end exclusive),
               "names": {"c4ed": "isr_timer_ch4_signal_gen", ...}  entry labels in the module,
-              "globals": [...]  names to export (default: all "names")}
-Names for addresses outside the module: tools/functions.tsv (original entry -> function
-here), the entry points of the other modules (asm/*.json) and the RAM variables defined in
-src/globals.c (they are at the original's addresses).
+              "globals": [...]  names to export (default: all "names"),
+              "tables": [[address, words], ...], "code": [address, ...]  code-pointer
+                  tables and code nothing else leads to, for ms1-ghidra's module listing
+                  (./ghidra.sh listing); not used here}
+Names for addresses outside the module: the version's function table (tools/functions.tsv:
+original entry -> function here), the entry points of the other modules (asm/*.json) and the
+RAM variables defined in src/globals.c (they are at the original's addresses).
 Inputs from the original (environment variables, defaults next to this project):
-  LISTING    every instruction of the original, ms1-ghidra's out/listing.tsv
+  RELEASE    the application version (tools/releases.py, default 4011): 4010 takes its
+             function table, its module descriptions (asm/4010) and its RAM addresses
+  LISTING    every instruction of the original, ms1-ghidra's out/listing.tsv (for 4010 the
+             modules' instructions, ./ghidra.sh listing)
   APP_IMAGE  the application image decoded from the firmware update file (CPU address =
              offset + 0x4000)
 """
@@ -29,12 +35,16 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # releases.py, also under python3 -I
+import releases
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LISTING = os.environ.get("LISTING") or os.path.join(ROOT, "..", "ms1-ghidra", "out", "listing.tsv")
 IMAGE = os.environ.get("APP_IMAGE") or os.path.join(ROOT, "..", "original-firmware", "4011_1-8_mobile-station-2_A.bin")
 REG_HEADER = os.path.join(ROOT, "gcc", "mc9s12d64.h")
 REG_INC = os.path.join(ROOT, "gcc", "mc9s12d64.inc")
-FUNCTIONS = os.path.join(ROOT, "tools", "functions.tsv")
+RELEASE = releases.get()
+FUNCTIONS = RELEASE.functions
 GLOBALS = os.path.join(ROOT, "src", "globals.c")
 
 REG = {"IX": "x", "IY": "y", "SP": "sp", "PC": "pc", "D": "d", "A": "a", "B": "b", "CCR": "ccr"}
@@ -60,12 +70,15 @@ def load_listing():
 
 
 def ram_variables():
-    """name -> address of the RAM variables (RAM(addr) / RAM_DATA(addr) in src/globals.c)"""
+    """name -> address of the RAM variables (RAM(addr) / RAM_DATA(addr) in src/globals.c, at
+    4011's addresses), at their address in RELEASE; those the version lacks are left out"""
     found = {}
     for line in open(GLOBALS):
         m = re.match(r"\s*RAM(?:_DATA)?\((0x[0-9A-Fa-f]+)\)\s+[^;=]*?(\w+)\s*(?:\[[^\]]*\])*\s*(?:=[^;]*)?;", line)
         if m:
-            found[m.group(2)] = int(m.group(1), 16)
+            a = RELEASE.ram(int(m.group(1), 16))
+            if a is not None:
+                found[m.group(2)] = a
     return found
 
 
@@ -78,7 +91,7 @@ def load_names():
         f = line.split()
         names[int(f[0], 16)] = f[1]
     # entry points of the assembly modules
-    asm_dir = os.path.join(ROOT, "asm")
+    asm_dir = RELEASE.asm_dir
     for fn in sorted(os.listdir(asm_dir)) if os.path.isdir(asm_dir) else []:
         if fn.endswith(".json"):
             for a, n in json.load(open(os.path.join(asm_dir, fn))).get("names", {}).items():
@@ -134,7 +147,7 @@ class Module:
             if size == 2 and a - 1 in self.regs:
                 return self.regs[a - 1] + "+1"
             return num(a)
-        if 0x1000 <= a < 0x1BB7:
+        if 0x1000 <= a < RELEASE.soft_registers:
             for back in range(0, 0x200):
                 if a - back in self.ram:
                     s = self.ram[a - back]

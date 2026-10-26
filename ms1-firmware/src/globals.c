@@ -115,12 +115,14 @@ RAM(0x10B4) u16 menu_value3;
 RAM(0x10B6) u16 menu_value4;
 RAM(0x10B8) u16 menu_db_brand;
 RAM(0x10BA) u8 lok_name_edit_buf[56];
+#if MS1_RELEASE != 0x4010
 RAM(0x10F2) u16 track_current;
 RAM(0x10F4) u16 track_current_offset;
 RAM(0x10F6) u16 overload_slow;
 RAM(0x10F8) u16 overload_fast;
 RAM(0x10FA) u8 shutdown_count;
 RAM(0x10FB) u16 shutdown_ticks;
+#endif
 RAM(0x10FD) u16 encoder_clicks_hi;
 RAM(0x10FF) u16 encoder_clicks_lo;
 RAM(0x1101) u8 encoder_count;

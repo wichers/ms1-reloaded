@@ -13,7 +13,12 @@ standing for the original's image and other *.txt words for scenario files. Per 
 Then: totals, the functions no run calls, and the functions where the rebuild spends the
 most extra time. Exit status 1 if a call differs or a whole-firmware comparison fails.
 
-usage: python3 tools/regress.py [-j JOBS] [-n CALLS] [--emu DIR] [--keep DIR] [RUN...]
+--release 4010 tests the version 4010 build (build/4010, `make RELEASE=4010`) against the
+release 4010 image (--firmware), made bootable with the device dump's bootloader by
+tools/mkimage.py --original; the 4011 original is ms1-emu's build/ms1_4011.s19.
+
+usage: python3 tools/regress.py [--release R] [-j JOBS] [-n CALLS] [--emu DIR] [--firmware DIR]
+                                [--keep DIR] [RUN...]
 """
 import argparse
 import concurrent.futures
@@ -25,10 +30,14 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # releases.py, also under python3 -I
+import releases
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SCENARIOS = os.path.join(HERE, "scenarios")
-CAN_RING = ["-r", "1929:10"]
+CAN_TX_RING = 0x1929          # 4011's address (tools/releases.py maps it), 10 frames
+DUMP = "firmware_20260317_192757_usbdm.s19"
 
 
 def runs():
@@ -114,27 +123,41 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("-j", type=int, default=os.cpu_count() or 4, help="parallel difftest runs")
     ap.add_argument("-n", type=int, default=100000, help="calls tested per function and run")
+    ap.add_argument("--release", default=releases.DEFAULT, choices=sorted(releases.RELEASES),
+                    help="the application version tested (default %(default)s)")
     ap.add_argument("--emu", default=os.path.join(ROOT, "..", "ms1-emu"), help="the ms1-emu checkout")
+    ap.add_argument("--firmware", default=os.path.join(ROOT, "..", "original-firmware"),
+                    help="the original firmware: release images and the device dump (for --release 4010)")
     ap.add_argument("--keep", help="keep the images, logs and reports in this directory")
     ap.add_argument("only", nargs="*", help="run names (default: all)")
     a = ap.parse_args()
 
+    rel = releases.get(a.release)
     emu = os.path.abspath(a.emu)
     difftest = os.path.join(emu, "build", "difftest")
-    base = os.path.join(emu, "build", "ms1_4011.s19")
-    for need in (difftest, base, os.path.join(ROOT, "build", "app.s19")):
+    if rel.name == "4011":
+        base = os.path.join(emu, "build", "ms1_4011.s19")
+    else:
+        base = os.path.join(os.path.abspath(a.firmware), rel.images[0] + ".bin")
+    dump = os.path.join(os.path.abspath(a.firmware), DUMP)
+    app = os.path.join(rel.build, "app.s19")
+    for need in (difftest, base, app) + ((dump,) if rel.name != "4011" else ()):
         if not os.path.exists(need):
             sys.exit(f"missing {need}: build ms1-emu (make build/ms1emu build/difftest, the image) and this firmware")
     work = a.keep or tempfile.mkdtemp(prefix="regress.")
     os.makedirs(work, exist_ok=True)
     orig, rebuild = os.path.join(work, "orig.s19"), os.path.join(work, "rebuild.s19")
     py = [sys.executable, "-I"]
-    subprocess.run(py + [os.path.join(HERE, "mkimage.py"), os.path.join(ROOT, "build", "app.s19"), base,
-                         rebuild], check=True, capture_output=True)
-    shutil.copy(base, orig)
+    mkimage = py + [os.path.join(HERE, "mkimage.py"), "--release", rel.name]
+    if rel.name == "4011":
+        shutil.copy(base, orig)
+    else:
+        subprocess.run(mkimage + ["--original", base, dump, orig], check=True, capture_output=True)
+    subprocess.run(mkimage + [app, orig, rebuild], check=True, capture_output=True)
     sym, tsv = os.path.join(work, "ms1.sym"), os.path.join(work, "functions.tsv")
-    shutil.copy(os.path.join(ROOT, "build", "ms1.sym"), sym)
-    shutil.copy(os.path.join(HERE, "functions.tsv"), tsv)
+    shutil.copy(os.path.join(rel.build, "ms1.sym"), sym)
+    shutil.copy(rel.functions, tsv)
+    can_ring = ["-r", f"{rel.ram(CAN_TX_RING):04X}:10"]
 
     todo = [r for r in runs() if not a.only or r[0] in a.only]
     if not todo:
@@ -146,8 +169,8 @@ def main():
             files = [orig, rebuild, sym, tsv]
             log_o, log_r = os.path.join(work, name + ".can.orig"), os.path.join(work, name + ".can.rebuild")
             jobs[name] = (
-                pool.submit(run, [difftest, "-y", "-n", str(a.n)] + CAN_RING + ["-s", path, "-c", log_o] + opts + files),
-                pool.submit(run, [difftest, "-W"] + CAN_RING + ["-s", path, "-c", log_r] + opts + files),
+                pool.submit(run, [difftest, "-y", "-n", str(a.n)] + can_ring + ["-s", path, "-c", log_o] + opts + files),
+                pool.submit(run, [difftest, "-W"] + can_ring + ["-s", path, "-c", log_r] + opts + files),
                 log_o, log_r)
         results = {name: (t.result(), w.result(), lo, lr) for name, (t, w, lo, lr) in jobs.items()}
 

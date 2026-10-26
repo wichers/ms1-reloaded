@@ -12,6 +12,8 @@
  *   0x02  overload
  *   0x40  output off for an overload shutdown, until shutdown_ticks reaches 200
  * Each change of bits 0x01/0x02 also sets the bit in mcan_status_pending.
+ *
+ * Version 4010 (MS1_RELEASE 0x4010) has its own, simpler monitor: see there.
  *========================================================================*/
 
 #include "../include/hcs12.h"
@@ -20,6 +22,63 @@
 
 extern void counter_inc_24bit(u8 *counter);
 
+#if MS1_RELEASE == 0x4010
+/* Version 4010 measures no current. The booster's comparator pulls PB6 low above the
+ * threshold signal_gen_init sets with PWM channels 2-3 (from flash_current_limit); PB6 counts
+ * only while PB7, the booster line the signal generator drives, is high. An overload, or a
+ * track voltage outside 12.0-25.0 V, sets bit 0x02 at once and adds 3 to track_fault_timer
+ * per pass; at 4500, or at once below 10.0 V or above 27.0 V, it stops (bit 0x01). Back in
+ * range, bit 0x02 clears at once and the timer counts down. Nothing here switches the
+ * output, and there is no shutdown counting (bit 0x40). */
+void track_current_monitor(void)
+{
+    u8 status, fault;
+    u16 v, t;
+
+    if (--minute_countdown == 0) {
+        counter_inc_24bit(operating_minutes);
+        minute_countdown = 60000;
+    }
+    if (operating_mode == 0)
+        return;
+    if (is_master == 0)
+        return;
+
+    status = system_status_flags;
+    fault = status & 3;
+    if (fault == 2 && !(track_fault_prev & 2)) {
+        counter_inc_24bit(overload_events);
+        status = system_status_flags;
+    }
+    track_fault_prev = fault;
+
+    v = adc_track_voltage;
+    if (!((PORTB & 0x80) && !(PORTB & 0x40)) && v > 11999 && v <= 25000) {
+        if (track_fault_timer != 0)
+            track_fault_timer--;
+        if (status & 2) {
+            system_status_flags = status & ~2;
+            mcan_status_pending |= 2;
+        }
+        return;
+    }
+    if (!(status & 2)) {
+        system_status_flags = status | 2;
+        mcan_status_pending |= 2;
+    }
+    t = track_fault_timer + 3;
+    track_fault_timer = t;
+    if ((u16)(v - 10000) > 17000) {
+        t = 4500;
+        track_fault_timer = 4500;
+    }
+    if (t > 4499) {
+        track_fault_timer = 4500;
+        system_status_flags |= 1;
+        mcan_status_pending |= 1;
+    }
+}
+#else
 void track_current_monitor(void)
 {
     u8 status, fault;
@@ -129,3 +188,4 @@ void track_current_monitor(void)
     else
         TIOS |= 0x08;
 }
+#endif

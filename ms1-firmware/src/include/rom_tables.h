@@ -4,8 +4,9 @@
 #include "hcs12.h"
 
 /*==========================================================================
- * The original's read-only tables: gcc/ms1.ld defines each symbol at the address given
- * here, tools/mkimage.py copies the bytes. Words are big-endian.
+ * The original's read-only tables: gcc/<version>/release.ld defines each symbol at the
+ * address given here (version 4011's; 4010 has them elsewhere), the flash metadata
+ * gcc/ms1.ld; tools/mkimage.py copies the bytes. Words are big-endian.
  *========================================================================*/
 
 /*--- The LCD (docs/architecture.md: Display) ---*/

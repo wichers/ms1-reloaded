@@ -10,7 +10,9 @@ From the original (a banked S-record file, e.g. the device dump in this director
   0xF800-0xFFFF             the bootloader, its flash metadata and the vector table
 The linked application (S-records from objcopy, CPU addresses) supplies 0x4000-0xE11A and the
 interrupt trampolines at 0xF740-0xF7FF; the CPU address space maps to flash as 0x4000 page $3E,
-0x8000 page $3D (the PPAGE window), 0xC000 page $3F.
+0x8000 page $3D (the PPAGE window), 0xC000 page $3F. For version 4010 (--release 4010) the
+original's part starts at 0xDFA1 and the application ends below it (tools/releases.py); the
+original's application version word (0xF73C) must be the version's.
 
 The bootloader (bootloader_crc_check_and_dispatch) runs CRC-16/CCITT (0x1021, initial 0xFFFF,
 data bits shifted in last) over page $3C 0x8000-0xBFFF then 0x4000-0xF7FF with page $3D, and
@@ -26,14 +28,30 @@ With a further output name it also writes the 64 KiB image in the update file's 
 0xF800-0xFFFF as in the release image (an update file carries no bootloader): the input of
 tools/bci.py encode.
 
-Usage: python3 tools/mkimage.py <app.s19> <original.s19> <out.s19> [<release.bin> [<out.bin>]]
+The bootloader starts the application only if the application version word at 0xF73C agrees
+with its flash metadata word at 0xFF1A (bootloader_crc_check_and_dispatch: the low bytes
+equal, the low nibbles of the high bytes equal, and bits 5-6 of the high byte where 0xF73C
+has them set). A device's bootloader carries the word for its version, so the bootloader of
+a 4011 device (the device dump) refuses 4010. When the check fails, the low byte at 0xFF1B
+becomes the application's, which passes it for 4010 and c010 with a 4011 device's bootloader;
+the S-record image says so on its line. A 4011 image keeps the bootloader as it is.
+
+--original writes the image of the release itself, for the emulator: everything below
+0xF800 from <release.bin>, the bootloader from <original.s19> (with the 0xFF1B rule above).
+
+Usage: python3 tools/mkimage.py [--release R] <app.s19> <original.s19> <out.s19> [<release.bin> [<out.bin>]]
+       python3 tools/mkimage.py [--release R] --original <release.bin> <original.s19> <out.s19>
 """
+import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # releases.py, also under python3 -I
+import releases
+
 PAGE = 0x4000
-COPY_FROM_ORIGINAL = [(0xE11B, 0xF740), (0xF800, 0x10000)]
-APP_ALLOWED = [(0x4000, 0xE11B), (0xF740, 0xF800)]
 COMP = 0xF73E
+VERSION = 0xF73C        # the application version word
+BOOT_VERSION = 0xFF1A   # the bootloader's: the application version it starts
 
 
 def read_srec(path):
@@ -156,14 +174,63 @@ def read_bin(path):
             for i, page in enumerate((0x3C, 0x3E, 0x3D, 0x3F)) for off in range(PAGE)}
 
 
+def word(pages, a):
+    page, off = cpu_to_flash(a)
+    return pages[page][off] << 8 | pages[page][off + 1]
+
+
+def bootloader_accepts(app, boot):
+    """bootloader_crc_check_and_dispatch's check of the application version word"""
+    x = app ^ boot
+    return (x & 0xFF) == 0 and (x >> 8) & 0x0F == 0 and (x >> 8) & 0x60 & (app >> 8) == 0
+
+
+def fit_bootloader(pages):
+    """Let the bootloader start the application (module docstring); a note, or ''."""
+    app, boot = word(pages, VERSION), word(pages, BOOT_VERSION)
+    if bootloader_accepts(app, boot):
+        return ""
+    page, off = cpu_to_flash(BOOT_VERSION + 1)
+    pages[page][off] = app & 0xFF
+    if not bootloader_accepts(app, word(pages, BOOT_VERSION)):
+        sys.exit(f"the bootloader's 0x{boot:04X} at 0x{BOOT_VERSION:04X} refuses application version 0x{app:04X}")
+    return f", bootloader word 0x{BOOT_VERSION:04X} 0x{boot:04X} -> 0x{word(pages, BOOT_VERSION):04X}"
+
+
+def original_image(rel, bin_path, boot_path, out_path):
+    release, boot = read_bin(bin_path), read_srec(boot_path)
+    pages = {p: bytearray(release[(p, off)] for off in range(PAGE)) for p in (0x3C, 0x3D, 0x3E, 0x3F)}
+    for a in range(0xF800, 0x10000):
+        page, off = cpu_to_flash(a)
+        if (page, off) not in boot:
+            sys.exit(f"{boot_path}: no byte at {a:#06x}")
+        pages[page][off] = boot[(page, off)]
+    if word(pages, VERSION) != rel.version:
+        sys.exit(f"{bin_path}: application version 0x{word(pages, VERSION):04X}, not {rel.name}")
+    if app_crc(pages, word(pages, COMP)) != 0:
+        sys.exit(f"{bin_path}: application CRC not 0")
+    note = fit_bootloader(pages)
+    print(f"{out_path}: the original {rel.name}{note}")
+    write_srec(out_path, pages)
+
+
 def main():
-    if len(sys.argv) not in (4, 5, 6):
+    args = sys.argv[1:]
+    rel = releases.get(args[1] if args[:1] == ["--release"] else None)
+    if args[:1] == ["--release"]:
+        args = args[2:]
+    if args[:1] == ["--original"] and len(args) == 4:
+        original_image(rel, *args[1:])
+        return
+    if len(args) not in (3, 4, 5):
         sys.exit(__doc__)
-    app_path, orig_path, out_path = sys.argv[1:4]
+    copy_from_original = [(rel.rodata_start, 0xF740), (0xF800, 0x10000)]
+    app_allowed = [(0x4000, rel.rodata_start), (0xF740, 0xF800)]
+    app_path, orig_path, out_path = args[:3]
     app, orig = read_srec(app_path), read_srec(orig_path)
-    if len(sys.argv) >= 5:
-        release = read_bin(sys.argv[4])
-        for a in range(0xE11B, 0xF740):
+    if len(args) >= 4:
+        release = read_bin(args[3])
+        for a in range(rel.rodata_start, 0xF740):
             key = cpu_to_flash(a)
             orig[key] = release[key]
         for off in range(PAGE):
@@ -171,32 +238,36 @@ def main():
     pages = {p: bytearray([0xFF] * PAGE) for p in (0x3C, 0x3D, 0x3E, 0x3F)}
     for (page, off), b in app.items():
         a = cpu_addr(page, off) if page != 0x3C else None
-        if a is None or not any(lo <= a < hi for lo, hi in APP_ALLOWED):
+        if a is None or not any(lo <= a < hi for lo, hi in app_allowed):
             sys.exit(f"{app_path}: application byte at {page:02X}:{off:04X} outside "
-                     f"0x4000-0xE11A and the trampolines")
+                     f"0x4000-0x{rel.rodata_start - 1:04X} and the trampolines")
         pages[page][off] = b
     for off in range(PAGE):
         if (0x3C, off) not in orig:
             sys.exit(f"{orig_path}: page $3C incomplete")
         pages[0x3C][off] = orig[(0x3C, off)]
-    for lo, hi in COPY_FROM_ORIGINAL:
+    for lo, hi in copy_from_original:
         for a in range(lo, hi):
             page, off = cpu_to_flash(a)
             if (page, off) not in orig:
                 sys.exit(f"{orig_path}: no byte at {a:#06x}")
             pages[page][off] = orig[(page, off)]
+    if word(pages, VERSION) != rel.version:
+        sys.exit(f"{args[3] if len(args) >= 4 else orig_path}: application version "
+                 f"0x{word(pages, VERSION):04X}, not {rel.name} (--release)")
+    note = fit_bootloader(pages)
     comp = solve_compensation(pages)
     page, off = cpu_to_flash(COMP)
     pages[page][off], pages[page][off + 1] = comp >> 8, comp & 0xFF
     used = sum(1 for (p, o) in app if p != 0x3C)
-    print(f"{out_path}: {used} application bytes, CRC compensation 0x{comp:04X} at 0x{COMP:04X}")
+    print(f"{out_path}: {used} application bytes, CRC compensation 0x{comp:04X} at 0x{COMP:04X}{note}")
     write_srec(out_path, pages)
-    if len(sys.argv) == 6:
+    if len(args) == 5:
         image = bytearray()
         for page in (0x3C, 0x3E, 0x3D, 0x3F):
             image += pages[page]
         image[3 * PAGE + 0xF800 - 0xC000:] = bytes(release[(0x3F, off)] for off in range(0xF800 - 0xC000, PAGE))
-        open(sys.argv[5], "wb").write(image)
+        open(args[4], "wb").write(image)
 
 
 main()

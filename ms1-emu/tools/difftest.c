@@ -63,7 +63,10 @@
 #include "../src/mcu.h"
 
 #define MAXF 1024
-#define RAM_VARS_END 0x1BB7    /* the GCC soft registers _.tmp, _.z, _.xy, _.frame follow */
+/* the end of the RAM variables, where the GCC soft registers _.tmp, _.z, _.xy, _.frame
+ * follow: 0x1BB7 in application version 4011, 0x1BAC in 4010 (the original's version word at
+ * 0xF73C) */
+static unsigned ram_vars_end = 0x1BB7;
 #define LOGMAX 4096
 
 typedef struct {
@@ -167,7 +170,7 @@ static uint16_t input_word(unsigned k)
 	uint16_t r = (uint16_t)(rng >> 8);
 	switch (k % 3) {
 	case 0: return r % 24;
-	case 1: return (uint16_t)(0x1000 + r % (RAM_VARS_END - 0x1000));
+	case 1: return (uint16_t)(0x1000 + r % (ram_vars_end - 0x1000));
 	default: return r & 0x3FFF;
 	}
 }
@@ -264,7 +267,7 @@ static void test_call(func_t *f, mcu_t *m, ms1_board_t *b)
 			ma.cpu.b, mb.cpu.b), diffs++;
 	int shown = 0;
 	for (unsigned a = 0x1000; a < 0x2000; a++) {
-		if (a >= RAM_VARS_END && a < (unsigned)sp0 + 2 + f->argbytes)
+		if (a >= ram_vars_end && a < (unsigned)sp0 + 2 + f->argbytes)
 			continue;
 		uint8_t va = ma.ram[a - 0x1000], vb = mb.ram[a - 0x1000];
 		if (va == vb || past_frame_length(&ma, a))
@@ -350,7 +353,7 @@ static int button_index(const char *s)
 			return names[i].index;
 	if (s[0] == 'p' && (s[1] == 'a' || s[1] == 'b') && s[2] >= '0' && s[2] <= '7' && !s[3]) {
 		int i = (s[1] == 'a' ? 0 : 8) + (s[2] - '0');
-		return i <= 12 ? i : -1;
+		return i;
 	}
 	return -1;
 }
@@ -672,6 +675,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s\n", err);
 		return 1;
 	}
+	if (mcu_peek(&mcu, 0xF73C) == 0x40 && mcu_peek(&mcu, 0xF73D) == 0x10)
+		ram_vars_end = 0x1BAC;
 	if (eeprom) {
 		FILE *f = fopen(eeprom, "rb");
 		if (!f || fread(mcu.eeprom, 1, EEPROM_SIZE, f) != EEPROM_SIZE) {

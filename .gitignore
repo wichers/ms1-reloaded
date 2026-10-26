@@ -6,6 +6,7 @@
 
 # What is derived from the original firmware: its instructions, pseudocode and IDA export
 /ms1-ghidra/out/listing.tsv
+/ms1-ghidra/out/listing_*.tsv
 /ms1-ghidra/out/ms1_4011_decomp.c
 /ms1-ghidra/ida_export/ms1_firmware.*
 

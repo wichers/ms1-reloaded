@@ -1,6 +1,7 @@
 {
   "title": "Low-level drivers: EEPROM commands, page-$3C database accessors, CAN0 interrupt handlers and frame rings, track-feedback capture, ports, 1 ms tick, delays - the original's hand-written assembly, 0xDCCF-0xE0A3",
   "ranges": [["dccf", "e0a4"]],
+  "code": ["ddb4"],
   "names": {
     "dccf": "eeprom_erase_sector",
     "dce8": "eeprom_program_word",

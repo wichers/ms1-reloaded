@@ -4,7 +4,8 @@
 ; normal mode, so the bootloader's values stay), the PLL is engaged after a fixed delay,
 ; then crt_restart (the original's 0x403C, also the soft-reset entry) copies .data,
 ; clears .bss, sets the stack and calls main(1, {"main"}). The original's 0x4077-0x40A2
-; follows.
+; follows. Version 4010 (assembled with --defsym MS1_4010=1) switches the booster off on PB7
+; instead of timer channel 3.
 
 	.sect .crt0,"ax"
 	.globl	_start
@@ -33,7 +34,11 @@ crt_restart:
 	orcc	#0x50
 	bclr	0x0008,#0x04	; PORTE bit 2
 	bclr	0x004C,#0x10	; TIE: timer channel 4
+	.ifdef	MS1_4010
+	bclr	0x0001,#0x80	; PORTB: PB7 low
+	.else
 	bclr	0x0040,#0x08	; TIOS: channel 3 to input capture
+	.endif
 	ldx	#__data_image
 	ldy	#__data_section_start
 2:	cpy	#_edata
@@ -62,7 +67,11 @@ crt_restart:
 enter_bootloader:
 	orcc	#0x50
 	bclr	0x004C,#0x10	; TIE: timer channel 4
+	.ifdef	MS1_4010
+	bclr	0x0001,#0x80	; PORTB: PB7 low
+	.else
 	bclr	0x0040,#0x08	; TIOS: channel 3 to input capture
+	.endif
 	bclr	0x0008,#0x04	; PORTE bit 2
 	ldy	#0x1000
 7:	cpy	#0x2000

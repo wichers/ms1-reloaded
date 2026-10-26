@@ -84,7 +84,7 @@ static int button_index(const char *s)
 			return buttons[i].index;
 	if (s[0] == 'p' && (s[1] == 'a' || s[1] == 'b') && s[2] >= '0' && s[2] <= '7' && !s[3]) {
 		int i = (s[1] == 'a' ? 0 : 8) + (s[2] - '0');
-		return i <= 12 ? i : -1;
+		return i;
 	}
 	return -1;
 }
@@ -181,7 +181,7 @@ static void usage(void)
 		"                 [,noread][,frames]\n"
 		"  -s FILE        input script: lines 'SECONDS press|release BUTTON', 'SECONDS turn N',\n"
 		"                 'SECONDS lcd', 'SECONDS text', 'SECONDS unplug|plug' (the CAN cable);\n"
-		"                 BUTTON is pa0-pa7, pb0-pb4 or ok, esc, knob, stop, light\n");
+		"                 BUTTON is pa0-pa7, pb0-pb7 or ok, esc, knob, stop, light\n");
 	exit(2);
 }
 
