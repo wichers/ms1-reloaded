@@ -62,7 +62,7 @@ void app_main_init(void)
     /* track voltage present: this MS1 is the master and generates the track signal */
     if (adc_track_voltage > 5000)
         is_master = 1;
-    can_device_uid = (flash_hw_id ^ mfx_reg_counter) | 1;
+    can_device_uid = (flash_uid_lo ^ mfx_reg_counter) | 1;
     if (is_master != 0) {
         signal_gen_init();
         mcan_sd_handle = 0x100;
@@ -200,8 +200,8 @@ void app_main_init(void)
     lok_edit.unused = 0xFF;
     encoder_clicks_lo = eeprom_record[2][1];
     encoder_clicks_hi = eeprom_record[2][0];
-    if (flash_vendor_id2 <= 0x101 && flash_compat_flags == 0 && flash_sw_id >= 2 &&
-        (flash_sw_id > 2 || flash_hw_id > 0x62B7))
+    if (flash_hw_version <= 0x101 && flash_compat_flags == 0 && flash_uid_hi >= 2 &&
+        (flash_uid_hi > 2 || flash_uid_lo > 0x62B7))
         encoder_debounce_mask = 0x1F;
     ui_enter_mode(0);
     delay_short(500);

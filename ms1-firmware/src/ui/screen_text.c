@@ -195,7 +195,7 @@ void ui_screen_text(void)
             utf8_to_charset(device_name, buf, 0x10);
             break;
         case 2:
-            str_format(buf, (const u8 *)"HW: %v %ux", flash_vendor_id2, flash_app_crc_expected);
+            str_format(buf, (const u8 *)"HW: %v %ux", flash_hw_version, flash_hw_code);
             if (porta_buttons_raw == 0xA5)
                 str_format(buf, (const u8 *)"PS RS");
             break;
@@ -213,7 +213,7 @@ void ui_screen_text(void)
             str_format(buf, (const u8 *)"AN: %s", *(const u8 *const *)0xF73A);
             break;
         case 6:
-            str_format(buf, (const u8 *)"U%04ux%04ux", flash_sw_id, flash_hw_id);
+            str_format(buf, (const u8 *)"U%04ux%04ux", flash_uid_hi, flash_uid_lo);
             break;
         case 7:
             if (!(ms_tick & 0xE0))

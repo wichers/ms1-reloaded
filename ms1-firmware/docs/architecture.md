@@ -52,8 +52,9 @@ signal, CAN, LCD, EEPROM), and how the code drives the hardware.
 ## 2. Start-up
 
 1. Reset runs the bootloader (0xF800-0xFFFF, taken from the original image, README *Image
-   layout*). After its CRC check it enters the application through the last entry of the
-   trampoline table (`gcc/vectors.s`), which jumps to `_start` (0x4000).
+   layout*; its checks, update mode and metadata: `docs/bootloader.md`). After its checks it
+   enters the application through the last entry of the trampoline table (`gcc/vectors.s`),
+   which jumps to `_start` (0x4000).
 2. `_start` (`gcc/crt0.s`) sets up the MMC registers, maps page $3D into the 0x8000 window for
    good, and brings the PLL to a 24 MHz bus. It then falls into `crt_restart` (0x403C), which
    masks interrupts, drives PORTE bit 2 low, turns off the timer channel 4 interrupt, makes
@@ -233,7 +234,7 @@ nonzero, it gives each free entry to the first of these that writes one:
 3. `lok_packets_refresh` (0x4922): the periodic refresh, one packet per call, slot by slot.
    MM slots cycle through phases (`mm_phase`); mfx slots get one drive-and-functions frame.
 4. `track_filler` (0x5952) when none of them writes: it steps `track_filler_state` and
-   alternates the mfx central frame (this device's UID from `flash_sw_id`/`flash_hw_id`, and
+   alternates the mfx central frame (this device's UID from `flash_uid_hi`/`flash_uid_lo`, and
    `mfx_reg_counter`) with an MM idle packet.
 
 The code also checks `track_filler_hold` (0x105B) and `track_scheduler_hold` (0x1036), but

@@ -22,7 +22,7 @@ extern u8  message_ticks;                   /* 0x13AA: UI passes left (show_mess
 extern u8  message_id;                      /* 0x13AB: the message, LANG(0x16 + message_id) */
 extern u8  language_index;                  /* 0x1030 */
 extern u8  device_name[16];                 /* 0x190F: this device's name, 0-terminated */
-extern u16 can_device_uid;                  /* 0x13C3: (flash_hw_id ^ mfx_reg_counter) | 1, written at
+extern u16 can_device_uid;                  /* 0x13C3: (flash_uid_lo ^ mfx_reg_counter) | 1, written at
                                              * start-up and never read */
 extern char end_of_data_marker[13];         /* 0x1023: "End of .data", the end of the original's .data */
 

@@ -15,6 +15,8 @@ are hints, not facts.
 - [docs/architecture.md](docs/architecture.md): how the parts of the firmware fit together —
   start-up, scheduling, the track signal (MM, mfx, feedback), the locomotive slots, CAN, the
   display, keys and knob, EEPROM, the peripherals
+- [docs/bootloader.md](docs/bootloader.md): the bootloader and the application — how it starts
+  and updates the application, the flash metadata block, and what a modified firmware must keep
 
 ## Building
 
@@ -81,7 +83,7 @@ byte at 0xFF1B set to 0x10 (`tools/mkimage.py` does so when the check fails, and
 | `Makefile` | sources, flags (`-m68hcs12 -mshort -O1 -fomit-frame-pointer`, per-function sections, `--gc-sections`), `UNCALLED` (functions the original has but nothing calls, kept with `-u`) |
 | `gcc/crt0.s` | start-up: the original's 0x4000-0x4076 (MMC, PLL, then `crt_restart` = the original's 0x403C: .data copy, .bss clear, stack, `main(1, {"main"})`) |
 | `gcc/vectors.s` | interrupt trampolines 0xF740-0xF7FF: the bootloader's vectors point at 0xF740 + 3n; unused vectors stop in `unexpected_interrupt` (BGND) |
-| `gcc/ms1.ld` | linker script template: memory map; symbols for data the code reads from the original image (configuration area, flash metadata, EEPROM fields) |
+| `gcc/ms1.ld` | linker script template: memory map; symbols for the bootloader's flash metadata words the code reads by name (`docs/bootloader.md`) |
 | `gcc/<version>/release.ld` | the version's symbols for the tables in the original's .rodata, and the end of the application; `gcc/ms1.ld` INCLUDEs it through `-L gcc/<version>` |
 | `tools/releases.py` | the versions: RAM layout, where the original's .rodata starts, the per-version files |
 | `tools/ramlayout.py` | writes `build/ms1.ld` from the template, placing every RAM variable at its address (below) |
@@ -205,9 +207,8 @@ the files group them by what they do.
 | EEPROM | `0x0800–0x0BFF` | Persistent configuration (1K, mirrored at 0x0C00) |
 | RAM | `0x1000–0x1FFF` | Variables, stack (top 0x2000), locomotive slots |
 | Main ROM | `0x4000–0xBFFF` | Application code; `0x8000–0xBFFF` is page $3D, mapped for good |
-| Fixed ROM | `0xC000–0xFDFF` | Drivers, ISRs, bootloader entry |
-| Bootloader | `0xF800–0xFCFF` | CAN flash update protocol |
-| Vectors | `0xFF80–0xFFFF` | 64 ISR vector entries |
+| Fixed ROM | `0xC000–0xF7FF` | Application code, the original's .rodata and identification area (`0xF700–0xF73F`), interrupt trampolines (`0xF740–0xF7FF`) |
+| Bootloader | `0xF800–0xFFFF` | Start-up check, CAN update protocol, flash metadata (`0xFF00–0xFF7F`), 64 vectors (`0xFF80–0xFFFF`) pointing at the trampolines (`docs/bootloader.md`) |
 | Paged ROM (0x3C) | `0x3C8000+` | Locomotive database and its accessors (`CALL $BB08/$BB0C,$38`) |
 
 ### Data Structures

@@ -8,7 +8,9 @@
  * bytes) or writes (more) an item; the answer, command 0x18 with bit 7, repeats the first
  * four bytes and carries up to four bytes of the item from the offset.
  *   group 0     the object's kind
- *   group 1     identification: 0 kind, 1-5 flash ID words, 3/3 the product string
+ *   group 1     identification: 0 kind, 1-5 the identification words of the flash metadata
+ *               and the application (docs/bootloader.md), 1/2 and 3/3 the bootloader's and
+ *               the application's product strings
  *   group 2     the name (device: device_name; slot: the locomotive's name)
  *   group 0x40  locomotive data of a slot: 0 send it all again, 1/0 protocol and
  *               capabilities, 1/1 address and flags, 2 the controlling device, 3 symbol,

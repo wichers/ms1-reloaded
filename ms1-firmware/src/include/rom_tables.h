@@ -46,11 +46,12 @@ extern const s16 lok_param_range[][2];     /* 0xEC57 */
 extern const u8 *const *const lang_table[];
 #define LANG(k) (lang_table[language_index][k])
 
-/* The bootloader's flash metadata (gcc/ms1.ld) */
-extern const u16 flash_sw_id;              /* 0xFF10 */
-extern const u16 flash_hw_id;              /* 0xFF12 */
-extern const u16 flash_vendor_id2;         /* 0xFF18 */
-extern const u16 flash_app_crc_expected;   /* 0xFF1A */
+/* The bootloader's flash metadata (gcc/ms1.ld; docs/bootloader.md: The metadata block) */
+extern const u16 flash_uid_hi;             /* 0xFF10: this device's UID */
+extern const u16 flash_uid_lo;             /* 0xFF12 */
+extern const u16 flash_hw_version;         /* 0xFF18: major.minor */
+extern const u16 flash_hw_code;            /* 0xFF1A: what the bootloader matches the
+                                            * application version word (0xF73C) against */
 extern const u16 flash_compat_flags;       /* 0xFF2C */
 extern const u16 flash_adc0_scale;         /* 0xFF60 */
 extern const u16 flash_adc1_scale;         /* 0xFF62 */
