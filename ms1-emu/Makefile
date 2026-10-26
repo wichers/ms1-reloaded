@@ -10,7 +10,7 @@ LISTING ?= ../ms1-ghidra/out/listing.tsv
 IMAGE ?= build/ms1_4011.s19
 
 CORE = src/cpu12.c src/cpu12_dis.c src/image.c
-MCU = src/mcu.c src/ect.c src/spi.c src/eeprom.c src/atd.c src/mscan.c src/board.c src/tui.c src/canbus.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c
+MCU = src/mcu.c src/ect.c src/spi.c src/eeprom.c src/atd.c src/mscan.c src/board.c src/tui.c src/canbus.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/irqstat.c
 
 build/ms1emu: src/main.c $(CORE) $(MCU) src/*.h src/cpu12_cycles.inc | build
 	$(CC) $(CFLAGS) -o $@ src/main.c $(CORE) $(MCU)

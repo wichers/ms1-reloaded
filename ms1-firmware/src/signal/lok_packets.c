@@ -27,7 +27,8 @@
 #include "../include/str.h"
 #include "../include/track_cmd.h"
 
-extern const u8 mfx_cv1_value[];                       /* 0xEB37 */
+/* the value the mfx CV 1 write sends */
+static const u8 mfx_cv1_value[] = { 0xC6 };
 
 
 u16 lok_packets_next(void)

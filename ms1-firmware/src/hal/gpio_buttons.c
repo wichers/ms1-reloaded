@@ -1,13 +1,28 @@
 /*==========================================================================
  * hal/gpio_buttons.c - the keys
  *
- * button_scan (0xD76F), every 32 ms: the keys on PORTA and PORTB (active low, read by
- * gpio_read_porta_active_low / gpio_read_portb_active_low in build/asm/hal.s), each port's state and
- * the bits that changed since the last scan; how long MENU/ESC (PB0) and STOP (PB3) are held.
+ * button_scan (0xD76F), every 32 ms: the keys on PORTA and PORTB (active low), each port's
+ * state and the bits that changed since the last scan; how long MENU/ESC (PB0) and STOP (PB3)
+ * are held.
+ *
+ * Functions:
+ *   gpio_read_porta_active_low  (0xDFDC) - the keys of PORTA pressed, among mask
+ *   gpio_read_portb_active_low  (0xDFE3) - the keys of PB0-PB4 pressed, among mask
+ *   button_scan                 (0xD76F) - the keys' state and changes
  *========================================================================*/
 
 #include "../include/hcs12.h"
 #include "../include/globals.h"
+
+u16 gpio_read_porta_active_low(u8 mask)
+{
+    return (u8)(mask & ~PORTA);
+}
+
+u16 gpio_read_portb_active_low(u8 mask)
+{
+    return mask & ~PORTB & 0x1F;
+}
 
 void button_scan(void)
 {

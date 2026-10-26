@@ -11,7 +11,7 @@
  * takes data LSB first while the HCS12 SPI sends MSB first, so the data bytes are stored
  * bit-reversed.
  *
- * The routines are the original's assembly (build/asm/siggen.s, build/asm/hal.s).
+ * They are in ui/lcd.c.
  *========================================================================*/
 
 void lcd_init(void);                /* 0xC268: SPI0 and port set-up, lcd_buf_load, start */

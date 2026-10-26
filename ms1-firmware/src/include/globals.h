@@ -32,7 +32,7 @@ extern volatile u16 rtc_minute_ms;          /* 0x1BB3: ms within the minute */
 extern volatile u16 rtc_day_minutes;        /* 0x1BB1: minutes within the day */
 extern volatile u16 rtc_day_counter;        /* 0x1BAF: days */
 
-/*--- Track signal: the command buffer (track_cmd.h) and the generator (build/asm/siggen.s) ---*/
+/*--- Track signal: the command buffer (track_cmd.h) and the generator (signal/signal_gen.c) ---*/
 extern u8  track_cmd_buf[48];               /* 0x1268: 4 entries of 12 bytes */
 extern u16 track_cmd_read_ptr;              /* 0x101C: the entry the generator works on */
 extern u16 track_cmd_write_ptr;             /* 0x101E: the entry being written */
@@ -43,7 +43,8 @@ extern u8  signal_gen_send_buffer[64];      /* 0x1228: (code, argument) byte pai
                                              * signal_gen_cmd_buf_consumer for signal_gen_send_buf_executor */
 extern u16 signal_gen_send_buf_read_ptr;    /* 0x1018 */
 extern u16 signal_gen_send_buf_write_ptr;   /* 0x101A */
-extern u8  signal_staging_buf[200];         /* 0x1160: timing entries for the timer channel 4 interrupt */
+#define SIGNAL_STAGING_SIZE 200
+extern u8  signal_staging_buf[SIGNAL_STAGING_SIZE];  /* 0x1160: timing entries for the timer channel 4 interrupt */
 extern volatile u16 signal_gen_staging_read_ptr;   /* 0x1014 */
 extern volatile u16 signal_gen_staging_write_ptr;  /* 0x1016 */
 extern u16 signal_timer_compare_base;       /* 0x1021: timer ticks of the next edge */
@@ -80,13 +81,14 @@ extern u16 minute_countdown;                /* 0x100B: ms to the next operating 
 extern u16 adc_track_voltage;               /* 0x13A4: mV */
 extern u16 adc_decoder_voltage;             /* 0x13A6: mV */
 
-/*--- mfx: feedback capture (build/asm/hal.s, signal/mfx_feedback.c) ---*/
+/*--- mfx: feedback capture (signal/feedback_capture.c, signal/mfx_feedback.c) ---*/
 extern u8  track_capture_cmd;               /* 0x129C: capture command at the next marked staging entry:
                                              * 1 start bit mode, 2 start ATD mode, 0x81/0x82 stop */
 extern u8  track_capture_next;              /* 0x129D: the command queued after it */
 extern u16 track_capture_samples;           /* 0x129E: samples the last stop returned; 0 none */
-extern u8  timer_capture_buffer[96];        /* 0x1B4B: bit mode: two bits (PT1, PB5) per edge, 8 per
-                                             * word; ATD mode: one ATD0 channel 2 byte per edge */
+#define TIMER_CAPTURE_SIZE 96
+extern u8  timer_capture_buffer[TIMER_CAPTURE_SIZE]; /* 0x1B4B: bit mode: two bits (PT1, PB5) per edge,
+                                             * 8 per word; ATD mode: one ATD0 channel 2 byte per edge */
 extern volatile u16 timer_capture_ptr;      /* 0x1BAB */
 extern volatile u8  timer_capture_count;    /* 0x1BAD */
 extern volatile u8  timer_capture_mode;     /* 0x1BAE: mode of the running capture */
@@ -127,9 +129,12 @@ extern u8  mfx_block08_cas;                 /* 0x1058 */
 extern u8  mfx_search_flag;                 /* 0x1059: the next search step counts as answered (set
                                              * by mfx_registration_start for the UID kept in EEPROM) */
 
-/*--- CAN: driver rings (build/asm/hal.s), 13-byte MSCAN frame images ---*/
-extern u8  can_tx_ring[130];                /* 0x1929: 10 frames */
-extern u8  can_rx_ring[416];                /* 0x19AB: 32 frames */
+/*--- CAN: driver rings (can/can0.c) of MSCAN frame images: IDR0-3, DSR0-7, DLR ---*/
+#define CAN_FRAME_SIZE      13
+#define CAN_TX_RING_SIZE    (10 * CAN_FRAME_SIZE)
+#define CAN_RX_RING_SIZE    (32 * CAN_FRAME_SIZE)
+extern u8  can_tx_ring[CAN_TX_RING_SIZE];   /* 0x1929 */
+extern u8  can_rx_ring[CAN_RX_RING_SIZE];   /* 0x19AB */
 extern volatile u16 can_rx_ring_read;       /* 0x1921 */
 extern volatile u16 can_rx_ring_write;      /* 0x1923 */
 extern volatile u16 can_tx_ring_read;       /* 0x1925 */
@@ -218,7 +223,7 @@ extern u8  ee_counter_record;               /* 0x13C8: eeprom_record entry saved
 extern u16 ee_counter_addr;                 /* 0x13D5: next record of the EEPROM ring (EE_RECORDS) */
 extern u16 eeprom_record[3][2];             /* 0x13C9: newest EEPROM record of each kind (1-3) */
 
-/* Start-up code (gcc/crt0.s) */
+/* Start-up code (sys/crt0.c) */
 extern void crt_restart(void) __attribute__((noreturn));      /* 0x403C: restart the application */
 extern void enter_bootloader(void) __attribute__((noreturn)); /* 0x407C: hand over to the bootloader */
 

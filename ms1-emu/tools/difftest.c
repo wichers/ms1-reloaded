@@ -3,11 +3,11 @@
  * The original image runs a scenario (time, inputs) on the emulator. Each time it enters a
  * function listed in the function table, the whole machine (MCU and board) is copied twice:
  * one copy runs the original function, the other the rebuild's function from the same state
- * (the rebuild's flash swapped in, PC at its entry), both with interrupts held off, until the
- * function returns to its caller. The two outcomes are then compared: return value (when the
+ * (the rebuild's flash swapped in, PC at its entry), both with interrupts held off and the
+ * board's inputs held still, until the function returns to its caller. The two outcomes are then compared: return value (when the
  * table gives the function one), RAM (the variables up to the GCC soft registers, and the
- * caller's stack from the return address up), EEPROM, and the sequence of writes to the I/O
- * registers. This needs the rebuild's RAM variables at the original's addresses and the same
+ * caller's stack from the return address up), EEPROM (with the commands under way completed),
+ * and the sequence of writes to the I/O registers. This needs the rebuild's RAM variables at the original's addresses and the same
  * calling convention (GCC m68hc1x: first argument in D, the rest on the stack).
  *
  *   difftest [options] ORIGINAL.s19 REBUILD.s19 SYMBOLS FUNCTIONS
@@ -42,16 +42,21 @@
  *                  original and in the rebuild (emulated microseconds, interrupts held off)
  *     -W           whole firmware: run REBUILD.s19 as the machine and test no function, for
  *                  comparing what a scenario shows (text lines, decoder events, -c log) with
- *                  a normal run of the original
+ *                  a normal run of the original; its LCD is read back with the tables
+ *                  SYMBOLS names
+ *     -I           with -W: interrupt timing after the run (as ms1emu -I, src/irqstat.c)
  *   SYMBOLS: the rebuild's symbol table as `nm -n` prints it ('ADDR TYPE NAME'): function
  *   entries, and the names of RAM variables for the report. A listed function missing from
  *   it (not linked into the rebuild) is reported and not tested.
- *   FUNCTIONS: lines 'ORIG_ADDR NAME [v|b|w [ARGBYTES]]': the original's entry address
+ *   FUNCTIONS: lines 'ORIG_ADDR NAME [v|b|w [ARGBYTES [pN]]]': the original's entry address
  *   (hex), the rebuild's function, its return value (none, byte in B, word in D; default
  *   none), and the bytes of its stack arguments (default 0); '#' starts a comment. The
  *   stack argument slots belong to the called function and are dead after it returns, so
  *   the given bytes above the return address are not compared: a function may keep a
- *   parameter there (the original does where GCC spilled it) or in a register.
+ *   parameter there (the original does where GCC spilled it) or in a register. pN: D and
+ *   the first N bytes of stack arguments may point to strings in flash; a call where one
+ *   reaches bytes the rebuild's image does not have at that address (the original's
+ *   read-only data, which the rebuild keeps elsewhere) is skipped, and counted as such.
  */
 #define _POSIX_C_SOURCE 200809L
 #include <getopt.h>
@@ -60,6 +65,7 @@
 #include <string.h>
 
 #include "../src/board.h"
+#include "../src/irqstat.h"
 #include "../src/mcu.h"
 
 #define MAXF 1024
@@ -74,8 +80,9 @@ typedef struct {
 	char name[64];
 	char ret;                  /* 'v', 'b', 'w' */
 	unsigned argbytes;         /* stack argument bytes, not compared */
+	int flash_args;            /* pN: D and N stack argument bytes may point into flash data; -1 none */
 	bool enabled;
-	unsigned calls, direct, tested, ok, differ, timeout, rebuild_timeout;
+	unsigned calls, direct, tested, ok, differ, timeout, rebuild_timeout, skipped;
 	double us_orig, us_rebuild;   /* time in the calls that both returned (-y) */
 	unsigned timed;
 	bool reported;
@@ -150,6 +157,11 @@ static void clone(mcu_t *dst, ms1_board_t *bdst, const mcu_t *src, const ms1_boa
 	dst->board.ctx = bdst;
 	dst->breakpoints = 0;
 	dst->log = 0;
+	/* The board's inputs hold still: a knob transition or feedback clock edge inside a call
+	 * would reach only the side that reads the port after it. Not UINT64_MAX, which a track
+	 * output write takes for a feedback clock not yet started. */
+	bdst->enc_next = bdst->poll_next = bdst->rds_next = UINT64_MAX - 1;
+	mcu_schedule(dst, EV_BOARD, UINT64_MAX - 1);
 }
 
 static uint16_t rd16(mcu_t *m, uint16_t a) { return (uint16_t)(mcu_peek(m, a) << 8 | mcu_peek(m, (uint16_t)(a + 1))); }
@@ -210,6 +222,39 @@ static const char *ram_label(uint16_t a, char *buf, size_t n)
 	}
 	snprintf(buf, n, "-");
 	return buf;
+}
+
+/* The byte at CPU address a of flash pages fl, page $3D in the window */
+static uint8_t flash_byte(uint8_t fl[FLASH_PAGES][PAGE_SIZE], uint16_t a)
+{
+	return a >= 0xC000 ? fl[3][a - 0xC000] : a >= 0x8000 ? fl[1][a - 0x8000] : fl[2][a - 0x4000];
+}
+
+/* Whether a pointer argument of f (D, then f->flash_args stack argument bytes) reaches a string
+ * in flash, up to its 0, whose bytes the rebuild's image does not have at that address: the
+ * original's read-only data the rebuild keeps elsewhere. Such a call is not tested. */
+static bool flash_arg_differs(func_t *f, mcu_t *m)
+{
+	uint16_t sp = m->cpu.sp;
+	for (int i = -2; i < f->flash_args; i += 2) {
+		uint16_t v = i < 0 ? cpu12_d(&m->cpu) : rd16(m, (uint16_t)(sp + 2 + i));
+		for (unsigned k = 0; v >= 0x4000 && v + k < 0xF800 && k < 64; k++) {
+			uint8_t o = flash_byte(m->flash, (uint16_t)(v + k));
+			if (o != flash_byte(rebuild_flash, (uint16_t)(v + k)))
+				return true;
+			if (!o)
+				break;
+		}
+	}
+	return false;
+}
+
+/* Complete the EEPROM commands under way: a sector erase takes milliseconds, so one started
+ * before the call can finish inside one side's call and after the other's. */
+static void eeprom_settle(mcu_t *m)
+{
+	while (m->ee.has_active)
+		eeprom_event(m);
 }
 
 static void test_call(func_t *f, mcu_t *m, ms1_board_t *b)
@@ -281,6 +326,8 @@ static void test_call(func_t *f, mcu_t *m, ms1_board_t *b)
 	}
 	if (shown > 12 && !verbose)
 		n += snprintf(msg + n, sizeof msg - (size_t)n, "  ... %d RAM bytes differ\n", shown);
+	eeprom_settle(&ma);
+	eeprom_settle(&mb);
 	for (unsigned i = 0; i < EEPROM_SIZE; i++)
 		if (ma.eeprom[i] != mb.eeprom[i]) {
 			n += snprintf(msg + n, sizeof msg - (size_t)n, "  EEPROM %04X original %02X rebuild %02X\n",
@@ -460,8 +507,12 @@ static void run_until(uint64_t until)
 		func_t *f = by_addr[m->cpu.pc];
 		if (f && f->enabled && entered_by_call(m)) {
 			f->calls++;
-			if (f->tested < (unsigned)max_tests)
-				test_call(f, m, &board);
+			if (f->tested < (unsigned)max_tests) {
+				if (f->flash_args >= 0 && flash_arg_differs(f, m))
+					f->skipped++;
+				else
+					test_call(f, m, &board);
+			}
 		}
 		/* mcu_run steps past the breakpoint it stopped at when called again */
 	}
@@ -571,8 +622,8 @@ static int load_functions(const char *path, const char **only, int nonly)
 	while (fgets(line, sizeof line, f)) {
 		unsigned o;
 		unsigned argbytes = 0;
-		char name[64], ret[8] = "v";
-		if (line[0] == '#' || sscanf(line, "%x %63s %7s %u", &o, name, ret, &argbytes) < 2)
+		char name[64], ret[8] = "v", flags[8] = "";
+		if (line[0] == '#' || sscanf(line, "%x %63s %7s %u %7s", &o, name, ret, &argbytes, flags) < 2)
 			continue;
 		if (nfuncs == MAXF || o > 0xFFFF)
 			continue;
@@ -590,6 +641,7 @@ static int load_functions(const char *path, const char **only, int nonly)
 		snprintf(fn->name, sizeof fn->name, "%s", name);
 		fn->ret = ret[0];
 		fn->argbytes = argbytes;
+		fn->flash_args = flags[0] == 'p' ? atoi(flags + 1) : -1;
 		fn->enabled = !nonly;
 		for (int i = 0; i < nonly; i++)
 			if (!strcmp(only[i], name))
@@ -616,11 +668,11 @@ int main(int argc, char **argv)
 	double seconds = 15;
 	const char *script = 0, *eeprom = 0, *peer_image = 0, *peer_script = 0;
 	const char *only[64], *decoder_spec[8], *can_log_path = 0;
-	bool whole = false;
+	bool whole = false, irq_timing = false;
 	int nonly = 0, ndecoder_specs = 0, opt;
 	int atd_set[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	int peer_atd[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-	while ((opt = getopt(argc, argv, "t:s:a:e:n:m:vxf:M:S:r:A:D:u:c:Wy")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:a:e:n:m:vxf:M:S:r:A:D:u:c:WyI")) != -1) {
 		switch (opt) {
 		case 't': seconds = atof(optarg); break;
 		case 's': script = optarg; break;
@@ -634,6 +686,7 @@ int main(int argc, char **argv)
 		case 'D': if (ndecoder_specs < 8) decoder_spec[ndecoder_specs++] = optarg; break;
 		case 'c': can_log_path = optarg; break;
 		case 'W': whole = true; break;
+		case 'I': irq_timing = true; break;
 		case 'y': show_times = true; break;
 		case 'u': {
 			if (ndirect == 32)
@@ -699,6 +752,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	board_init(&board, &mcu, can_log);
+	if (whole && board_lcd_symbols(&board, argv[optind + 2]))
+		return 1;
+	if (irq_timing && whole)
+		irqstat_attach(&mcu);
 	for (int i = 0; i < 8; i++)
 		if (atd_set[i] >= 0)
 			board.atd[i] = (uint16_t)atd_set[i];
@@ -747,19 +804,24 @@ int main(int argc, char **argv)
 	board_lcd_text(&board, text, sizeof text);
 	printf("%s at t=%.3fs: PC %04X, LCD \"%s\"\n", whole ? "rebuild" : "original", mcu_seconds(&mcu, mcu.now),
 		mcu.cpu.pc, text);
+	if (irq_timing && whole)
+		irqstat_print(&mcu, stdout);
 
-	printf("\n%-36s %5s %5s %6s %5s %6s %7s\n", "function", "orig", "build", "calls", "tests", "match", "differ");
-	unsigned tot_ok = 0, tot_diff = 0;
+	printf("\n%-36s %5s %5s %6s %5s %6s %7s %7s\n", "function", "orig", "build", "calls", "tests", "match", "differ",
+	       "skipped");
+	unsigned tot_ok = 0, tot_diff = 0, tot_skip = 0;
 	for (int i = 0; i < nfuncs; i++) {
 		func_t *f = &funcs[i];
 		if (!f->enabled)
 			continue;
-		printf("%-36s %04X  %04X %6u %5u %6u %7u%s%s\n", f->name, f->orig, f->rebuild, f->calls, f->tested, f->ok, f->differ,
-			f->timeout ? "  (original timed out on some calls)" : "", f->direct ? "  (called directly)" : "");
+		printf("%-36s %04X  %04X %6u %5u %6u %7u %7u%s%s\n", f->name, f->orig, f->rebuild, f->calls, f->tested, f->ok,
+			f->differ, f->skipped, f->timeout ? "  (original timed out on some calls)" : "",
+			f->direct ? "  (called directly)" : "");
 		tot_ok += f->ok;
 		tot_diff += f->differ;
+		tot_skip += f->skipped;
 	}
-	printf("total: %u calls match, %u differ\n", tot_ok, tot_diff);
+	printf("total: %u calls match, %u differ, %u skipped\n", tot_ok, tot_diff, tot_skip);
 	if (show_times) {
 		printf("\n%-36s %6s %12s %12s %7s\n", "function", "timed", "orig us", "rebuild us", "ratio");
 		for (int i = 0; i < nfuncs; i++) {

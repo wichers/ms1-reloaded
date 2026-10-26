@@ -26,7 +26,7 @@ extern u16 compiler_shift_left_d_by_x(u16 value, u16 count);  /* 0xE109 */
 /* Segment table base: 0xEE5F in ROM.
  * 16 groups, each 16 bytes = 4 sub-entries of 4 bytes.
  * Sub-entry = 2 pairs: (offset, mask, offset, mask). */
-#define SEG_TABLE_BASE  ((u16)&lcd_blank_image[0x58])   /* lcd_icon_segments; this form compiles to the original code */
+#define SEG_TABLE_BASE  ((u16)lcd_icon_segments)
 #define DISPLAY_BUF     ((u16)lcd_buf)  /* 0x1108 */
 
 /*--------------------------------------------------------------------------

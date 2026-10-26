@@ -2,7 +2,7 @@
  * signal/mfx_feedback.c - evaluating a captured mfx feedback window
  *
  * In a feedback window the decoder answers through the receiver (RDS demodulator): the
- * track signal generator (build/asm/siggen.s) starts a capture before the window and stops it
+ * track signal generator (signal/signal_gen.c) starts a capture before the window and stops it
  * after; track_capture_samples is then nonzero when something was captured. A 1-bit window
  * captures the carrier level (ATD0 channel 2) into timer_capture_buffer; a data window
  * captures, per receiver clock, the data bit and the quality bit, packed MSB first from

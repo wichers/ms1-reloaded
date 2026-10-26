@@ -29,7 +29,19 @@
 9333	track_current_monitor	v
 AB3D	lcd_lok_icons	v
 B7FD	lcd_draw_text	v
-BB9A	str_format	w
+BB9A	str_format	w	0	p10
+C0AE	lcd_init	v
+C0D2	lcd_buf_load	v
+C0E4	lcd_render_text	v	4
+C1E5	lcd_set_bar	v
+C290	lcd_clear_segments	v	0	p0
+C2AB	lcd_text_width	w	4
+C3CE	signal_gen_init	v
+C49A	signal_gen_send_buf_executor	v
+C6A3	signal_gen_cmd_buf_consumer	v
+C8CC	track_cmd_pause	v
+C8E4	track_cmd_write_type2	v
+C8F1	track_cmd_advance	v
 C906	mfx_put_bits	v
 C994	mfx_put_command	v
 CA12	mfx_cmd_syncs	v
@@ -71,10 +83,10 @@ AE8E	lcd_status_icons	v
 AADA	lcd_mfx_icon	v
 AFD8	lcd_speed_bar	v
 B11E	ui_screen_text	v
-B9A6	str_len	w
+B9A6	str_len	w	0	p0
 B9BB	str_cmp	w
-B9EB	str_ncpy	w
-BA1B	str_cat	w
+B9EB	str_ncpy	w	0	p0
+BA1B	str_cat	w	0	p2
 BA34	str_append_char	w
 BA4A	str_skip_ctrl	w
 BA5A	str_itoa	w
@@ -111,3 +123,27 @@ CD71	mfx_frame_cmd20	v
 8E58	eeprom_write_record	v
 CFAC	mm_write_direction	v
 D8D7	lok_make_name_unique	v
+B8DC	encoder_set_count	v
+B8F7	encoder_sample	v
+DB55	eeprom_erase_sector	v
+DB6E	eeprom_program_word	v
+DB84	lokdb_count	w
+DB8D	lokdb_read	v
+DC1E	can_poll	v
+DC3B	can_controller_full_init	v
+DCC9	can_tx_enqueue_frame	w
+DD32	can_rx_dequeue_frame	w
+DDED	timer_capture_start_bit_mode	v
+DE15	timer_capture_start_adc_mode	v
+DE20	timer_capture_stop_and_align	w
+DE50	timer_capture_stop_and_count	w
+DE62	gpio_read_porta_active_low	w
+DE69	gpio_read_portb_active_low	w
+DEAE	timer_modulus_init	v
+DEC4	timer_modulus_read	w
+DECC	lcd_buf_init	v
+DEDE	lcd_pump_start	v
+DEE7	lcd_pump_all	v
+DEF8	delay_long	v
+DF0A	delay_short	v
+DF1D	counter_inc_24bit	v

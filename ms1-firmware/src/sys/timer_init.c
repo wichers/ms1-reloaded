@@ -4,7 +4,7 @@
  * Functions:
  *   timer_atd_init        (0xBA5E) - Timer and ATD0 set-up
  *
- * The encoder routines that follow it in the original (0xBA96, 0xBAB1) are in build/asm/encoder.s.
+ * The encoder routines that follow it in the original (0xBA96, 0xBAB1) are in ui/encoder.c.
  *========================================================================*/
 
 #include "../include/hcs12.h"

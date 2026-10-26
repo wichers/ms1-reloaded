@@ -1,7 +1,7 @@
 /*==========================================================================
  * ui/ui_helpers.c - Speed knob and encoder value helpers, character index
  *
- * The encoder interrupt-free sampling (encoder_sample) counts quadrature
+ * The main loop's sampling of the knob (encoder_sample, ui/encoder.c) counts quadrature
  * transitions into encoder_count (0x1101), wrapping in encoder_range; the helpers here turn
  * those counts into changes of a value.
  *
@@ -17,6 +17,10 @@
 #include "../include/eeprom_config.h"
 #include "../include/rom_tables.h"
 #include "../include/ui.h"
+
+/* The characters of the name editor in knob order */
+const u8 charset_index_map[CHARSET_INDEX_MAP_SIZE] =
+    "0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZaoeud_^~&%$#|()[]{}<>bc\"'`!?.,:;/\\=*+-";
 
 
 /* 0xD7E0: a speed byte (bit 7 direction, bits 0-6 speed) changed by the knob, in the knob

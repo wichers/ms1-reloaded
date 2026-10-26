@@ -1,8 +1,8 @@
 /*==========================================================================
  * signal/mfx_register.c - Finding, registering and reading mfx decoders (0x4A90-0x5951)
  *
- * mfx locomotives answer on the track (feedback, captured by timer channel 0 - build/asm/hal.s -
- * and evaluated by mfx_feedback_bit/mfx_feedback_data). The engine, one
+ * mfx locomotives answer on the track (feedback, captured by timer channel 0 -
+ * signal/feedback_capture.c - and evaluated by mfx_feedback_bit/mfx_feedback_data). The engine, one
  * step per call from the scheduler, works in states (mfx_state):
  *   1      search: is there an unregistered decoder?
  *   2      find its 32-bit UID bit by bit (mfx_substate = bits known)
@@ -33,8 +33,33 @@
 #include "../include/lokstack.h"
 
 
-/* {mfx icon, MS1 icon} pairs, 0xEB49 */
-extern const u8 mfx_icon_map[18][2];
+/* {mfx icon, MS1 icon} pairs */
+static const u8 mfx_icon_map[18][2] = {
+    { 0x01, 0x10 },
+    { 0x02, 0x0B },
+    { 0x03, 0x01 },
+    { 0x04, 0x0E },
+    { 0x05, 0x0F },
+    { 0x06, 0x0B },
+    { 0x07, 0x0C },
+    { 0x08, 0x0D },
+    { 0x09, 0x0C },
+    { 0x0A, 0x07 },
+    { 0x0B, 0x08 },
+    { 0x20, 0x06 },
+    { 0x21, 0x0A },
+    { 0x22, 0x09 },
+    { 0x23, 0x02 },
+    { 0x24, 0x03 },
+    { 0x25, 0x04 },
+    { 0x26, 0x05 },
+};
+
+/* The command codes of a locomotive's drive and function frames (mfx_drive_cmd,
+ * mfx_function_cmd), by mfx_substate / mfx_block02_cas when the readout finds them */
+static const u8 mfx_cmd_codes[17] = {
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x15, 0x16, 0x17, 0x18, 0x19,
+};
 
 
 void mfx_registration_start(void)
@@ -341,7 +366,7 @@ static void readout_result(lok_record_t *e)
                 mfx_cv = (((u16)mfx_block05 << 2) + mfx_read_buf[1]) << 6;
             } else {
                 if (t == 0x11 && mfx_block04 != 0 && e->mfx_function_cmd == 0) {
-                    e->mfx_function_cmd = rom_func_icon_table[mfx_substate / mfx_block02_cas];
+                    e->mfx_function_cmd = mfx_cmd_codes[mfx_substate / mfx_block02_cas];
                     mfx_ca_functions = mfx_cv;
                 }
                 mfx_substate++;
@@ -352,7 +377,7 @@ static void readout_result(lok_record_t *e)
                 mfx_cv += 0x3F;
                 if (mfx_read_buf[0] == 1) {
                     e->speed_object = 1;
-                    e->mfx_drive_cmd = rom_func_icon_table[mfx_substate / mfx_block02_cas];
+                    e->mfx_drive_cmd = mfx_cmd_codes[mfx_substate / mfx_block02_cas];
                 } else {
                     mfx_block = 0x7F;
                 }

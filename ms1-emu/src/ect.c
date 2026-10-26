@@ -35,6 +35,11 @@ static uint16_t tcnt_now(mcu_t *m)
 	return (uint16_t)(e->tcnt_base + (m->now - e->tcnt_time) / e->tick_period);
 }
 
+uint16_t ect_tcnt(mcu_t *m)
+{
+	return tcnt_now(m);
+}
+
 /* Fold elapsed counts into the base so the period can change. */
 static void tcnt_rebase(mcu_t *m)
 {

@@ -149,6 +149,9 @@ struct mcu {
 	/* differential testing (tools/difftest.c) */
 	bool irq_block;             /* take no I-maskable interrupt and no XIRQ */
 	void (*write_hook)(mcu_t *m, uint16_t addr, uint8_t v);   /* every CPU write; NULL if none */
+	/* after every CPU step that took cycles (an instruction, or an exception entry), with the
+	 * PC before it; NULL if none */
+	void (*step_hook)(mcu_t *m, uint16_t pc);
 	void *hook_ctx;
 
 	/* debugging */
@@ -198,6 +201,8 @@ enum {
 void ect_init(mcu_t *m);
 void ect_reset(mcu_t *m);
 void ect_event(mcu_t *m);
+/* TCNT now, without a register read's side effects */
+uint16_t ect_tcnt(mcu_t *m);
 void ect_mdc_event(mcu_t *m);
 void ect_pins_changed(mcu_t *m, uint8_t pt_levels);
 uint8_t ect_pt_override(mcu_t *m, uint8_t *mask);

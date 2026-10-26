@@ -87,24 +87,9 @@ The language has two compiler specs: `default` (generic) and **`ms1`**, which th
 | | `CommitSignatures.java` | commits every other function's decompiler-derived parameters and return, in two passes, so callers show the arguments they pass |
 | | `AnnotateFunctions.java` | names functions and parameters where the code shows what they are, keeping the committed parameter storage; listed with their evidence |
 
-`./ghidra.sh names` runs `rebuild_names.py` (the firmware rebuild's `tools/functions.tsv`, `asm/*.json` names and `src/globals.c` RAM variables) and `ApplyNames.java`, which makes those names primary and User Defined, keeping an imported name as a secondary label; the listing export does not depend on names.
+`./ghidra.sh names` runs `rebuild_names.py` (the firmware rebuild's `tools/functions.tsv`, the other entries its source files' headers list with their original address, such as the interrupt handlers, and `src/globals.c` RAM variables) and `ApplyNames.java`, which makes those names primary and User Defined, keeping an imported name as a secondary label; the listing export does not depend on names.
 
 `./ghidra.sh decompile` runs `DecompileAll.java`, `ExportFacts.java` and `ExportListing.java` on the saved program; the summary line in `out/decompile.log` gives the decompiled/failed counts. `ExportFacts.java` writes `out/facts.json`: per function its calls, thunk target, and every load/store at a constant address (folded from the instruction's p-code, so direct-page register accesses count even where Ghidra creates no reference; register-indexed accesses are not resolved). `python3 -I firmware_map.py` turns it into `docs/`. `ExportListing.java` writes `out/listing.tsv`: every instruction outside the page-3C overlay (address, bytes, mnemonic, text), the reference the emulator's decoder check (`ms1-emu`) compares against.
-
-## Module listing of another release
-
-The firmware rebuild generates its assembly modules from a listing (`../ms1-firmware/tools/asmgen.py`). For a release other than 4011 there is no Ghidra program; `./ghidra.sh listing RELEASE.bin MODULE_DIR OUT.tsv` makes a listing of the modules alone:
-
-- `module_seeds.py` reads the module descriptions (`MODULE_DIR/*.json`: `ranges`, `names`, `tables`, `code`) and writes the ranges and the seed addresses: every entry, every jump-table word that points into its module outside the table, and the listed other code;
-- a throw-away project (`build/listing/`, deleted afterwards) imports `RELEASE.bin`'s 0x4000-0xFFFF raw (`BinaryLoader`), without auto-analysis;
-- `DisassembleSeeds.java` disassembles from the seeds, following the flow only inside the ranges, so the jump tables stay data;
-- `ExportListing.java` writes `OUT.tsv` in `out/listing.tsv`'s format.
-
-```sh
-./ghidra.sh listing ../original-firmware/4010_1-8_mobile-station_A.bin ../ms1-firmware/asm/4010 out/listing_4010.tsv
-```
-
-On the 4011 image with `../ms1-firmware/asm` this reproduces `out/listing.tsv`'s instructions in the module ranges line for line. Like `out/listing.tsv`, the listing is derived from the original and not tracked.
 
 ## Function boundaries
 
@@ -166,14 +151,13 @@ Always pass a copy: idalib unpacks the database next to the file it opens. `expo
 ```
 ms1-ghidra/
 ├── compose_4011.py          IDA XML + 4011 image -> build/ms1_4011.{xml,bytes}
-├── module_seeds.py          the firmware rebuild's module descriptions -> seeds for ./ghidra.sh listing
 ├── firmware_map.py          out/facts.json -> docs/firmware-map.md, docs/function-index.md
 ├── docs/                    analyses (track-signal.md, ghidra-language-issues.md); firmware-map.md, function-index.md (generated)
-├── ghidra.sh                headless import / names / decompile / module listing
+├── ghidra.sh                headless import / names / decompile
 ├── ghidra_lang/             HCS-12:BE:16:flat sources + build.sh
-├── ghidra_scripts/          import pipeline scripts + DecompileAll.java, DisassembleSeeds.java
+├── ghidra_scripts/          import pipeline scripts + DecompileAll.java
 ├── ida_export/              IDA database export + export_ida.py
-├── out/                     boundaries.tsv, facts.json (tracked); ms1_4011_decomp.c, listing.tsv, listing_*.tsv (derived from the original), *.log ignored
+├── out/                     boundaries.tsv, facts.json (tracked); ms1_4011_decomp.c, listing.tsv (derived from the original), *.log ignored
 ├── build/                   generated XML/bytes and the extension (ignored)
 └── project/                 Ghidra project (ignored)
 ```

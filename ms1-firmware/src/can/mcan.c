@@ -22,8 +22,6 @@
 #include "../include/ui.h"
 #include "../include/lokstack.h"
 
-extern u16  can_tx_enqueue_frame(u32 id, const u8 *data, u16 dlc);   /* build/asm/hal.s */
-extern u16  can_rx_dequeue_frame(u8 *dest);                          /* build/asm/hal.s */
 extern void mcan_master_request(void);                           /* 0x601A */
 extern void mcan_object_request(void);                           /* 0x637A */
 extern void mcan_send_status(void);                         /* 0x6A95 */

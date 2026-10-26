@@ -5,7 +5,7 @@
  * byte 0 the entry type (4 = mfx frame), byte 1 the bit count, the bits from byte 2 on,
  * MSB first; mfx_byte_idx/mfx_bit_pos is the write position. The CRC-8 (polynomial 0x07,
  * start 0xFF) runs over the bits as they are written. The track signal generator
- * (build/asm/siggen.s) turns the entries into the track signal.
+ * (signal/signal_gen.c) turns the entries into the track signal.
  *
  * Functions:
  *   mfx_put_bits        (0xCA80) - append bits

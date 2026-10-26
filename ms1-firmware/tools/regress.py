@@ -7,11 +7,14 @@ standing for the original's image and other *.txt words for scenario files. Per 
 - the function test: difftest with the scenario, every listed function compared call by call;
 - the whole-firmware comparison: the rebuild run as the whole machine (difftest -W) with the
   same options, its text lines, decoder events and CAN frames compared with the original's,
-  times left out and numbers with a fractional part masked (timing-derived values);
+  times left out and numbers with a fractional part masked (timing-derived values), CAN
+  frames per direction and ID with a frame repeated unchanged counted once;
 - the call times of each side (difftest -y).
 
 Then: totals, the functions no run calls, and the functions where the rebuild spends the
-most extra time. Exit status 1 if a call differs or a whole-firmware comparison fails.
+most extra time. Exit status 1 if a call differs or a whole-firmware comparison fails. Skipped
+calls are those of functions flagged pN in the function table that got a string of the
+original's read-only data, which the rebuild keeps elsewhere (difftest).
 
 --release 4010 tests the version 4010 build (build/4010, `make RELEASE=4010`) against the
 release 4010 image (--firmware), made bootable with the device dump's bootloader by
@@ -59,7 +62,7 @@ def resolve(words, orig):
 
 
 def table(text):
-    """{function: (calls, direct, tested, match, differ)} from a difftest report."""
+    """{function: (calls, direct, tested, match, differ, skipped)} from a difftest report."""
     rows, on = {}, False
     for line in text.splitlines():
         if line.startswith("function "):
@@ -71,7 +74,7 @@ def table(text):
             continue
         w = line.split()
         if len(w) >= 7 and re.fullmatch(r"[0-9A-F]{4}", w[1] or ""):
-            rows[w[0]] = (int(w[3]), "called directly" in line, int(w[4]), int(w[5]), int(w[6]))
+            rows[w[0]] = (int(w[3]), "called directly" in line, int(w[4]), int(w[5]), int(w[6]), int(w[7]))
     return rows
 
 
@@ -94,7 +97,8 @@ EVENT = re.compile(r"^\s*\d+\.\d+ ((?:mm|mm1|mfx):\S+ .*)$")
 def observables(text, can_log):
     """What a scenario shows, without times: text lines, decoder events, the final LCD, then the
     CAN frames grouped by direction and ID (in order within a group: frames of different IDs
-    interleave by timing)."""
+    interleave by timing), a frame repeated unchanged counted once (how often a state repeats,
+    such as the mfx search's status frame after each search that finds no decoder, is timing)."""
     out = []
     for line in text.splitlines():
         m = EVENT.match(line)
@@ -110,7 +114,7 @@ def observables(text, can_log):
         if len(w) >= 3:
             frames.append(w[1:])
     frames.sort(key=lambda f: (f[0], f[1]))         # stable: per-ID order stays
-    out += ["can " + " ".join(f) for f in frames]
+    out += ["can " + " ".join(f) for i, f in enumerate(frames) if not i or f != frames[i - 1]]
     return out
 
 
@@ -141,7 +145,9 @@ def main():
         base = os.path.join(os.path.abspath(a.firmware), rel.images[0] + ".bin")
     dump = os.path.join(os.path.abspath(a.firmware), DUMP)
     app = os.path.join(rel.build, "app.s19")
-    for need in (difftest, base, app) + ((dump,) if rel.name != "4011" else ()):
+    page3c = os.path.join(rel.build, "page3c.bin")
+    ident = os.path.join(rel.build, "ident", rel.images[0] + ".s19")
+    for need in (difftest, base, app, page3c, ident) + ((dump,) if rel.name != "4011" else ()):
         if not os.path.exists(need):
             sys.exit(f"missing {need}: build ms1-emu (make build/ms1emu build/difftest, the image) and this firmware")
     work = a.keep or tempfile.mkdtemp(prefix="regress.")
@@ -153,7 +159,8 @@ def main():
         shutil.copy(base, orig)
     else:
         subprocess.run(mkimage + ["--original", base, dump, orig], check=True, capture_output=True)
-    subprocess.run(mkimage + [app, orig, rebuild], check=True, capture_output=True)
+    subprocess.run(mkimage + ["--bootloader", orig, "--s19", rebuild, app, page3c, ident], check=True,
+                   capture_output=True)
     sym, tsv = os.path.join(work, "ms1.sym"), os.path.join(work, "functions.tsv")
     shutil.copy(os.path.join(rel.build, "ms1.sym"), sym)
     shutil.copy(rel.functions, tsv)
@@ -176,7 +183,7 @@ def main():
 
     failed = False
     calls, timing = {}, {}
-    print(f"{'run':<14} {'match':>8} {'differ':>7}  whole firmware")
+    print(f"{'run':<14} {'match':>8} {'differ':>7} {'skipped':>7}  whole firmware")
     for name, _, _ in todo:
         test, whole, log_o, log_r = results[name]
         if a.keep:
@@ -185,6 +192,7 @@ def main():
         t = table(test)
         ok = sum(r[3] for r in t.values())
         bad = sum(r[4] for r in t.values())
+        skipped = sum(r[5] for r in t.values())
         if not t:
             print(f"{name:<14} difftest failed:\n{test[-2000:]}")
             failed = True
@@ -208,7 +216,7 @@ def main():
                        f"    original: {so[k] if k < len(so) else '(end)'}\n    rebuild:  {sr[k] if k < len(sr) else '(end)'}")
         if bad:
             failed = True
-        print(f"{name:<14} {ok:>8} {bad:>7}  {verdict}")
+        print(f"{name:<14} {ok:>8} {bad:>7} {skipped:>7}  {verdict}")
         block = False
         for line in test.splitlines() if bad else []:
             if re.match(r"^\S+\s+call \d+ at t=", line):

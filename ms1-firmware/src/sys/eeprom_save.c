@@ -1,7 +1,7 @@
 /*==========================================================================
  * sys/eeprom_save.c - saving to the EEPROM (0x8DB2-0x9143)
  *
- * The EEPROM is erased and programmed in aligned 4-byte records (build/asm/hal.s). A write
+ * The EEPROM is erased and programmed in aligned 4-byte records (hal/eeprom.c). A write
  * stages the record's new content in ee_record and, if it differs from the EEPROM, erases
  * the record and leaves its address in ee_record_addr; eeprom_write_finish programs it
  * once the erase is done.

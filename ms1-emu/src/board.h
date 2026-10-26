@@ -50,6 +50,9 @@ typedef struct ms1_board {
 	uint64_t enc_next, poll_next, rds_next;   /* board event times (UINT64_MAX: none) */
 	FILE *can_log;
 	unsigned long can_tx, can_rx;
+	/* the firmware's LCD tables the display is read back with (board_lcd_symbols); 0: the
+	 * original's, by its application version word */
+	uint16_t lcd_matrix, lcd_bar, lcd_font, lcd_icons;
 } ms1_board_t;
 
 void board_init(ms1_board_t *b, mcu_t *m, FILE *can_log);
@@ -62,6 +65,9 @@ void board_attach_decoder(ms1_board_t *b, decoder_t *d);
 decoder_feedback_t board_feedback(ms1_board_t *b);
 /* Render the LCD (38x5 matrix, speed bar, other lit segments) as text. */
 void board_lcd_print(ms1_board_t *b, FILE *out);
+/* Read the LCD back with the tables of a symbol table as `nm -n` prints it (a rebuild's:
+ * lcd_text_dots, lcd_bar_segments, lcd_font, lcd_icon_segments); 0, or -1 with a message */
+int board_lcd_symbols(ms1_board_t *b, const char *path);
 /* Lit icons and arrows, space-separated ('*' marks the "on" variant of a function icon). */
 void board_lcd_icons(ms1_board_t *b, char *out, size_t size);
 /* The matrix read back as text with the firmware's font. */

@@ -5,11 +5,27 @@ Based on reverse-engineering of the MC9S12D64 bootloader at 0xF877-0xFCDB,
 plus the ECoS/MCS userspace updater `hc12admin` (sub_BE70 / sub_8904).
 
 Decode: .bci -> 64 KB flash image (decode_bci_file).
-Encode: 64 KB flash image + template .bci -> new .bci, preserving the
-template's header, record table, and per-block parameters (stride, seeds,
-scatter init, padding bytes; extract_block_params). Decoding the result gives
-the image back; the encoded bytes need not equal the template's (checked on the
-four release files: same images, different bytes). Not tested on a device.
+Encode: 64 KB flash image + a loader -> .bci (encode_bci): the header the release files have,
+from the image (bci_header), then the loader's blocks and the image's, each with parameters of
+its own (block_params). Decoding the result gives the image back; on the four release
+images, with their version's loader, the header is the release file's. Not tested on a device.
+Loader: an update file's loader -> S-records at 0x1000 (extract_loader, write_srec).
+
+The blocks, in file order, carry the records of the records table (below):
+  Loader (8)       the first blocks (loader_block_count), dest_keys 0x00-0x06: code that the
+                   bootloader decodes into RAM 0x1000-0x17FF and runs (bootloader 0xFC59-0xFCB6:
+                   once all four dest_keys have arrived, the CRC-16 of stage 2 over
+                   0x1000-0x17FF must come out 0; then JSR 0x1000 with the file offset of the
+                   next block and the transfer handle on the stack). Not part of the image.
+  Application (1)  the image: a 0x200-byte slice at dest_key * 0x100 per block, the pages in
+                   the order $3C, $3E, $3D, $3F, without 0xF800-0xFFFF (the bootloader).
+
+The release files' loader (ms1-firmware/third_party/loader/) takes the application's blocks as
+the bootloader takes its own (stages below; dest_key * 0x100 must be below 0xF800), in any
+order. It first erases the flash sector 0xF600-0xF7FF, which holds the application version
+word, and the EEPROM's first sector, 0x0800-0x0803. For each block it erases the block's
+sector and programs it, except the version word 0xF73C. Once every one of the 0x7C slots has
+arrived, it programs the version word and restarts through the reset vector.
 
 File header (hc12admin sub_BE70):
   Bytes 0..3:   Magic 'BCI\0' (BE 0x42434900). Hard-required.
@@ -87,8 +103,9 @@ Stage 5 (trailing bytes):
   6 more bytes CRC'd. Final CRC must be 0.
 """
 
-import sys
 import os
+import random
+import sys
 
 
 BLOCK_SIZE = 0x226          # 550 bytes per block (full transport unit)
@@ -126,6 +143,13 @@ def crc16_ccitt_update(crc: int, byte: int) -> int:
         byte = (byte << 1) & 0xFF
         if msb:
             crc ^= 0x1021
+    return crc
+
+
+def crc16_ccitt(data: bytes) -> int:
+    crc = 0xFFFF
+    for b in data:
+        crc = crc16_ccitt_update(crc, b)
     return crc
 
 
@@ -400,18 +424,37 @@ def _print_header_info(filepath: str, data: bytes, header: dict) -> None:
 
 
 FLASH_IMAGE_SIZE = 0x10000  # 64 KB MC9S12D64 staged flash image
+APP_SIZE = 0xF800           # the image an update file carries: up to the bootloader
+LOADER_ADDR = 0x1000        # the loader's RAM, dest_keys 0x00-0x06
+LOADER_SIZE = 0x800
+
+# The application's identification area (ms1-firmware src/sys/ident.c), in page $3F: the image
+# offset is the CPU address
+IDENT = 0xF700              # its identification words
+IDENT_NAME = 0xF720         # the pointer to its product name
+VERSION_WORD = 0xF73C       # the application version word
+
+# The release files' target: the manufacturer (ESU, a device's 0xFF14), and per application
+# version word the device's hardware version range (major.minor from, to: its 0xFF18), then
+# the bootloader version range (0xFF24)
+TARGET_MANUFACTURER = 0x97
+TARGET_HW_VERSIONS = {0x4011: b"\x02\x00\x02\xff", 0x4010: b"\x01\x00\x01\xff"}
+TARGET_BOOT_VERSIONS = b"\x01\x00\x01\xff"
+
+
+def loader_block_count(header: dict) -> int:
+    """The blocks, from the first, that carry the Loader record (module docstring)."""
+    loader = header["records"]["loader"]
+    return -(-loader["payload_size"] // FLASH_BYTES) if loader else 0
+
 
 def decode_bci_file(filepath: str, output_path: str = None) -> bytes:
     """Decode all blocks in a .bci file into a single 64 KB image.
 
     Each block's decoded 0x200 payload is placed at offset (dest_key * 0x100)
-    in the output image, mirroring the bootloader's RAM staging layout
-    (dest_addr = 0x1000 + dest_key*0x100). dest_key always even, so
-    dest_key in 0x00..0xFE covers 128 contiguous 0x200 chunks = 0x10000 bytes.
-
-    Session 0 (dest_keys 0x00..0x06) appears twice per file -- once as app code
-    and once as the loco database. Last-write-wins, which matches the order in
-    which the chip programs flash.
+    in the output image. dest_key always even, so dest_key in 0x00..0xFE covers
+    128 contiguous 0x200 chunks = 0x10000 bytes. The loader's blocks
+    (loader_block_count) are decoded and checked but left out of the image.
     """
     with open(filepath, "rb") as f:
         data = f.read()
@@ -424,10 +467,12 @@ def decode_bci_file(filepath: str, output_path: str = None) -> bytes:
         print(f"Warning: {e}; falling back to len%0x226 layout.")
         header = None
 
+    loader_blocks = 0
     if header is not None:
         _print_header_info(filepath, data, header)
         binary_start = header["image_data_off"]
         block_count = header["block_count"]
+        loader_blocks = loader_block_count(header)
     else:
         binary_start = len(data) % BLOCK_SIZE
         block_count = (len(data) - binary_start) // BLOCK_SIZE
@@ -437,6 +482,7 @@ def decode_bci_file(filepath: str, output_path: str = None) -> bytes:
 
     image = bytearray(FLASH_IMAGE_SIZE)
     written = bytearray(FLASH_IMAGE_SIZE // FLASH_BYTES)  # write count per slot
+    loader = bytearray(LOADER_SIZE)
 
     valid = 0
     crc_ok = 0
@@ -459,20 +505,30 @@ def decode_bci_file(filepath: str, output_path: str = None) -> bytes:
 
         slot = result["dest_key"] >> 1                 # 0..0x7F
         dst = result["dest_key"] * 0x100               # == slot * FLASH_BYTES
-        image[dst:dst + FLASH_BYTES] = result["payload"]
-        written[slot] += 1
+        if i < loader_blocks:
+            if dst < LOADER_SIZE:
+                loader[dst:dst + FLASH_BYTES] = result["payload"]
+            where = f"loader RAM {LOADER_ADDR + dst:#06x}"
+        else:
+            image[dst:dst + FLASH_BYTES] = result["payload"]
+            written[slot] += 1
+            where = f"img[{dst:#06x}]"
 
         if i < 8 or i % 32 == 0:
             status = "OK" if result["crc_valid"] else f"CRC={result['crc_state']:#06x}"
             print(
                 f"  Block {i:4d} @ {offset:#08x}: "
-                f"key={result['dest_key']:#04x} -> img[{dst:#06x}] "
+                f"key={result['dest_key']:#04x} -> {where} "
                 f"stride={result['stride']:3d} dstride={result['dest_stride']:3d} "
                 f"xor_key={result['xor_key']:#04x} {status}"
             )
 
     print()
     print(f"Results: {valid}/{block_count} valid, {crc_ok}/{block_count} CRC OK, {failed} failed")
+    if loader_blocks:
+        crc = crc16_ccitt(loader)
+        print(f"Loader:  RAM {LOADER_ADDR:#06x}-{LOADER_ADDR + LOADER_SIZE - 1:#06x}, CRC-16 "
+              + ("0: the bootloader runs it" if crc == 0 else f"{crc:#06x}: the bootloader refuses it"))
 
     empty = [i for i, c in enumerate(written) if c == 0]
     overwritten = [i for i, c in enumerate(written) if c > 1]
@@ -480,7 +536,7 @@ def decode_bci_file(filepath: str, output_path: str = None) -> bytes:
         print(f"Empty slots ({len(empty)}): " +
               ", ".join(f"{i:#04x}" for i in empty))
     if overwritten:
-        print(f"Overwritten slots (last-write-wins): " +
+        print(f"Slots written more than once (the last counts): " +
               ", ".join(f"{i:#04x}(x{written[i]})" for i in overwritten))
 
     if output_path is None:
@@ -494,48 +550,6 @@ def decode_bci_file(filepath: str, output_path: str = None) -> bytes:
     print(f"Saved {output_path} ({FLASH_IMAGE_SIZE} bytes)")
 
     return bytes(image)
-
-
-def extract_block_params(block: bytes) -> dict:
-    """Extract every parameter needed to re-encode `block` byte-for-byte.
-    Mirrors decode_bci_block's stages 1-3 but skips the XOR stream and stops
-    after capturing the 14-byte header + 4 leading trailing bytes."""
-    if len(block) < BLOCK_SIZE:
-        raise ValueError(f"block too short: {len(block)}")
-
-    desc = pre_descramble(block)
-    header_offset = desc[2]
-    start_pos = PAYLOAD_START + header_offset
-    if start_pos >= PAYLOAD_END:
-        start_pos -= PAYLOAD_LEN
-    stride = (desc[start_pos] + 3) & 0xFFFF
-
-    # Walk the full strided sequence (541 bytes) so we can recover the 14-byte
-    # header AND the 4 free trailing bytes (positions 535..538 of the sequence).
-    seq = bytearray(PAYLOAD_LEN)
-    pos = start_pos
-    for k in range(PAYLOAD_LEN):
-        seq[k] = desc[pos]
-        pos += stride
-        if pos >= PAYLOAD_END:
-            pos -= PAYLOAD_LEN
-
-    return {
-        "init_seed": block[0],
-        "init_state": block[1],
-        "header_offset": header_offset,
-        "reserved": bytes(block[3:PAYLOAD_START]),
-        "transport": bytes(block[PAYLOAD_END:BLOCK_SIZE]),
-        "stride": stride,
-        "dest_stride": (seq[1] + 7) & 0xFFFF,
-        "dest_key": seq[4],
-        "scatter_pos": seq[6],
-        "skipped": seq[7],
-        "xor_state": seq[8],
-        "xor_key": seq[9],
-        "padding": bytes(seq[10:14]),
-        "trailing": bytes(seq[535:539]),
-    }
 
 
 def encode_bci_block(payload: bytes, dest_key: int, *,
@@ -654,73 +668,144 @@ def encode_bci_block(payload: bytes, dest_key: int, *,
     return bytes(block)
 
 
-def encode_bci_file(bin_path: str, template_path: str, output_path: str = None) -> bytes:
-    """Re-pack a 64 KB flash image into a .bci file using `template_path`'s
-    header, record table, and per-block parameters. Each template block is
-    decoded just enough to learn its dest_key + stage-1/2/3 params, then
-    re-encoded with the corresponding 0x200-byte slice from `bin_path`.
-    Blocks that cannot be parsed are copied verbatim."""
-    with open(bin_path, "rb") as f:
-        image = f.read()
+def bci_header(image: bytes, block_count: int) -> bytes:
+    """The header of the release files, for `image` followed by `block_count` blocks: the records
+    table, the Loader and Application records, the latter with the image's identification
+    words, version word and product name, and the target for the version word."""
+    version = _be16(image, VERSION_WORD)
+    if version not in TARGET_HW_VERSIONS:
+        raise ValueError(f"no target for the application version word {version:#06x}")
+    name_at = _be16(image, IDENT_NAME)
+    name = image[name_at:image.index(b"\0", name_at)]
+    if len(name) >= 0x20:
+        raise ValueError(f"product name {name!r} longer than 31 bytes")
+
+    h = bytearray(0xC0)
+
+    def put32(off: int, value: int) -> None:
+        h[off:off + 4] = value.to_bytes(4, "big")
+
+    h[0:4] = BCI_MAGIC
+    put32(0x04, 0x00020000)                 # header version 0.2
+    put32(0x10, 0x20)                       # the records table
+    put32(0x14, len(h) - 0x20)              # header size: the records table's
+    put32(0x18, len(h))                     # the blocks
+    put32(0x1C, block_count * BLOCK_SIZE)
+    put32(0x20, 0x20)                       # table: the first record, from the table
+    put32(0x24, 2)                          #   records
+    put32(0x30, 0x90)                       #   the targets, from the table
+    put32(0x34, 1)                          #   targets
+    put32(0x40, 8)                          # Loader: type, record size, payload size
+    put32(0x44, 0x10)
+    put32(0x48, LOADER_SIZE)
+    put32(0x50, 1)                          # Application: type, record size, payload size
+    put32(0x54, 0x60)
+    put32(0x58, APP_SIZE)
+    h[0x60:0x70] = image[IDENT:IDENT + 0x10]
+    h[0x7C:0x7E] = image[VERSION_WORD:VERSION_WORD + 2]
+    put32(0x80, 0x40)                       # the product name, from the record
+    h[0x90:0x90 + len(name)] = name
+    put32(0xB0, TARGET_MANUFACTURER)        # the target
+    h[0xB4:0xB6] = image[VERSION_WORD:VERSION_WORD + 2]
+    h[0xB6:0xB8] = b"\x4f\xff"
+    h[0xB8:0xBC] = TARGET_HW_VERSIONS[version]
+    h[0xBC:0xC0] = TARGET_BOOT_VERSIONS
+    return bytes(h)
+
+
+def block_params(rng: random.Random) -> dict:
+    """encode_bci_block's parameters: any value in these ranges decodes (the strides are
+    coprime to the prime lengths they walk); the release files' look random."""
+    r = rng.randrange
+    return {
+        "stride": r(3, 259), "dest_stride": r(7, 263), "header_offset": r(256),
+        "scatter_pos": r(256), "xor_state": r(256), "xor_key": r(256), "init_seed": r(256),
+        "init_state": r(256), "skipped": r(256), "padding": rng.randbytes(4),
+        "trailing": rng.randbytes(4), "reserved": rng.randbytes(2), "transport": rng.randbytes(4),
+    }
+
+
+def encode_bci(image: bytes, loader: bytes) -> bytes:
+    """An update file for `image` with `loader`: bci_header, then the loader's blocks and every
+    slot of the image below APP_SIZE, in dest_key order, with parameters from a fixed seed."""
     if len(image) != FLASH_IMAGE_SIZE:
         raise ValueError(
             f"image must be {FLASH_IMAGE_SIZE} bytes ({FLASH_IMAGE_SIZE:#x}), got {len(image)}"
         )
+    if len(loader) != LOADER_SIZE or crc16_ccitt(loader) != 0:
+        raise ValueError(f"the loader must be {LOADER_SIZE:#x} bytes with a CRC-16 of 0")
+    parts = [(dk, loader) for dk in range(0, LOADER_SIZE // 0x100, 2)]
+    parts += [(dk, image) for dk in range(0, APP_SIZE // 0x100, 2)]
+    rng = random.Random(0)
+    out = bytearray(bci_header(image, len(parts)))
+    for dk, src in parts:
+        out += encode_bci_block(src[dk * 0x100:dk * 0x100 + FLASH_BYTES], dk, **block_params(rng))
+    return bytes(out)
 
-    with open(template_path, "rb") as f:
-        tmpl = f.read()
 
-    header = parse_bci_header(tmpl)
-    binary_start = header["image_data_off"]
-    block_count = header["block_count"]
+def extract_loader(data: bytes) -> bytes:
+    """The loader of the update file `data`, as the bootloader puts it in RAM."""
+    header = parse_bci_header(data)
+    start = header["image_data_off"]
+    loader = bytearray(LOADER_SIZE)
+    for i in range(loader_block_count(header)):
+        r = decode_bci_block(data[start + i * BLOCK_SIZE:start + (i + 1) * BLOCK_SIZE])
+        if not r["valid"] or not r["crc_valid"] or r["dest_key"] * 0x100 >= LOADER_SIZE:
+            raise ValueError(f"block {i}: not a loader block")
+        loader[r["dest_key"] * 0x100:r["dest_key"] * 0x100 + FLASH_BYTES] = r["payload"]
+    if crc16_ccitt(loader) != 0:
+        raise ValueError("the loader's CRC-16 is not 0")
+    return bytes(loader)
 
-    print(f"Image:    {bin_path}")
-    print(f"Template: {template_path}")
-    _print_header_info(template_path, tmpl, header)
-    print()
 
-    out = bytearray(tmpl[:binary_start])
+def _srec(kind: str, addr: int, data: bytes) -> str:
+    rec = bytes([len(data) + 3]) + addr.to_bytes(2, "big") + data
+    return f"{kind}{rec.hex().upper()}{~sum(rec) & 0xFF:02X}\n"
 
-    encoded = 0
-    copied = 0
-    for i in range(block_count):
-        offset = binary_start + i * BLOCK_SIZE
-        block = tmpl[offset:offset + BLOCK_SIZE]
 
-        try:
-            params = extract_block_params(block)
-        except Exception as e:
-            print(f"  Block {i:4d} @ {offset:#08x}: cannot parse ({e}), copying verbatim")
-            out.extend(block)
-            copied += 1
-            continue
+def write_srec(path: str, addr: int, data: bytes) -> None:
+    """S1 records of 32 bytes for `data` at `addr`."""
+    with open(path, "w") as f:
+        f.write(_srec("S0", 0, b"loader"))
+        for off in range(0, len(data), 32):
+            f.write(_srec("S1", addr + off, data[off:off + 32]))
+        f.write(_srec("S9", 0, b""))
 
-        dk = params.pop("dest_key")
-        slot_off = dk * 0x100
-        if slot_off + FLASH_BYTES > len(image):
-            print(f"  Block {i:4d} @ {offset:#08x}: dest_key {dk:#04x} past image, copying verbatim")
-            out.extend(block)
-            copied += 1
-            continue
 
-        payload = image[slot_off:slot_off + FLASH_BYTES]
-        new_block = encode_bci_block(payload, dk, **params)
-        out.extend(new_block)
-        encoded += 1
+def read_loader(path: str) -> bytes:
+    """A loader from S1 records covering LOADER_ADDR..+LOADER_SIZE."""
+    loader = bytearray(LOADER_SIZE)
+    covered = 0
+    with open(path) as f:
+        for n, line in enumerate(f, 1):
+            if not line.startswith("S1"):
+                continue
+            rec = bytes.fromhex(line[2:].strip())
+            addr, data = _be16(rec, 1), rec[3:-1]
+            if (rec[0] != len(rec) - 1 or sum(rec) & 0xFF != 0xFF or addr < LOADER_ADDR
+                    or addr + len(data) > LOADER_ADDR + LOADER_SIZE):
+                raise ValueError(f"{path}:{n}: bad S1 record for {LOADER_ADDR:#06x}-"
+                                 f"{LOADER_ADDR + LOADER_SIZE - 1:#06x}")
+            loader[addr - LOADER_ADDR:addr - LOADER_ADDR + len(data)] = data
+            covered += len(data)
+    if covered != LOADER_SIZE:
+        raise ValueError(f"{path}: {covered} of {LOADER_SIZE} loader bytes")
+    return bytes(loader)
 
-        if i < 8 or i % 32 == 0:
-            print(
-                f"  Block {i:4d} @ {offset:#08x}: key={dk:#04x} <- img[{slot_off:#06x}] "
-                f"stride={params['stride']:3d} dstride={params['dest_stride']:3d} "
-                f"xor_key={params['xor_key']:#04x}"
-            )
 
-    print()
-    print(f"Encoded {encoded}/{block_count} blocks, copied {copied} verbatim, total {len(out)} bytes")
-
+def encode_bci_file(bin_path: str, loader_path: str, output_path: str = None) -> bytes:
+    """encode_bci from files: the image, the loader as S-records (read_loader)."""
+    with open(bin_path, "rb") as f:
+        image = f.read()
+    out = encode_bci(image, read_loader(loader_path))
     if output_path is None:
         base = os.path.splitext(os.path.basename(bin_path))[0]
         output_path = f"{base}.bci"
+
+    print(f"Image:  {bin_path}")
+    print(f"Loader: {loader_path}")
+    _print_header_info(output_path, out, parse_bci_header(out))
+
     parent = os.path.dirname(output_path)
     if parent:
         os.makedirs(parent, exist_ok=True)
@@ -728,14 +813,15 @@ def encode_bci_file(bin_path: str, template_path: str, output_path: str = None) 
         f.write(out)
     print(f"Saved {output_path} ({len(out)} bytes)")
 
-    return bytes(out)
+    return out
 
 
 _USAGE = (
     "Usage:\n"
     "  bci.py decode <file.bci> [output.bin]\n"
-    "  bci.py encode <file.bin> <template.bci> [output.bci]\n"
-    "  bci.py <file.bci> [output.bin]                  # decode\n"
+    "  bci.py encode <file.bin> <loader.s19> [output.bci]\n"
+    "  bci.py loader <file.bci> <loader.s19>             # the update file's loader\n"
+    "  bci.py <file.bci> [output.bin]                    # decode\n"
 )
 
 
@@ -757,6 +843,9 @@ if __name__ == "__main__":
             sys.exit(1)
         out = sys.argv[4] if len(sys.argv) > 4 else None
         encode_bci_file(sys.argv[2], sys.argv[3], out)
+    elif cmd == "loader" and len(sys.argv) == 4:
+        with open(sys.argv[2], "rb") as f:
+            write_srec(sys.argv[3], LOADER_ADDR, extract_loader(f.read()))
     elif os.path.exists(cmd):
         # positional `<file.bci> [output.bin]` decodes
         out = sys.argv[2] if len(sys.argv) > 2 else None

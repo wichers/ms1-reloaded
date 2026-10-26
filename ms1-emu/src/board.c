@@ -19,8 +19,9 @@
  * column, five (display_buffer offset, mask) pairs, top row first) and the 14-segment speed bar
  * at 0xF450, both indexing the 88-byte (strobe, data) transmit buffer the frame is built from.
  * Those addresses, the font's and the icon table's are application version 4011's; version
- * 4010 (the word at 0xF73C) has them elsewhere (rom_tables). Its PB6 is an over-current input
- * (active low), a button here (pb6). */
+ * 4010 (the word at 0xF73C) has them elsewhere (rom_tables), a rebuild where its symbol table
+ * says (board_lcd_symbols). Version 4010's PB6 is an over-current input (active low), a button
+ * here (pb6). */
 #include "board.h"
 
 #include <string.h>
@@ -50,19 +51,49 @@ static const struct rom_tables {
 	{ 0x4010, 0xF2F7, 0xF2DB, 0xED90, 0xECEA },
 };
 
-static const struct rom_tables *tables(const ms1_board_t *b)
+static struct rom_tables tables(const ms1_board_t *b)
 {
+	if (b->lcd_matrix)
+		return (struct rom_tables){ 0, b->lcd_matrix, b->lcd_bar, b->lcd_font, b->lcd_icons };
 	uint16_t version = (uint16_t)(mcu_peek(b->m, 0xF73C) << 8 | mcu_peek(b->m, 0xF73D));
 	for (size_t i = 0; i < sizeof rom_tables / sizeof rom_tables[0]; i++)
 		if (rom_tables[i].version == version)
-			return &rom_tables[i];
-	return &rom_tables[0];
+			return rom_tables[i];
+	return rom_tables[0];
 }
 
-#define GLASS_MATRIX (tables(b)->matrix)
-#define GLASS_BAR (tables(b)->bar)
-#define FONT (tables(b)->font)
-#define ICON_TABLE (tables(b)->icons)
+int board_lcd_symbols(ms1_board_t *b, const char *path)
+{
+	static const char *const names[4] = { "lcd_text_dots", "lcd_bar_segments", "lcd_font", "lcd_icon_segments" };
+	uint16_t *fields[4] = { &b->lcd_matrix, &b->lcd_bar, &b->lcd_font, &b->lcd_icons };
+	uint16_t found[4] = { 0 };
+	char line[256], name[200], type;
+	unsigned long a;
+	FILE *f = fopen(path, "r");
+	if (!f) {
+		fprintf(stderr, "%s: cannot open\n", path);
+		return -1;
+	}
+	while (fgets(line, sizeof line, f))
+		if (sscanf(line, "%lx %c %199s", &a, &type, name) == 3)
+			for (int i = 0; i < 4; i++)
+				if (!strcmp(name, names[i]))
+					found[i] = (uint16_t)a;
+	fclose(f);
+	for (int i = 0; i < 4; i++)
+		if (!found[i]) {
+			fprintf(stderr, "%s: no %s\n", path, names[i]);
+			return -1;
+		}
+	for (int i = 0; i < 4; i++)
+		*fields[i] = found[i];
+	return 0;
+}
+
+#define GLASS_MATRIX (tables(b).matrix)
+#define GLASS_BAR (tables(b).bar)
+#define FONT (tables(b).font)
+#define ICON_TABLE (tables(b).icons)
 #define ICON_COUNT 83
 
 /* Icon names, identified on MS1 hardware by the ms1-firmware project (src/include/lcd_icons.h):

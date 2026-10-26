@@ -33,8 +33,14 @@ typedef signed long     s32;
 #define NULL ((void *)0)
 #endif
 
+/* bus clock cycles in a millisecond: the 24 MHz the start-up code sets */
+#define BUS_CYCLES_MS   24000
+
 /* Interrupt masking (CCR: I = 0x10, X = 0x40; software can clear X but not set it) */
 #define IRQ_DISABLE()   __asm__ __volatile__ ("orcc #0x50")
 #define IRQ_ENABLE()    __asm__ __volatile__ ("andcc #0xAF")
+/* Mask interrupts and keep the CCR in a u16 for IRQ_RESTORE, which puts it back */
+#define IRQ_SAVE(ccr)       __asm__ __volatile__ ("tfr\tccr,b\n\torcc\t#0x50" : "=d" (ccr) : : "memory")
+#define IRQ_RESTORE(ccr)    __asm__ __volatile__ ("tfr\tb,ccr" : : "d" (ccr) : "memory")
 
 #endif /* HCS12_H */

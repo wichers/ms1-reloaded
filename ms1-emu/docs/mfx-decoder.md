@@ -86,7 +86,7 @@ The decoder answers through the board's feedback receiver (`decoder_feedback_t`)
 | QUAL (quality) | PB5 | high while a decoder sends the carrier |
 | carrier level | ATD0 channel 2 | `RDS_CARRIER_LEVEL` while a decoder sends the carrier, else the `-a 2=` value |
 
-How the firmware reads it (`isr_feedback_capture`, `build/asm/siggen.s`, the signal
+How the firmware reads it (`isr_feedback_capture`, `ms1-firmware/src/signal/feedback_capture.c`, the signal
 generator starting and stopping the capture at fixed points of the window):
 
 - **1-bit** (capture mode 2, both RDCL edges): ATD0 channel 2 into `timer_capture_buffer`.

@@ -1,17 +1,15 @@
 /* Linker script for the MS1 firmware, GNU 68HC12 toolchain.
  *
  * The CPU sees one flat 48K code space, 0x4000-0xF7FF: the start-up code maps page $3D into
- * the 0x8000 window once and for all, as the original does. The application's code and its
- * own read-only data take 0x4000-0xE11A (version 4010: 0x4000-0xDFA0), where the original's
- * code and its GCC runtime helpers are; tools/mkimage.py adds what comes from the original
- * image: page $3C (the locomotive database and its accessors), the original's .rodata, build
- * information and configuration area 0xE11B-0xF73F (4010: 0xDFA1-0xF73F; tables the firmware
- * reads by address: language tables, display maps, trit tables, ...), the bootloader and its
- * metadata 0xF800-0xFFFF; and makes the application CRC valid with the word at 0xF73E.
+ * the 0x8000 window once and for all, as the original does. The application's code and
+ * read-only data take 0x4000 up to the identification strings; tools/mkimage.py adds page $3C
+ * (the locomotive database and its accessors) and the release's identification area
+ * (src/sys/ident.c), each linked on its own, and the bootloader of a device dump; and makes
+ * the application CRC valid with the word at 0xF73E.
  *
  * This is the template of build/ms1.ld, which tools/ramlayout.py generates from it. The
- * version's part, gcc/<version>/release.ld (the tables' addresses, the end of the
- * application), is found through the linker's search path (-L gcc/<version>). */
+ * addresses of the page-$3C accessors (build/page3c_symbols.ld) come from that link, found
+ * through the linker's search path (-L build). */
 OUTPUT_FORMAT("elf32-m68hc12", "elf32-m68hc12", "elf32-m68hc12")
 OUTPUT_ARCH(m68hc12)
 ENTRY(_start)
@@ -19,7 +17,7 @@ ENTRY(_start)
 MEMORY
 {
   ram   (rwx) : ORIGIN = 0x1000, LENGTH = 0x1000
-  rom   (rx)  : ORIGIN = 0x4000, LENGTH = 0xE11B - 0x4000
+  rom   (rx)  : ORIGIN = 0x4000, LENGTH = 0xF680 - 0x4000   /* the identification strings follow (gcc/ident.ld) */
   tramp (rx)  : ORIGIN = 0xF740, LENGTH = 0xC0
 }
 
@@ -77,5 +75,5 @@ flash_adc3_scale       = 0xFF66;
 flash_adc4_scale       = 0xFF68;
 flash_current_limit    = 0xFF7A;
 
-/* The version's tables in the original's .rodata, and the end of the application */
-INCLUDE release.ld
+/* The page-$3C accessors lok/lokdb_access.c CALLs */
+INCLUDE page3c_symbols.ld

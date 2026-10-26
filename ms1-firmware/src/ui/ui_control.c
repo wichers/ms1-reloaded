@@ -23,11 +23,35 @@
 #include "../include/rom_tables.h"
 #include "../include/ui.h"
 #include "../include/lokstack.h"
+#include "../include/delay.h"
+
+/* {min, max} per protocol (lok_record_t.protocol), for the knob: the address, the CV number
+ * and the CV value of a locomotive */
+static const s16 lok_address_range[5][2] = {
+    { 0, 0 },   /* 0 */
+    { 0, 0 },   /* LOK_MFX */
+    { 1, 9999 },   /* LOK_DCC */
+    { 1, 80 },   /* LOK_MM */
+    { 1, 104 },   /* 4 */
+};
+static const s16 lok_cv_range[5][2] = {
+    { 0, 0 },   /* 0 */
+    { 0, 0 },   /* LOK_MFX */
+    { 1, 1023 },   /* LOK_DCC */
+    { 1, 79 },   /* LOK_MM */
+    { 0, 0 },   /* 4 */
+};
+static const s16 lok_cv_value_range[5][2] = {
+    { 0, 0 },   /* 0 */
+    { 0, 0 },   /* LOK_MFX */
+    { 0, 255 },   /* LOK_DCC */
+    { 0, 80 },   /* LOK_MM */
+    { 0, 0 },   /* 4 */
+};
 
 extern void show_message(u8 message, u8 ticks);       /* 0xDCA9: show a message */
 extern u16  lokdb_count(void);             /* database: number of records */
 extern void lokdb_read(u16 index, u8 *dest); /* database: copy record index */
-extern void delay_short(u16 ms);
 
 /* keys pressed now (pressed and newly pressed) */
 #define KEY(mask)        (button_state_edge & button_state_raw & (mask))
@@ -452,13 +476,13 @@ static void change_item(u8 slot, u8 sub)
         }
         if (menu_sub == 1) {
             e = ENTRY(lok_current_slot);
-            menu_value = ui_knob_adjust(menu_value, lok_range_ec43[e->protocol][1], lok_range_ec43[e->protocol][0], 4);
+            menu_value = ui_knob_adjust(menu_value, lok_cv_range[e->protocol][1], lok_cv_range[e->protocol][0], 4);
             if (KEY(KEY_OK | KEY_KNOB))
                 menu_sub++;
         } else if (menu_sub == 2) {
             e = ENTRY(lok_current_slot);
-            menu_value2 = ui_knob_adjust(menu_value2, lok_param_range[e->protocol][1],
-                                                      lok_param_range[e->protocol][0], 4);
+            menu_value2 = ui_knob_adjust(menu_value2, lok_cv_value_range[e->protocol][1],
+                                                      lok_cv_value_range[e->protocol][0], 4);
             if (KEY(KEY_OK | KEY_KNOB)) {
                 disp = DISP(lok_current_slot);
                 if (disp->prog_cv != 0)

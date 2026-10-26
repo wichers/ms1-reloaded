@@ -7,6 +7,11 @@
 #include "hcs12.h"
 #include "lokstack.h"
 
+/* can/can0.c: the CAN0 controller and its frame rings */
+void can_controller_full_init(u16 bitrate_100);                  /* 0xDDB5: bit rate in 100 bit/s */
+u16  can_tx_enqueue_frame(u32 id, const u8 *data, u16 dlc);      /* 0xDE43 */
+u16  can_rx_dequeue_frame(u8 *dest);                             /* 0xDEAC */
+
 /* can/mcan.c */
 u16  mcan_receive(void);                                         /* 0x5E70 */
 u16  mcan_send(u16 cmd, u16 handle, const u8 *data, u16 dlc);      /* 0x5EA5 */

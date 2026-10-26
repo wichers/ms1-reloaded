@@ -362,5 +362,10 @@
 #define ATD1DR7      _REG16(0x013E)
 #define CAN0RXTSR    _REG16(0x016E)
 #define CAN0TXTSR    _REG16(0x017E)
+/* PWM channel pairs concatenated (PWMCTL CON01, CON23): their period and duty as words */
+#define PWMPER01     _REG16(0x00B4)
+#define PWMPER23     _REG16(0x00B6)
+#define PWMDTY01     _REG16(0x00BC)
+#define PWMDTY23     _REG16(0x00BE)
 
 #endif

@@ -5,12 +5,12 @@ How the parts of the firmware fit together: what runs when, how data gets from t
 signal, CAN, LCD, EEPROM), and how the code drives the hardware.
 
 - **Where a function lives:** `tools/functions.tsv` (original entry → function here), the
-  `names` of `asm/*.json` (routines of the assembly modules), README *Source Layout* (file →
-  subsystem).
+  "Functions:" list in each source file's header (with the original entries, the interrupt
+  handlers' too), README *Source Layout* (file → subsystem).
 - **Addresses** are the original's, of application version 4011. Function entries are as in
   `tools/functions.tsv`. RAM variables sit at their original addresses (README *RAM layout*,
-  `build/ms1.sym`). Tables in the original image have their symbols in
-  `gcc/4011/release.ld`.
+  `build/ms1.sym`). The original's read-only tables are C in this build, with the original's
+  contents (README *Image layout*); the addresses given with them are the original's.
 - **Version 4010** (releases 4010 and c010) differs in the track current, the booster line, a
   few functions and its addresses: section 11.
 - **Timer ticks:** the timer runs at 6 MHz (24 MHz bus, prescaler 4 set by `signal_gen_init`),
@@ -53,9 +53,9 @@ signal, CAN, LCD, EEPROM), and how the code drives the hardware.
 
 1. Reset runs the bootloader (0xF800-0xFFFF, taken from the original image, README *Image
    layout*; its checks, update mode and metadata: `docs/bootloader.md`). After its checks it
-   enters the application through the last entry of the trampoline table (`gcc/vectors.s`),
+   enters the application through the last entry of the trampoline table (`src/sys/vectors.c`),
    which jumps to `_start` (0x4000).
-2. `_start` (`gcc/crt0.s`) sets up the MMC registers, maps page $3D into the 0x8000 window for
+2. `_start` (`src/sys/crt0.c`) sets up the MMC registers, maps page $3D into the 0x8000 window for
    good, and brings the PLL to a 24 MHz bus. It then falls into `crt_restart` (0x403C), which
    masks interrupts, drives PORTE bit 2 low, turns off the timer channel 4 interrupt, makes
    channel 3 an input capture again (track output off, see 4.4), copies .data, clears .bss, sets
@@ -94,19 +94,19 @@ Leaving the application:
 | every 4 ms, one phase by `ms_tick & 3` | 0 `mcan_process`; 1 `signal_gen_cmd_buf_consumer` (master); 2 `track_scheduler`; 3 the phase-3 task |
 | every 32 ms, phase 3 by `ms_tick` bits 2-4 | `eeprom_save_task`, `button_scan`, `ui_task`, `lcd_status_icons`, `lcd_speed_bar`, `ui_screen_text`, `lcd_draw_text`; the last slot is empty |
 
-**Interrupts** (vectors: `gcc/vectors.s`; there is no RTOS, everything else runs in the main
+**Interrupts** (vectors: `src/sys/vectors.c`; there is no RTOS, everything else runs in the main
 loop):
 
-| Handler | Module | Trigger | Work |
+| Handler | File | Trigger | Work |
 |---|---|---|---|
-| `isr_ms_tick` (0xDFEC) | `build/asm/hal.s` | modulus down-counter, every 1 ms (`timer_modulus_init`) | counts `rtc_ms_counter`; `rtc_minute_ms`, `rtc_day_minutes`, `rtc_day_counter` count ms in the minute, minutes in the day, days |
-| `isr_timer_ch4_signal_gen` (0xC4ED) | `build/asm/siggen.s` | timer channel 4 compare (master only) | the next staging entry to the track outputs (4.4) |
-| `isr_feedback_capture` (0xDF13) | `build/asm/hal.s` | timer channel 0 input capture, during a feedback capture | samples the mfx feedback receiver (4.8) |
-| `isr_spi0_lcd` (0xC23E) | `build/asm/siggen.s` | SPI0 transfer complete | the next `lcd_buf` byte to the PT6547 (section 7) |
-| `can0_rx_isr` (0xDD61) | `build/asm/hal.s` | CAN0 receive | frame into the receive ring (section 6) |
-| `can0_tx_isr` (0xDD1B) | `build/asm/hal.s` | CAN0 transmit buffer empty | the next frame from the transmit ring |
-| `can0_error_isr` (0xDD10) | `build/asm/hal.s` | CAN0 receiver overrun | clears the overrun flag |
-| `unexpected_interrupt` | `gcc/vectors.s` | every other vector | stops (BGND) |
+| `isr_ms_tick` (0xDFEC) | `src/sys/ms_tick.c` | modulus down-counter, every 1 ms (`timer_modulus_init`) | counts `rtc_ms_counter`; `rtc_minute_ms`, `rtc_day_minutes`, `rtc_day_counter` count ms in the minute, minutes in the day, days |
+| `isr_timer_ch4_signal_gen` (0xC4ED) | `src/signal/signal_gen.c` | timer channel 4 compare (master only) | the next staging entry to the track outputs (4.4) |
+| `isr_feedback_capture` (0xDF13) | `src/signal/feedback_capture.c` | timer channel 0 input capture, during a feedback capture | samples the mfx feedback receiver (4.8) |
+| `isr_spi0_lcd` (0xC23E) | `src/ui/lcd.c` | SPI0 transfer complete | the next `lcd_buf` byte to the PT6547 (section 7) |
+| `can0_rx_isr` (0xDD61) | `src/can/can0.c` | CAN0 receive | frame into the receive ring (section 6) |
+| `can0_tx_isr` (0xDD1B) | `src/can/can0.c` | CAN0 transmit buffer empty | the next frame from the transmit ring |
+| `can0_error_isr` (0xDD10) | `src/can/can0.c` | CAN0 receiver overrun | clears the overrun flag |
+| `unexpected_interrupt` | `src/sys/vectors.c` | every other vector | stops (BGND) |
 
 Code that masks interrupts itself: `crt_restart`, `enter_bootloader`, `app_main_init`,
 `can_controller_full_init`, the ring update in `can_tx_enqueue_frame`, `encoder_set_count`,
@@ -119,7 +119,7 @@ Code that masks interrupts itself: `crt_restart`, `enter_bootloader`, `app_main_
 
 ### 4.1 Pipeline
 
-The C code writes commands. The assembly in `build/asm/siggen.s` expands them in two stages into
+The C code writes commands. `src/signal/signal_gen.c` expands them in two stages into
 timer compare entries, and the timer channel 4 interrupt plays those out on the track outputs.
 The display does not use this pipeline (section 7).
 
@@ -190,7 +190,7 @@ levels.
 | 0x0F, 0x10 | the top 8 or 2 bits of d as MM bits: 1 = 182 µs positive then 26 µs negative, 0 = 26 µs then 182 µs |
 | 0x11 | 6 × [(d & 0x7F) × 8 ticks at the polarity d bit 7 selects, then (127 − (d & 0x7F)) × 8 ticks at 0 V] |
 | 0x12 | one edge, d µs |
-| 0x13 | two edges, 2d µs each |
+| 0x13 | one edge, then 2 × 2d µs at that level (the same entry twice) |
 | 0x14 | d µs without an edge (the level continues) |
 | 0x15 | 2 × 2d µs without an edge |
 
@@ -309,7 +309,7 @@ nothing sets either of them, in the original too, so they stay 0.
   `mfx_feedback_data` (0xCFE4) reads them from 0x1B50 (the 21st edge): a start pattern, the
   bytes, a CRC byte (polynomial 0x07, start 0xFF), and a quality count that each quality-0
   bit halves.
-- Capture driver (`build/asm/hal.s`): `timer_capture_start_bit_mode` (rising edges) or
+- Capture driver (`src/signal/feedback_capture.c`): `timer_capture_start_bit_mode` (rising edges) or
   `timer_capture_start_adc_mode` (both edges) clears `timer_capture_buffer` (0x1B4B) and turns
   on the channel 0 interrupt. `isr_feedback_capture` stores samples up to the buffer end.
   `timer_capture_stop_and_align` or `timer_capture_stop_and_count` stops the capture and returns
@@ -357,13 +357,14 @@ Writers are `ui_task` (`src/ui/ui_control.c`), the CAN receive side (`mcan_recei
 
 ## 6. CAN
 
-### 6.1 Driver (`build/asm/hal.s`)
+### 6.1 Driver (`src/can/can0.c`)
 
 - `can_controller_full_init(rate)` (0xDDB5) takes the bit rate in units of 100 bit/s.
   `app_main_init` passes 0x9C4, which gives 250 kbit/s: 24 time quanta per bit from the
   24 MHz bus, sampled three times (BTR1 0xFE).
-- Acceptance: both 32-bit filters compare only the IDE and SRR bits, so every extended
-  (29-bit) frame is accepted and standard frames are not. The receive and overrun interrupts
+- Acceptance: both 32-bit filters compare only bits 3 and 4 of IDR1: the first passes every
+  extended (29-bit) frame (SRR and IDE set), the second every standard data frame (RTR and
+  IDE clear). The receive and overrun interrupts
   are on (CAN0RIER 3).
 - A ring entry is 13 bytes: IDR0-3, 8 data bytes and DLC, as the MSCAN buffers hold them.
 
@@ -444,8 +445,8 @@ the receive ring.
   bytes (flag 1), the last of them the block code 0-3. The data bytes are bit-reversed
   (`src/include/lcd.h`).
 - **Writers:** the main loop writes `lcd_buf` while the interrupt reads it, without
-  synchronisation. The assembly routines are `lcd_render_text`, `lcd_set_bar`,
-  `lcd_clear_segments` and `lcd_text_width` (`src/include/lcd.h`). The UI files also set icon
+  synchronisation. The drawing routines are `lcd_render_text`, `lcd_set_bar`,
+  `lcd_clear_segments` and `lcd_text_width` (`src/ui/lcd.c`). The UI files also set icon
   bits directly (`src/include/lcd_icons.h`, and the `lcd_buf` field macros at the end of
   `src/include/globals.h`).
 - **Text:** `ui_screen_text` composes `lcd_text` (0x108C) and places it (`lcd_text_layout`,
@@ -455,8 +456,8 @@ the receive ring.
   the start-up image, and `lcd_pump_all` sends it with interrupts masked (`lcd_pump_start` step
   by step, the buffer twice over). `lcd_buf_load` blanks the display at the end of
   `app_main_init`.
-- **Glass maps** in the original image (symbols in `gcc/4011/release.ld`, declared in
-  `src/include/rom_tables.h`):
+- **Glass maps** (`src/ui/lcd_tables.c`, declared in `src/include/rom_tables.h`; the address
+  is the original's):
 
   | Address | Symbol | Content | Read by |
   |---|---|---|---|
@@ -464,7 +465,7 @@ the receive ring.
   | 0xEE5F | `lcd_icon_segments` | an (`lcd_buf` offset, mask) pair per icon (indices in `src/include/lcd_icons.h`) | `lcd_clear_segments`, `src/ui/lok_icons.c` |
   | 0xEF05 | `lcd_font` | 8 bytes per character code: width in the low nibble of byte 0, then column bytes | `lcd_render_text`, `lcd_text_width` |
   | 0xF450 | `lcd_bar_segments` | the speed bar: an (offset, mask) pair per bar segment | `lcd_set_bar` |
-  | 0xF46C | `lcd_text_dots` | the text dot matrix up to 0xF5E8: five (offset, mask) pairs per column, one per dot, bit 7 of the glyph's column byte first | `lcd_render_text` |
+  | 0xF46C | `lcd_text_dots` | the text dot matrix, 38 columns: five (offset, mask) pairs per column, one per dot, bit 7 of the glyph's column byte first | `lcd_render_text` |
   | 0xF5E8 | `lcd_start_image` | the start-up `lcd_buf` image (most segments on) | `lcd_buf_init` |
 
 ## 8. Keys, knob, analog inputs
@@ -494,13 +495,13 @@ the receive ring.
   | 3, 4 | `track_current_monitor` | track current (4.6; not read by version 4010) |
 
 - **Calibration words:** the bootloader's flash metadata at 0xFF60-0xFF7F (`flash_adc*_scale`,
-  `flash_current_limit`, `flash_encoder_step` in `gcc/ms1.ld`). `tools/mkimage.py` takes them
-  from the original image.
+  `flash_current_limit`, `flash_encoder_step` in `gcc/ms1.ld`), part of the device's
+  bootloader sector (`docs/bootloader.md`).
 
 ## 9. EEPROM
 
 - **Layout:** `src/include/eeprom_config.h` (EEPROM at 0x0800, `INITEE` in `_start`).
-- **Access:** `eeprom_erase_sector` and `eeprom_program_word` (`build/asm/hal.s`) work on 4-byte
+- **Access:** `eeprom_erase_sector` and `eeprom_program_word` (`src/hal/eeprom.c`) work on 4-byte
   sectors. Program waits for completion; erase does not, so `eeprom_save_task` programs an
   erased record on its next call (`eeprom_write_finish`).
 - **Saving:** `eeprom_save_task` (0x8E87, every 32 ms) writes one record per call. It serves
@@ -543,12 +544,11 @@ the receive ring.
 
 Releases 4010 and c010 run application version 4010, for the MS1 hardware without track current
 measurement. The source builds it with `MS1_RELEASE` 0x4010 (README *Release images*); its
-function entries are in `tools/functions_4010.tsv`, its module routines in `asm/4010/*.json`,
-its table symbols in `gcc/4010/release.ld`. Everything not listed here is the same code.
+function entries are in `tools/functions_4010.tsv`. Everything not listed here is the same code.
 
 | | Version 4011 | Version 4010 |
 |---|---|---|
-| Over-current | track current from ATD0 channels 3 and 4, against `flash_current_limit` in software (4.6) | the booster's comparator pulls PB6 low above a threshold that `signal_gen_init` sets from `flash_current_limit` with PWM channels 2-3 (concatenated, centre-aligned, period 0x0FFF, duty limit × (limit + 1000) / 1550, `pwm23_set_overcurrent_threshold`); PWM channels 0-1 get duty 39 (`pwm01_set_duty`) |
+| Over-current | track current from ATD0 channels 3 and 4, against `flash_current_limit` in software (4.6) | the booster's comparator pulls PB6 low above a threshold that `signal_gen_init` sets from `flash_current_limit` with PWM channels 2-3 (concatenated, centre-aligned, period 0x0FFF, duty limit × (limit + 1000) / 1550); PWM channels 0-1 get duty 39 |
 | Booster line: staging control bit 7 (4.4) | PT3, set at the entry's compare (TCTL2 OL3; channel 3's compare reloaded with each entry) | PB7, set at once by `isr_timer_ch4_signal_gen`, inverted: bit 7 drives PB7 low |
 | `signal_gen_init` | channels 3-5: TIE, TIOS, PTT3 high, DDRT, TC3-TC5, TCTL2 | channels 4 and 5 only; the PWM set-up; PB7 low and an output |
 | Track off on restart (`crt_restart`, `enter_bootloader`, the restart paths in `src/ui/ui_control.c`) | TIOS bit 3 clear | PB7 low (`TRACK_OUTPUT_OFF`) |
@@ -557,5 +557,5 @@ its table symbols in `gcc/4010/release.ld`. Everything not listed here is the sa
 | INFO item 9 (`ui_screen_text`) | `IT:` the current and the limit, while `ms_tick & 0xE0` is 0 | `OVC:` the limit (`a / 100 % 10` for the tenths), every pass |
 | `mfx_frame_begin`, 9- and 11-bit addresses (4.8) | 10 + 9 and 110 + 11 bits | 01 + 9 and 011 + 11 bits: not the mfx format (`../doc/MFX - Trackprotocol.pdf`, frame structure), kept as the original sends them. The MS1 assigns SIDs from 1, so only SIDs from 128 to 2047 meet it |
 | RAM (`tools/releases.py`) | `src/globals.c` | no variables at 0x10F2-0x10FC (`track_current` … `shutdown_ticks`); every variable from 0x10FD up 0x0B lower, the GCC soft registers at 0x1BAC |
-| Flash | application 0x4000-0xE11A, the original's .rodata from 0xE11B | 0x4000-0xDFA0, from 0xDFA1; the tables hold the same bytes |
-| Assembly modules | `asm/*.json` | the same code at other addresses, except `isr_timer_ch4_signal_gen` and `signal_gen_init` (above) and the two PWM routines; its immediates that point into RAM or the .rodata hold 4010's addresses |
+| Flash, in the original | application 0x4000-0xE11A, its read-only data from 0xE11B | 0x4000-0xDFA0, from 0xDFA1; the tables hold the same bytes, so this build has one set (README *Image layout*) |
+| Identification area (`src/sys/ident.c`) | "Mobile Station 2 MFx Motorola", version word 0x4011 | "Mobile Station MFx Motorola", 0x4010 |

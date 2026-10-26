@@ -1,9 +1,0 @@
-{
-  "title": "Rotary encoder: counter set-up and quadrature sampling - the original's hand-written assembly, 0xBA96-0xBB5F",
-  "ranges": [["ba96", "bb60"]],
-  "tables": [["bafe", 16]],
-  "names": {
-    "ba96": "encoder_set_count",
-    "bab1": "encoder_sample"
-  }
-}

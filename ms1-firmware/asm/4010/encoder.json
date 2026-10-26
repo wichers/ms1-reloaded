@@ -1,9 +1,0 @@
-{
-  "title": "Rotary encoder: counter set-up and quadrature sampling - version 4010's hand-written assembly, 0xB8DC-0xB9A5",
-  "ranges": [["b8dc", "b9a6"]],
-  "tables": [["b944", 16]],
-  "names": {
-    "b8dc": "encoder_set_count",
-    "b8f7": "encoder_sample"
-  }
-}

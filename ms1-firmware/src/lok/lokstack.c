@@ -20,6 +20,12 @@
 #include "../include/lokstack.h"
 #include "../include/rom_tables.h"
 
+/* The object ids the UI steps through: the device's own (0, 1, 2), 0x100, 0x101, the slots
+ * 0x200-0x209 */
+static const u16 lok_id_table[15] = {
+    0x0000, 0x0001, 0x0002, 0x0100, 0x0101, 0x0200, 0x0201, 0x0202, 0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x0209
+};
+
 
 /* The slot whose state has the object id handle and whose record is in use, or 10. Slot 10,
  * the edit record, is looked at too. */

@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "board.h"
+#include "irqstat.h"
 #include "canbus.h"
 #include "mcu.h"
 #include "tui.h"
@@ -175,6 +176,10 @@ static void usage(void)
 		"  -r             run no faster than real time (for a shared bus)\n"
 		"  -a CH=VALUE    ATD0 channel input, 10-bit (default 512); 0=0 starts the MS1 as a CAN slave\n"
 		"  -T FILE        log track output changes: time, PT3, PT4, PT5\n"
+		"  -I             interrupt timing: per interrupt its time from entry to RTI, and the track\n"
+		"                 signal interrupt's latency and slack (src/irqstat.c), after the run\n"
+		"  -S SYMBOLS     the image's symbol table (`nm -n`), for a rebuild: the LCD is read back with\n"
+		"                 its tables (default the original's, by the application version word)\n"
 		"  -D SPEC        attach a locomotive decoder to the track, repeatable; it logs what it does\n"
 		"                 and an analysis of the signal at the end: mm:ADDR[,mm1][,packets],\n"
 		"                 mfx:UID[,name=NAME][,symbol=elok|diesel|steam|none][,cv=VVV/II:XX]...\n"
@@ -192,18 +197,18 @@ int main(int argc, char **argv)
 	unsigned dumps[16][2];
 	int ndumps = 0;
 	const char *eeprom = 0;
-	bool quiet = false, show_lcd = false, interactive = false, realtime = false;
+	bool quiet = false, show_lcd = false, interactive = false, realtime = false, irq_timing = false;
 	const char *bus_spec = 0;
 	int atd_set[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	static canbus_t bus;
 	FILE *can_log = 0, *track_log = 0;
-	const char *script = 0;
+	const char *script = 0, *lcd_symbols = 0;
 	const char *decoder_spec[8];
 	int ndecoder_specs = 0;
 	static uint8_t bp[8192];
 	bool have_bp = false;
 	int opt;
-	while ((opt = getopt(argc, argv, "t:b:p:e:qn:d:lc:s:T:iC:ra:D:")) != -1) {
+	while ((opt = getopt(argc, argv, "t:b:p:e:qn:d:lc:s:T:iC:ra:D:S:I")) != -1) {
 		switch (opt) {
 		case 't': seconds = atof(optarg); break;
 		case 'b': {
@@ -239,6 +244,8 @@ int main(int argc, char **argv)
 				decoder_spec[ndecoder_specs++] = optarg;
 			break;
 		case 'n': trace_len = atoi(optarg) > 4096 ? 4096 : atoi(optarg); break;
+		case 'S': lcd_symbols = optarg; break;
+		case 'I': irq_timing = true; break;
 		default: usage();
 		}
 	}
@@ -263,6 +270,10 @@ int main(int argc, char **argv)
 	if (have_bp)
 		m->breakpoints = bp;
 	board_init(&board, m, can_log);
+	if (lcd_symbols && board_lcd_symbols(&board, lcd_symbols))
+		return 1;
+	if (irq_timing)
+		irqstat_attach(m);
 	board.track_log = track_log;
 	for (int i = 0; i < ndecoder_specs; i++) {
 		/* interactive: the state shows on the screen, the analysis after quitting */
@@ -316,6 +327,8 @@ int main(int argc, char **argv)
 				printf(" %02X", mcu_peek(m, (uint16_t)(dumps[d][0] + j)));
 			printf("\n");
 		}
+	if (irq_timing)
+		irqstat_print(m, stdout);
 	if (prof > 0 && !m->stop)
 		profile(m, prof, stdout);
 	return 0;

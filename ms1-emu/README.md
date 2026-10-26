@@ -42,6 +42,8 @@ make diff                 # differential CPU test against sim6812
 | `-c FILE` | log CAN frames (`-` = stdout): time, `TX`/`RX`, 29-bit ID, DLC, data |
 | `-s FILE` | input script (below) |
 | `-T FILE` | log every change of the track outputs: time (s), PT3, PT4, PT5 levels |
+| `-I` | interrupt timing, after the run: per interrupt vector the bus cycles from entry to the end of its `RTI` (nested interrupts included); for the track signal interrupt (timer channel 4) the latency after its compare, the slack before the next compare (≤ 0: a compare passed before it was set up) and the shortest compare interval; the longest stretch with interrupts masked outside interrupts and where it starts; at the track signal interrupt's entries, the fewest entries and the least signal time in the firmware's staging ring, and how often it was empty (the interrupt then plays an old entry) (`src/irqstat.c`) |
+| `-S SYMBOLS` | the image's symbol table (`nm -n`, e.g. `../ms1-firmware/build/ms1.sym`), for the firmware rebuild: the LCD is read back with the tables it names (`board_lcd_symbols`) instead of the original's |
 | `-C BUS` | attach a CAN bus: a SocketCAN interface (`can0`, `vcan0`) or `udp:PORT` (below) |
 | `-r` | run no faster than real time (needed when sharing a bus with real-time partners) |
 | `-a CH=VALUE` | ATD0 channel input, 10-bit (default 512 on every channel); `-a 0=0` starts the MS1 as a CAN slave |
@@ -107,10 +109,16 @@ build/difftest [-t SECONDS] [-s SCRIPT] [-a CH=V] [-e EEPROM] [-n N] [-m MS] [-v
   flash and starts at the rebuild's function. Both run with interrupts held off
   (`mcu_t.irq_block`) until the function returns to its caller, or `-m` emulated ms
   (default 50) pass.
+- The board's inputs hold still in both copies (no `EV_BOARD` event: knob transitions, the
+  mfx feedback clock, CAN bus polling). An input change inside the call would reach only the
+  side that reads the port after it: the slower code reads later.
 - Compared: the return value (when the table gives one), RAM from `0x1000` up to the GCC
   soft registers (`ram_vars_end`: `0x1BB7` in application version 4011, `0x1BAC` when the
   original's version word at `0xF73C` is 4010) and the stack from the return address up, the
   EEPROM, and the sequence of writes to the I/O registers (`mcu_t.write_hook`).
+- The EEPROM is compared with the commands under way completed on both sides. A sector
+  erase takes milliseconds: one started before the call can finish inside the longer of the
+  two calls only, which would otherwise show as a difference.
 - `-r ADDR:COUNT` names a ring of `COUNT` CAN frames at `ADDR`, each as the MSCAN buffers
   hold one (identifier 4 bytes, data 8, length 1; repeatable). The data bytes past a
   frame's length are never sent and are left out of the comparison: firmware that sends a
@@ -134,9 +142,12 @@ build/difftest [-t SECONDS] [-s SCRIPT] [-a CH=V] [-e EEPROM] [-n N] [-m MS] [-v
 - `-y` adds a table of the mean time of a tested call of each function in the original and
   in the rebuild (emulated µs, interrupts held off): where the rebuild's code is slower.
 - `-c FILE` logs the machine's CAN frames (as `ms1emu -c`).
+- `-I` with `-W`: interrupt timing after the run, as `ms1emu -I`; for a run with a second MS1
+  on the bus (`-M`).
 - `-W` runs `REBUILD.s19` as the whole machine and tests nothing: with the same options, its
   text lines, decoder events and `-c` log can be compared with a normal run of the original
-  (`../ms1-firmware/tools/regress.py` does this for every scenario).
+  (`../ms1-firmware/tools/regress.py` does this for every scenario). Its LCD is read back with
+  the tables `SYMBOLS` names.
 - `SYMBOLS`: the rebuild's `nm -n` output — function entries, and RAM variable names for
   the report. `FUNCTIONS`: lines `ORIG_ADDR NAME [v|b|w [ARGBYTES]]` — the original's entry
   (hex), the rebuild's function, its return value (none / `B` / `D`), and the bytes of its
@@ -184,6 +195,7 @@ C11, no dependencies. Sources in `src/`:
 | `eeprom.c` | EEPROM controller |
 | `mscan.c` | MSCAN0 |
 | `board.h`, `board.c` | MS1 board: buttons, encoder, LCD driver, analog inputs, track output, mfx feedback receiver, CAN log |
+| `irqstat.h`, `irqstat.c` | interrupt timing (`-I`), through `mcu_t.step_hook` |
 | `decoder.h`, `decoder.c`, `decoder_int.h` | locomotive decoders on the track output: API and front ([docs/decoders.md](docs/decoders.md)) |
 | `decoder_mm.c` | Märklin Motorola decoder ([docs/mm-decoder.md](docs/mm-decoder.md)) |
 | `decoder_mfx.c` | mfx decoder: frames, registration, configuration variables, answers ([docs/mfx-decoder.md](docs/mfx-decoder.md)) |
@@ -285,7 +297,8 @@ in ms1-firmware's `src/include/lcd_icons.h` (`*` = the "on" variant of a functio
 direction arrows and markings are the bits `lcd_set_bar` sets. Segments outside all of
 these are listed as block.byte.mask. The table addresses here are application version 4011's;
 for version 4010 the model reads that version's (`rom_tables` in `src/board.c`, chosen by the
-version word at `0xF73C`).
+version word at `0xF73C`), and for the firmware rebuild, whose tables are elsewhere, the ones
+its symbol table names (`-S`, `board_lcd_symbols`).
 
 **LCD text.** The matrix is read back as text with the firmware's font at `0xEF05`
 (`lcd_encode_char + 0xE9`): glyph *c* is ASCII *c*, its first byte's low nibble is the width

@@ -1,6 +1,6 @@
 /*==========================================================================
  * eeprom_config.h - the EEPROM: 1 KiB at 0x0800-0x0BFF (INITEE = 0x09), erased and programmed
- * in aligned 4-byte records (build/asm/hal.s); sys/eeprom_save.c writes it
+ * in aligned 4-byte records (hal/eeprom.c); sys/eeprom_save.c writes it
  *========================================================================*/
 #ifndef EEPROM_CONFIG_H
 #define EEPROM_CONFIG_H
@@ -23,10 +23,7 @@
 #define EE_RECORDS          0x0BE4  /* ring of 4-byte records: two words, kind 1-3 in the last byte */
 #define EE_RECORDS_END      0x0BFC
 
-/* Default image of 0x0800-0x099F, in the original's read-only data */
-extern const u8 eeprom_defaults[0x1A0];   /* 0xE788 */
-
-/* EEPROM commands (build/asm/hal.s) */
+/* EEPROM commands (hal/eeprom.c) */
 void eeprom_erase_sector(u16 addr);
 void eeprom_program_word(u16 addr, u16 data);
 

@@ -5,11 +5,16 @@
 
 /*==========================================================================
  * The track command buffer (track_cmd_buf, 0x1268): entries the track signal generator
- * (build/asm/siggen.s) turns into the track signal. track_cmd_write_ptr is the entry being written,
- * track_cmd_free the room left.
+ * (signal/signal_gen.c) turns into the track signal. track_cmd_write_ptr is the entry being
+ * written, track_cmd_free the room left.
  *========================================================================*/
 
-/* entries (build/asm/siggen.s) */
+/* the generator (signal/signal_gen.c) */
+void signal_gen_init(void);                                             /* 0xC58E */
+void signal_gen_send_buf_executor(u16 count);                           /* 0xC614 */
+void signal_gen_cmd_buf_consumer(u16 count);                            /* 0xC81D */
+
+/* entries (signal/signal_gen.c) */
 void track_cmd_advance(void);                     /* 0xCA6B: close the entry */
 void track_cmd_write_type2(u8 data);                     /* 0xCA5E: entry type 2, one byte */
 void track_cmd_pause(u16 timing_value);       /* 0xCA46: a pause (entry type 1) */

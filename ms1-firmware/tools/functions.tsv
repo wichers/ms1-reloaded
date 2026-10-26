@@ -1,7 +1,9 @@
 # Original function entry -> function of this build, for the differential test (ms1-emu difftest).
 # Columns: original entry (hex), function here, return value (v none, b byte in B, w word in D),
-# stack argument bytes the test leaves out where the original keeps a parameter in its slot.
-# The assembly modules' routines (asm/*.json) are not listed: they are the original's bytes.
+# stack argument bytes the test leaves out where the original keeps a parameter in its slot,
+# pN: D and N bytes of stack arguments may point to strings in flash (difftest skips a call
+# whose string is not at that address in this build: the original's read-only data).
+# Interrupt handlers are not listed: an interrupt enters them, not a call.
 407C	enter_bootloader	w
 40A3	lok_packets_next	w
 4922	lok_packets_refresh	w
@@ -30,7 +32,19 @@
 9333	track_current_monitor	v
 ACF1	lcd_lok_icons	v
 B9B7	lcd_draw_text	v
-BD54	str_format	w
+BD54	str_format	w	0	p10
+C268	lcd_init	v
+C28C	lcd_buf_load	v
+C29E	lcd_render_text	v	4
+C39F	lcd_set_bar	v
+C44A	lcd_clear_segments	v	0	p0
+C465	lcd_text_width	w	4
+C58E	signal_gen_init	v
+C614	signal_gen_send_buf_executor	v
+C81D	signal_gen_cmd_buf_consumer	v
+CA46	track_cmd_pause	v
+CA5E	track_cmd_write_type2	v
+CA6B	track_cmd_advance	v
 CA80	mfx_put_bits	v
 CB0E	mfx_put_command	v
 CB8C	mfx_cmd_syncs	v
@@ -72,10 +86,10 @@ B042	lcd_status_icons	v
 AC8E	lcd_mfx_icon	v
 B18C	lcd_speed_bar	v
 B2D2	ui_screen_text	v
-BB60	str_len	w
+BB60	str_len	w	0	p0
 BB75	str_cmp	w
-BBA5	str_ncpy	w
-BBD5	str_cat	w
+BBA5	str_ncpy	w	0	p0
+BBD5	str_cat	w	0	p2
 BBEE	str_append_char	w
 BC04	str_skip_ctrl	w
 BC14	str_itoa	w
@@ -112,3 +126,27 @@ CEEB	mfx_frame_cmd20	v
 8E58	eeprom_write_record	v
 D126	mm_write_direction	v
 DA51	lok_make_name_unique	v
+BA96	encoder_set_count	v
+BAB1	encoder_sample	v
+DCCF	eeprom_erase_sector	v
+DCE8	eeprom_program_word	v
+DCFE	lokdb_count	w
+DD07	lokdb_read	v
+DD98	can_poll	v
+DDB5	can_controller_full_init	v
+DE43	can_tx_enqueue_frame	w
+DEAC	can_rx_dequeue_frame	w
+DF67	timer_capture_start_bit_mode	v
+DF8F	timer_capture_start_adc_mode	v
+DF9A	timer_capture_stop_and_align	w
+DFCA	timer_capture_stop_and_count	w
+DFDC	gpio_read_porta_active_low	w
+DFE3	gpio_read_portb_active_low	w
+E028	timer_modulus_init	v
+E03E	timer_modulus_read	w
+E046	lcd_buf_init	v
+E058	lcd_pump_start	v
+E061	lcd_pump_all	v
+E072	delay_long	v
+E084	delay_short	v
+E097	counter_inc_24bit	v

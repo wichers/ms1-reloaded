@@ -20,7 +20,12 @@
 #include "../include/globals.h"
 #include "../include/rom_tables.h"
 
-extern void counter_inc_24bit(u8 *counter);
+/* 0xE097: count a big-endian 24-bit counter up */
+void counter_inc_24bit(u8 *counter)
+{
+    if (++counter[2] == 0 && ++counter[1] == 0)
+        ++counter[0];
+}
 
 #if MS1_RELEASE == 0x4010
 /* Version 4010 measures no current. The booster's comparator pulls PB6 low above the

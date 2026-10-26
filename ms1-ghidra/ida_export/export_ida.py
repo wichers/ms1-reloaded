@@ -101,12 +101,14 @@ summary = dict(functions=len(functions), user_named_functions=sum(f["user_named"
                names=len(names), user_named_names=sum(n["user_named"] for n in names),
                commented_addresses=len(comments), bookmarks=len(bookmarks), local_types=len(types),
                structs=sum(t["kind"] == "struct" for t in types), enums=sum(t["kind"] == "enum" for t in types))
-json.dump(dict(source_idb=os.path.basename(db), processor=ida_idp.get_idp_name(),
-               min_ea=ida_ida.inf_get_min_ea(), max_ea=ida_ida.inf_get_max_ea(),
-               entry_points=[dict(ordinal=o, ea=ea, name=n) for _, o, ea, n in idautils.Entries()],
-               summary=summary, segments=segments, functions=functions, names=names, comments=comments,
-               bookmarks=bookmarks, types=types),
-          open(os.path.join(out, "ms1_ida.json"), "w"), indent=1)
+with open(os.path.join(out, "ms1_ida.json"), "w") as f:
+    json.dump(dict(source_idb=os.path.basename(db), processor=ida_idp.get_idp_name(),
+                   min_ea=ida_ida.inf_get_min_ea(), max_ea=ida_ida.inf_get_max_ea(),
+                   entry_points=[dict(ordinal=o, ea=ea, name=n) for _, o, ea, n in idautils.Entries()],
+                   summary=summary, segments=segments, functions=functions, names=names, comments=comments,
+                   bookmarks=bookmarks, types=types),
+              f, indent=1)
+    f.write("\n")
 
 with open(os.path.join(out, "ms1_types.h"), "w") as h:
     h.write("/* Local types exported from %s */\n\n" % os.path.basename(db))

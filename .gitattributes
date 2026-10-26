@@ -1,0 +1,2 @@
+# Every text file with LF line endings, in the repository and in checkouts
+* text=auto eol=lf

@@ -23,7 +23,7 @@ bootloader as `../ms1-ghidra` analyses it (its `bootloader_*` functions in
 
 1. `bootloader_hw_init` (0xF800) sets up the memory map (INITRM, INITRG, INITEE, MISC: write-once
    in normal mode, so the application's later writes leave them), maps page $3D, engages the PLL
-   for a 24 MHz bus (the sequence `_start` in `gcc/crt0.s` repeats), masks interrupts, drives
+   for a 24 MHz bus (the sequence `_start` in `src/sys/crt0.c` repeats), masks interrupts, drives
    PORTE bit 2 low, turns off the timer channel 4 interrupt and makes timer channel 3 an input
    capture (4011's booster line off). It uses RAM from 0x1800 and the stack from 0x2000.
 2. `bootloader_crc_check_and_dispatch` (0xF877) checks the application:
@@ -44,6 +44,15 @@ At 0xF8F6 the bootloader enables CAN0 with the bus clock as its clock source, 25
 24 MHz bus (BTR0 0xC3, BTR1 0xFE: prescaler 4, 24 time quanta per bit), and its own acceptance
 filters. It announces itself with the UID (0xFF10-0xFF13) and waits for an update file's blocks
 (file format: `../tools/bci.py`; the master's side of the protocol: `../ms1-master`, flashing).
+It does not program the flash itself: it decodes the file's first blocks, the update file's
+loader, into RAM 0x1000-0x17FF, and once the four 0x200-byte parts (dest_keys 0x00-0x06) are in
+and their CRC-16 comes out 0, calls 0x1000 with the file offset of the next block: the rest
+of the file is the loader's. An update
+file therefore brings its own loader: `build/<release>.bci` carries the original's
+(`third_party/loader/`, what it does: `../tools/bci.py`). That loader erases the application
+version word first and programs it last, so an interrupted update leaves no application the
+checks above start. It also erases EEPROM 0x0800-0x0803: after an update the application finds
+`EE_LANGUAGE` erased and rewrites the EEPROM from its defaults (`src/include/eeprom_config.h`).
 It never returns to the application; it leaves update mode only through a reset, after which
 the checks above start a valid application again (power off and on is enough).
 
@@ -53,7 +62,7 @@ the checks above start a valid application again (power off and on is enough).
 | `enter_bootloader` from the options menu | the RESET item with PA3 and PA7 held (`porta_buttons_raw` 0x88, `src/ui/ui_control.c`; scenario `tools/scenarios/bootloader.txt`) |
 | `enter_bootloader` from CAN | a master's registration answer for this device's UID with bit 0 of its last data byte set (`src/can/mcan.c`) |
 
-`enter_bootloader` (`gcc/crt0.s`, the original's 0x407C) masks interrupts, turns off the timer
+`enter_bootloader` (`src/sys/crt0.c`, the original's 0x407C) masks interrupts, turns off the timer
 channel 4 interrupt and the booster line, drives PORTE bit 2 low, clears RAM 0x1000-0x1FFF,
 sets the stack to 0x2000 and jumps through the pointer at 0xFF70 (to 0xF8F6 if it is 0). It
 bypasses `bootloader_hw_init`, so update mode runs on the clock the application left: its CAN
@@ -63,7 +72,7 @@ bit rate is right only at the 24 MHz bus.
 
 No code: the application calls no bootloader routine. It takes the entry of update mode
 (0xFF70, above) and reads the metadata block. Its own restarts (`crt_restart`) stay inside the
-application; the original's restart through the reset vector (0x4077 in `gcc/crt0.s`) is
+application; the original's restart through the reset vector (0x4077 in `src/sys/crt0.c`) is
 never called.
 
 ## The metadata block
@@ -106,25 +115,27 @@ What belongs to what:
 
 | Address | Content | Read by |
 |---|---|---|
-| 0xF700-0xF70F | the application's identification words: 0xF702 its version word, 0xF704 its version (major.minor) | identification 3/0-3/2, 4/0; registration steps 6 and 7; INFO `AP:` |
+| 0xF700-0xF70F | the application's identification words (`struct ms1_ident` in `src/sys/ident.c`): 0xF702 its version word, 0xF704 its version (major.minor), 0xF706 and 0xF708 per release build, 0xF70E the hardware code of its article | identification 3/0-3/2, 4/0; registration steps 6 and 7; INFO `AP:` |
 | 0xF720 | pointers to the application's strings | identification 3/3 sends the first, the product name |
 | 0xF73A | pointer to the article number string | INFO `AN:` |
 | 0xF73C | the application version word | the bootloader's check |
 | 0xF73E | the CRC compensation word | the bootloader's CRC |
-| 0xF740-0xF7FF | the trampolines (`gcc/vectors.s`): a 3-byte `JMP` per vector, the last (0xF7FD) to `_start` | the bootloader's vector table and its jump into the application |
+| 0xF740-0xF7FF | the trampolines (`src/sys/vectors.c`): a 3-byte `JMP` per vector, the last (0xF7FD) to `_start` | the bootloader's vector table and its jump into the application |
 
-`tools/mkimage.py` takes 0xF700-0xF73F from the original, as part of its .rodata (README
-*Image layout*), and computes 0xF73E; the build provides the trampolines.
+`src/sys/ident.c` holds 0xF700-0xF73F of each release, with the original release's values,
+linked on its own with its strings from 0xF680 (`gcc/ident.ld`); `tools/mkimage.py` computes
+0xF73E; the build provides the trampolines.
 
 ## Keeping a modified firmware startable and updatable
 
-1. **Trampolines:** keep `gcc/vectors.s` at 0xF740 (the `tramp` region of `gcc/ms1.ld`), one
+1. **Trampolines:** keep `src/sys/vectors.c`'s table at 0xF740 (the `tramp` region of `gcc/ms1.ld`), one
    3-byte `JMP` per vector in vector order, the last one to `_start`. An interrupt the firmware
    enables needs its handler there.
 2. **Version word:** build the version for the device's hardware variant (`RELEASE`), so that
    0xF73C passes that device's 0xFF1A (*What belongs to what*).
 3. **CRC:** let `tools/mkimage.py` write 0xF73E; every image the Makefile builds goes through it.
-   The application must end below the original's .rodata (`gcc/<version>/release.ld` asserts it).
+   The application must end below the identification strings (the `rom` region of
+   `gcc/ms1.ld`; `tools/mkimage.py` checks it).
 4. **A way into update mode:** the bootloader enters it at reset only when a check fails. A
    firmware that passes the checks but hangs, or has neither the menu nor the CAN path to
    `enter_bootloader`, can then be recovered only over BDM. Enter it with the 24 MHz bus clock

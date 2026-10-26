@@ -79,6 +79,7 @@ public class ExportFacts extends GhidraScript {
 		doc.put("labels_below_0x4000", labels);
 		try (FileWriter w = new FileWriter(getScriptArgs()[0])) {
 			new GsonBuilder().setPrettyPrinting().create().toJson(doc, w);
+			w.write("\n");
 		}
 		println(String.format("ExportFacts: %d functions, %d labels below 0x4000", out.size(), labels.size()));
 	}

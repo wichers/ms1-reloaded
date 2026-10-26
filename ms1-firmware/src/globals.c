@@ -12,6 +12,7 @@
 
 #include "include/hcs12.h"
 #include "include/lokstack.h"
+#include "include/globals.h"
 
 /* .bss.* and .data.* names give the sections the types GCC gives .bss and .data */
 #define RAM(addr)      __attribute__((section(".bss.ram." #addr)))
@@ -20,7 +21,7 @@
 /* The original's .data, 0x1000-0x102F: the initial values are the original's */
 /* (the buffers the pointers below start at, defined first for their initialisers) */
 RAM(0x1108) u8 lcd_buf[88];
-RAM(0x1160) u8 signal_staging_buf[200];
+RAM(0x1160) u8 signal_staging_buf[SIGNAL_STAGING_SIZE];
 RAM(0x1228) u8 signal_gen_send_buffer[64];
 RAM(0x1268) u8 track_cmd_buf[48];
 RAM_DATA(0x1000) u16 mfx_next_address = 0x36AF;  /* the address a new mfx locomotive gets, counting down */
@@ -180,9 +181,9 @@ RAM(0x1921) volatile u16 can_rx_ring_read;
 RAM(0x1923) volatile u16 can_rx_ring_write;
 RAM(0x1925) volatile u16 can_tx_ring_read;
 RAM(0x1927) volatile u16 can_tx_ring_write;
-RAM(0x1929) u8 can_tx_ring[130];
-RAM(0x19AB) u8 can_rx_ring[416];
-RAM(0x1B4B) u8 timer_capture_buffer[96];
+RAM(0x1929) u8 can_tx_ring[CAN_TX_RING_SIZE];
+RAM(0x19AB) u8 can_rx_ring[CAN_RX_RING_SIZE];
+RAM(0x1B4B) u8 timer_capture_buffer[TIMER_CAPTURE_SIZE];
 RAM(0x1BAB) volatile u16 timer_capture_ptr;
 RAM(0x1BAD) volatile u8 timer_capture_count;
 RAM(0x1BAE) volatile u8 timer_capture_mode;

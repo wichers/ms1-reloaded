@@ -1,6 +1,6 @@
 # CLAUDE.md — MS1 firmware rebuild
 
-C (and the original's hand-written assembly) source of the Märklin Mobile Station 1 firmware (MC9S12D64), built with GCC to behave like the original. `README.md` covers building, the source layout, the image and RAM layout, and verification.
+C source (inline assembly for the interrupt handlers) of the Märklin Mobile Station 1 firmware (MC9S12D64), built with GCC to behave like the original. `README.md` covers building, the source layout, the image and RAM layout, and verification.
 
 ## Rules
 

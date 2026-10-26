@@ -536,6 +536,8 @@ uint64_t mcu_run(mcu_t *m, uint64_t until)
 			if (c->insn_pc == pc)
 				m->trace[m->trace_pos++ & 4095] = pc;
 			m->now += mcu_bus_cycles(m, (uint64_t)cycles);
+			if (m->step_hook)
+				m->step_hook(m, pc);
 			if (m->stop)
 				return m->now;
 		}

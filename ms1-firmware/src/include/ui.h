@@ -31,7 +31,10 @@ u8   ui_knob_speed(u8 speed);                                       /* 0xD7E0 */
 u16  charset_index_lookup(u8 c);                                    /* 0xDAFF */
 void ui_knob_reset(void);                                           /* 0xDB25 */
 s16  ui_knob_adjust(s16 value, s16 max, s16 min, u8 flags);         /* 0xDB3C */
+
+/* ui/encoder.c: the knob's counter */
 void encoder_set_count(u8 value, u8 max, u8 mode);                  /* 0xBA96 */
+void encoder_sample(void);                                          /* 0xBAB1 */
 
 /* ui/lcd_text.c: text placement and menu levels */
 void lcd_scroll_step(u16 cols);                                     /* 0x9144 */
