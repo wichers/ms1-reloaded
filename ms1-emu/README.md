@@ -22,7 +22,7 @@ python3 -I tools/compose_image.py ../original-firmware/4011_1-8_mobile-station-2
     ../original-firmware/firmware_20260317_192757_usbdm.s19 build/ms1_4011.s19
 build/ms1emu -i build/ms1_4011.s19          # interactive
 build/ms1emu -t 10 -p 1 build/ms1_4011.s19    # batch: run 10 s, profile 1 s
-make check                # CPU tests and the decoder check against the Ghidra listing
+make check                # CPU tests, DCC decoder tests, and the decoder check against the Ghidra listing
 make diff                 # differential CPU test against sim6812
 ```
 
@@ -47,7 +47,7 @@ make diff                 # differential CPU test against sim6812
 | `-C BUS` | attach a CAN bus: a SocketCAN interface (`can0`, `vcan0`) or `udp:PORT` (below) |
 | `-r` | run no faster than real time (needed when sharing a bus with real-time partners) |
 | `-a CH=VALUE` | ATD0 channel input, 10-bit (default 512 on every channel); `-a 0=0` starts the MS1 as a CAN slave |
-| `-D SPEC` | attach a locomotive decoder to the track, repeatable: `mm:ADDR[,mm1][,packets]` or `mfx:UID[,name=NAME][,symbol=SYMBOL][,frames]`. It logs what it does (registration, CV reads, speed, functions) and prints an analysis of the signal after the run ([docs/decoders.md](docs/decoders.md)) |
+| `-D SPEC` | attach a decoder to the track, repeatable: `mm:ADDR[,mm1][,packets]`, `mfx:UID[,name=NAME][,symbol=SYMBOL][,frames]`, `dcc:ADDR[,long][,steps=N][,cv=N:V][,ack=MA][,noack][,packets]` or `dccacc:ADDR[,…]`. It logs what it does (registration, CV reads and writes, speed, functions, accessory outputs) and prints an analysis of the signal after the run ([docs/decoders.md](docs/decoders.md)) |
 
 Interactive mode runs in step with the wall clock (or as fast as possible, `f`), redraws the
 LCD every 50 ms with the text it reads, the lit icons and the state of each `-D` decoder, and
@@ -199,6 +199,7 @@ C11, no dependencies. Sources in `src/`:
 | `decoder.h`, `decoder.c`, `decoder_int.h` | locomotive decoders on the track output: API and front ([docs/decoders.md](docs/decoders.md)) |
 | `decoder_mm.c` | Märklin Motorola decoder ([docs/mm-decoder.md](docs/mm-decoder.md)) |
 | `decoder_mfx.c` | mfx decoder: frames, registration, configuration variables, answers ([docs/mfx-decoder.md](docs/mfx-decoder.md)) |
+| `decoder_dcc.c` | DCC locomotive and accessory decoders: packets, CVs, POM, service mode and its acknowledgement ([docs/dcc-decoder.md](docs/dcc-decoder.md)) |
 | `tui.h`, `tui.c` | interactive terminal front end |
 | `canbus.h`, `canbus.c` | CAN transports: SocketCAN and the UDP bus |
 | `main.c` | `ms1emu` command |
@@ -283,6 +284,7 @@ Wiring, as the firmware uses the pins:
 | track feedback (RDS receiver: RDCL, RDDA, QUAL) | PT0 (input capture 0), PTT 1, PORTB 5 | `isr_feedback_capture` |
 | track / decoder voltage | ATD0 channels 0 / 1 | `adc_read_and_scale_voltages` |
 | feedback carrier level | ATD0 channel 2 | `isr_feedback_capture`, `mfx_feedback_bit` |
+| version 4011: track current | ATD0 channel 3 (and 4); a DCC decoder's acknowledgement adds to channel 3 (`extra_current`) | `track_current_monitor` |
 
 **LCD.** The display driver is not addressed with the PT6547 protocol (command byte after STB
 falls): the firmware sends Sanyo CCB-style frames — an address byte while CE is low (`A2` on
@@ -345,7 +347,8 @@ answer raises PB5 and ATD0 channel 2, and its data bits re-phase RDCL with the b
 **Track output.** After start-up the signal generator drives PT4/PT5 in antiphase with Märklin
 Motorola bit cells of 182/26 µs and mfx cells of 100/50 µs (`-T` logs every edge).
 `python3 -I tools/track_decode.py track.log` decodes the log: MM packets (address trits,
-function, speed, MM2 bits) and mfx bursts as bit strings. With an empty locomotive list the
+function, speed, MM2 bits), DCC packets (preamble, bytes, checksum and what they command) and
+mfx bursts as bit strings. With an empty locomotive list the
 firmware sends MM idle packets (address 80) between periodic mfx frames. The track is at 0 V
 (PT4 = PT5) during start-up and while STOP is in effect. `-D` attaches decoders that act on
 the signal ([docs/decoders.md](docs/decoders.md)).
@@ -401,6 +404,7 @@ the signal ([docs/decoders.md](docs/decoders.md)).
 | Target | What it compares | Pass criterion |
 |---|---|---|
 | `make check` (`tests/cpu_test.c`) | exception entry/return, RTI chaining into a pending interrupt, the delay after clearing I, WAI, SWI, TRAP, CALL/RTC, X-bit rules | all pass |
+| `make check` (`tests/dcc_test.c`) | the DCC decoders on synthetic packets: 128/28/14 speed steps, functions, short and long addresses, POM, service mode with its acknowledgement, accessory outputs, the RCN-210 half-bit limits, preamble length, checksum | all pass |
 | `make check` (`tests/decode_check.c`) | every instruction in the Ghidra listing (`ms1-ghidra/out/listing.tsv`, written by `ms1-ghidra`'s `ExportListing.java`) against this disassembler: image bytes, length, mnemonic (aliases folded) | 0 mismatches |
 | `make diff` (`tests/diff_sim6812.c`) | each opcode, 20 000 random register/memory states, against sim6812's CPU core (`SIM6812`, default `../sim6812/src/sim6812`: a checkout of the sim6812 HC12 simulator, which is not part of this repository and has its own license; linked into the test program only): registers, condition codes (minus bits the manual leaves undefined), memory writes | no difference outside the `known` table |
 

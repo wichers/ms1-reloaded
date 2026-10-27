@@ -43,6 +43,9 @@ typedef struct ms1_board {
 	int rds_carriers;                /* decoders sending the carrier now */
 	bool rds_clk;                    /* RDCL level */
 	bool rds_hold;                   /* a decoder's bit set the last rising edge */
+	/* extra track current a decoder draws (a DCC acknowledgement), until extra_end */
+	double extra_ma;
+	uint64_t extra_end;
 	/* CAN */
 	canbus_t *bus;                   /* attached bus, or NULL */
 	bool can_unplugged;              /* cable pulled: no frames go out or come in */

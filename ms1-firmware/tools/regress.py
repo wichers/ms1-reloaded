@@ -11,8 +11,13 @@ standing for the original's image and other *.txt words for scenario files. Per 
   frames per direction and ID with a frame repeated unchanged counted once;
 - the call times of each side (difftest -y).
 
+'# expect[ LABEL]: OPTIONS' lines are runs of behaviour the original does not have (DCC): the
+rebuild runs alone (difftest -W) and what it shows is compared with the file
+tools/scenarios/LABEL.expected (LABEL defaults to the scenario's name; version 4010 takes
+LABEL.4010.expected where that exists). --update writes those files from the rebuild instead.
+
 Then: totals, the functions no run calls, and the functions where the rebuild spends the
-most extra time. Exit status 1 if a call differs or a whole-firmware comparison fails. Skipped
+most extra time. Exit status 1 if a call differs or a comparison fails. Skipped
 calls are those of functions flagged pN in the function table that got a string of the
 original's read-only data, which the rebuild keeps elsewhere (difftest).
 
@@ -21,7 +26,7 @@ release 4010 image (--firmware), made bootable with the device dump's bootloader
 tools/mkimage.py --original; the 4011 original is ms1-emu's build/ms1_4011.s19.
 
 usage: python3 tools/regress.py [--release R] [-j JOBS] [-n CALLS] [--emu DIR] [--firmware DIR]
-                                [--keep DIR] [RUN...]
+                                [--keep DIR] [--update] [RUN...]
 """
 import argparse
 import concurrent.futures
@@ -44,17 +49,24 @@ DUMP = "firmware_20260317_192757_usbdm.s19"
 
 
 def runs():
-    """(name, scenario path, option words) for every run line, in file order."""
+    """(name, scenario path, option words, expect) for every run and expect line, in file
+    order"""
     out = []
     for f in sorted(os.listdir(SCENARIOS)):
         if not f.endswith(".txt"):
             continue
         path = os.path.join(SCENARIOS, f)
         for line in open(path, encoding="utf-8"):
-            m = re.match(r"#\s*run(?:\s+(\w+))?:\s*(.*)", line)
+            m = re.match(r"#\s*(run|expect)(?:\s+(\w+))?:\s*(.*)", line)
             if m:
-                out.append((m.group(1) or f[:-4], path, shlex.split(m.group(2))))
+                out.append((m.group(2) or f[:-4], path, shlex.split(m.group(3)), m.group(1) == "expect"))
     return out
+
+
+def expected_path(name, release):
+    """the expected observables of an expect run"""
+    own = os.path.join(SCENARIOS, f"{name}.{release}.expected")
+    return own if os.path.exists(own) else os.path.join(SCENARIOS, f"{name}.expected")
 
 
 def resolve(words, orig):
@@ -91,7 +103,7 @@ def times(text):
     return rows
 
 
-EVENT = re.compile(r"^\s*\d+\.\d+ ((?:mm|mm1|mfx):\S+ .*)$")
+EVENT = re.compile(r"^\s*\d+\.\d+ ((?:mm|mm1|mfx|dcc|dccacc):\S+ .*)$")
 
 
 def observables(text, can_log):
@@ -133,6 +145,7 @@ def main():
     ap.add_argument("--firmware", default=os.path.join(ROOT, "..", "original-firmware"),
                     help="the original firmware: release images and the device dump (for --release 4010)")
     ap.add_argument("--keep", help="keep the images, logs and reports in this directory")
+    ap.add_argument("--update", action="store_true", help="write the expect runs' files from the rebuild")
     ap.add_argument("only", nargs="*", help="run names (default: all)")
     a = ap.parse_args()
 
@@ -171,24 +184,47 @@ def main():
         sys.exit("no such run")
     jobs = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.j) as pool:
-        for name, path, words in todo:
+        for name, path, words, expect in todo:
             opts = resolve(words, orig)
             files = [orig, rebuild, sym, tsv]
             log_o, log_r = os.path.join(work, name + ".can.orig"), os.path.join(work, name + ".can.rebuild")
             jobs[name] = (
+                None if expect else
                 pool.submit(run, [difftest, "-y", "-n", str(a.n)] + can_ring + ["-s", path, "-c", log_o] + opts + files),
                 pool.submit(run, [difftest, "-W"] + can_ring + ["-s", path, "-c", log_r] + opts + files),
                 log_o, log_r)
-        results = {name: (t.result(), w.result(), lo, lr) for name, (t, w, lo, lr) in jobs.items()}
+        results = {name: (t.result() if t else None, w.result(), lo, lr) for name, (t, w, lo, lr) in jobs.items()}
 
     failed = False
     calls, timing = {}, {}
     print(f"{'run':<14} {'match':>8} {'differ':>7} {'skipped':>7}  whole firmware")
-    for name, _, _ in todo:
+    for name, _, _, expect in todo:
         test, whole, log_o, log_r = results[name]
         if a.keep:
-            open(os.path.join(work, name + ".test.txt"), "w").write(test)
+            if test is not None:
+                open(os.path.join(work, name + ".test.txt"), "w").write(test)
             open(os.path.join(work, name + ".whole.txt"), "w").write(whole)
+        if expect:
+            got = observables(whole, log_r)
+            path = expected_path(name, rel.name)
+            if a.update:
+                open(path, "w", encoding="utf-8").write("".join(line + "\n" for line in got))
+                verdict = f"written ({len(got)} lines, {os.path.relpath(path, ROOT)})"
+            elif not os.path.exists(path):
+                failed = True
+                verdict = f"no {os.path.relpath(path, ROOT)} (--update writes it)"
+            else:
+                want = open(path, encoding="utf-8").read().splitlines()
+                if want == got:
+                    verdict = f"as expected ({len(got)} lines)"
+                else:
+                    failed = True
+                    k = next((i for i, (x, y) in enumerate(zip(want, got)) if x != y), min(len(want), len(got)))
+                    verdict = (f"DIFFERS at line {k + 1} of {len(want)}/{len(got)}:\n"
+                               f"    expected: {want[k] if k < len(want) else '(end)'}\n"
+                               f"    rebuild:  {got[k] if k < len(got) else '(end)'}")
+            print(f"{name:<14} {'-':>8} {'-':>7} {'-':>7}  {verdict}")
+            continue
         t = table(test)
         ok = sum(r[3] for r in t.values())
         bad = sum(r[4] for r in t.values())

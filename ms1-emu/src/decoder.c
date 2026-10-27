@@ -3,7 +3,7 @@
  * A decoder sees the track voltage the H-bridge makes of PT4/PT5 (+, -, or 0 while both sides
  * are equal) and decodes it from the edge timing, as the decoder in a locomotive would. It
  * logs what it does and, at the end, an analysis of the signal. The protocols are in
- * decoder_mm.c (Märklin Motorola) and decoder_mfx.c (mfx). */
+ * decoder_mm.c (Märklin Motorola), decoder_mfx.c (mfx) and decoder_dcc.c (DCC). */
 #include "decoder_int.h"
 
 #include <stdarg.h>
@@ -51,8 +51,12 @@ decoder_t *decoder_create(const char *spec, FILE *log, const decoder_feedback_t 
 		ok = mm_create(d, spec + 3, err, errsize);
 	else if (!strncmp(spec, "mfx:", 4))
 		ok = mfx_create(d, spec + 4, err, errsize);
+	else if (!strncmp(spec, "dcc:", 4))
+		ok = dcc_create(d, spec + 4, err, errsize);
+	else if (!strncmp(spec, "dccacc:", 7))
+		ok = dccacc_create(d, spec + 7, err, errsize);
 	else {
-		snprintf(err, errsize, "decoder '%s': the kinds are mm:ADDR and mfx:UID", spec);
+		snprintf(err, errsize, "decoder '%s': the kinds are mm:ADDR, mfx:UID, dcc:ADDR and dccacc:ADDR", spec);
 		ok = false;
 	}
 	if (!ok) {

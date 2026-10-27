@@ -11,9 +11,11 @@ compare two images (the original and a rebuild) on the same scenario.
 |---|---|
 | Märklin Motorola | [mm-decoder.md](mm-decoder.md) |
 | mfx, and the feedback receiver | [mfx-decoder.md](mfx-decoder.md) |
+| DCC locomotive and accessory decoders, and the acknowledgement | [dcc-decoder.md](dcc-decoder.md) |
 
 Sources: `src/decoder.h` (API), `src/decoder.c` (the protocol-independent front),
-`src/decoder_int.h` (shared by the implementations), `src/decoder_mm.c`, `src/decoder_mfx.c`.
+`src/decoder_int.h` (shared by the implementations), `src/decoder_mm.c`, `src/decoder_mfx.c`,
+`src/decoder_dcc.c`.
 The board feeds every attached decoder from `pins_out` in `src/board.c` and gives it the
 feedback path (`board_feedback`).
 
@@ -35,6 +37,7 @@ build/ms1emu -q -t 42 -s ../ms1-firmware/tools/scenarios/mfx.txt -D 'mfx:7A3F001
 | `mfx:…,cv=VVV/II:XX` | sets one configuration variable (hex: CV number, index, value) over the built-in image; repeatable — e.g. `cv=000/02:02`, a block 01 of version 2 |
 | `mfx:…,noread` | answers no CV read (1-bit answers still): a decoder whose data answers do not arrive |
 | `mfx:…,frames` | also logs every frame on the track, parsed |
+| `dcc:ADDR`, `dccacc:ADDR` | DCC locomotive decoder (address 1–10239) and basic accessory decoder (decoder address 1–510); options in [dcc-decoder.md](dcc-decoder.md) |
 
 - `-D` can be repeated, up to the size of `ms1_board_t.decoders`. Each decoder sees the whole
   track signal and acts on what is addressed to it.
@@ -48,7 +51,7 @@ build/ms1emu -q -t 42 -s ../ms1-firmware/tools/scenarios/mfx.txt -D 'mfx:7A3F001
 ## Events
 
 Each line is `TIME NAME EVENT`, with `TIME` in emulated seconds and `NAME` the decoder (`mm:3`,
-`mm1:3`, `mfx:7A3F0012`). The events of each protocol are listed in its reference. The state
+`mm1:3`, `mfx:7A3F0012`, `dcc:3`, `dccacc:5`). The events of each protocol are listed in its reference. The state
 lines (at the end, and in the TUI) end in `no track voltage` while the track is off.
 
 ## Track voltage

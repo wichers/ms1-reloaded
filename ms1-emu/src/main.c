@@ -183,7 +183,9 @@ static void usage(void)
 		"  -D SPEC        attach a locomotive decoder to the track, repeatable; it logs what it does\n"
 		"                 and an analysis of the signal at the end: mm:ADDR[,mm1][,packets],\n"
 		"                 mfx:UID[,name=NAME][,symbol=elok|diesel|steam|none][,cv=VVV/II:XX]...\n"
-		"                 [,noread][,frames]\n"
+		"                 [,noread][,frames], dcc:ADDR[,long][,steps=14|28|128][,cv=N:V]...\n"
+		"                 [,ack=MA][,noack][,packets], dccacc:ADDR[,cv=N:V]...[,ack=MA][,noack]\n"
+		"                 [,packets]\n"
 		"  -s FILE        input script: lines 'SECONDS press|release BUTTON', 'SECONDS turn N',\n"
 		"                 'SECONDS lcd', 'SECONDS text', 'SECONDS unplug|plug' (the CAN cable);\n"
 		"                 BUTTON is pa0-pa7, pb0-pb7 or ok, esc, knob, stop, light\n");

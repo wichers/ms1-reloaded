@@ -1,6 +1,7 @@
 # ms1-emu: MC9S12D64 / MS1 emulator.
 #   make            build build/ms1emu
-#   make check      CPU tests, and the decoder check against the Ghidra listing
+#   make check      CPU tests, the DCC decoder tests, and the instruction decoder check against
+#                   the Ghidra listing
 #                   (needs ../ms1-ghidra/out/listing.tsv and $(IMAGE))
 #   make diff       differential CPU test against sim6812 (needs its sources in $(SIM6812))
 CC ?= cc
@@ -10,7 +11,7 @@ LISTING ?= ../ms1-ghidra/out/listing.tsv
 IMAGE ?= build/ms1_4011.s19
 
 CORE = src/cpu12.c src/cpu12_dis.c src/image.c
-MCU = src/mcu.c src/ect.c src/spi.c src/eeprom.c src/atd.c src/mscan.c src/board.c src/tui.c src/canbus.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/irqstat.c
+MCU = src/mcu.c src/ect.c src/spi.c src/eeprom.c src/atd.c src/mscan.c src/board.c src/tui.c src/canbus.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/decoder_dcc.c src/irqstat.c
 
 build/ms1emu: src/main.c $(CORE) $(MCU) src/*.h src/cpu12_cycles.inc | build
 	$(CC) $(CFLAGS) -o $@ src/main.c $(CORE) $(MCU)
@@ -35,8 +36,12 @@ build/diff_sim6812: tests/diff_sim6812.c src/cpu12.c src/cpu12_dis.c src/cpu12.h
 		tests/diff_sim6812.c src/cpu12.c src/cpu12_dis.c \
 		$(SIM6812)/instr.c $(SIM6812)/decode.c $(SIM6812)/common.c
 
-check: build/cpu_test build/decode_check
+build/dcc_test: tests/dcc_test.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/decoder_dcc.c src/decoder.h src/decoder_int.h | build
+	$(CC) $(CFLAGS) -o $@ tests/dcc_test.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/decoder_dcc.c
+
+check: build/cpu_test build/decode_check build/dcc_test
 	build/cpu_test
+	build/dcc_test
 	build/decode_check $(IMAGE) $(LISTING)
 
 diff: build/diff_sim6812

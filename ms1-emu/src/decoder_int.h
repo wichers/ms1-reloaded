@@ -1,4 +1,5 @@
-/* Shared by the decoder implementations: decoder.c (the front), decoder_mm.c, decoder_mfx.c. */
+/* Shared by the decoder implementations: decoder.c (the front), decoder_mm.c, decoder_mfx.c,
+ * decoder_dcc.c. */
 #ifndef DECODER_INT_H
 #define DECODER_INT_H
 
@@ -31,9 +32,11 @@ struct decoder {
 /* An event line: "TIME NAME TEXT" */
 void decoder_say(decoder_t *d, double t, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
-/* Set up d->ops, d->impl and d->name from the text after "mm:" / "mfx:"; false with a
- * message in err. */
+/* Set up d->ops, d->impl and d->name from the text after "mm:" / "mfx:" / "dcc:" /
+ * "dccacc:"; false with a message in err. */
 bool mm_create(decoder_t *d, const char *args, char *err, size_t errsize);
 bool mfx_create(decoder_t *d, const char *args, char *err, size_t errsize);
+bool dcc_create(decoder_t *d, const char *args, char *err, size_t errsize);
+bool dccacc_create(decoder_t *d, const char *args, char *err, size_t errsize);
 
 #endif

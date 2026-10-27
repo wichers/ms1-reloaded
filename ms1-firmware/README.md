@@ -311,7 +311,9 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   in the function; `m68hc11-addr2line -e build/ms1.elf` maps the rebuild's to source lines.
 - **Scenarios** (`tools/scenarios/`, the `ms1emu -s` format): each file's header says what it
   covers; its `# run[ LABEL]: OPTIONS` lines are its runs — difftest options, `ORIGINAL` for
-  the original's image, other `*.txt` for scenario files (a second MS1's inputs).
+  the original's image, other `*.txt` for scenario files (a second MS1's inputs) — and its
+  `# expect[ LABEL]: OPTIONS` lines runs of behaviour the original does not have (*Expected
+  output*). A header line must not itself start with `# run` or `# expect`.
 
   | Scenario | Runs | Covers |
   |---|---|---|
@@ -326,6 +328,13 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   | `mfxfault.txt` | `mfxfault` | mfx decoders with a bad configuration (another address, slot dropped) and without data answers (read-out given up, decoder deleted) |
   | `bootloader.txt` | `bootloader` | OPTIONEN, RESET, PA3+PA7: the jump to the bootloader |
 
+- **Expected output**: an `# expect` run runs the rebuild alone (`difftest -W`) and compares
+  what it shows — the observables of the whole-firmware comparison below — with
+  `tools/scenarios/LABEL.expected` (LABEL: the run's label, else the scenario's name; version
+  4010 takes `LABEL.4010.expected` where that exists). `python3 tools/regress.py --update RUN`
+  writes the file from the rebuild; read its diff before committing it. Decoder events of
+  `dcc:` and `dccacc:` decoders (`../ms1-emu/docs/dcc-decoder.md`) are observables like MM's
+  and mfx's.
 - **Whole firmware**: `tools/regress.py` also runs the rebuild as the whole machine
   (`difftest -W`) and compares what each scenario shows with the original's run: text lines,
   decoder events (`-D`, `../ms1-emu/docs/decoders.md`) and CAN frames, without times and with

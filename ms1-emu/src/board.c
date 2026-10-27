@@ -13,7 +13,8 @@
  *   address byte while CE is low, then a 10-byte data block while CE is high; the four blocks
  *   end in block codes 0-3. Bytes arrive MSB first, the driver takes them LSB first;
  * - analog: ATD0 channel 0 track voltage, channel 1 decoder voltage
- *   (adc_read_and_scale_voltages), channel 2 sampled by the track capture.
+ *   (adc_read_and_scale_voltages), channel 2 sampled by the track capture, channel 3 the track
+ *   current (version 4011), which a decoder's acknowledgement raises (extra_current).
  *
  * The LCD is rendered with the firmware's own glass map: the 38x5 dot matrix at 0xF46C (per
  * column, five (display_buffer offset, mask) pairs, top row first) and the 14-segment speed bar
@@ -456,9 +457,17 @@ static void rds_bit(void *ctx, int bit)
 	reschedule(b);
 }
 
+/* A DCC acknowledgement: ma more track current for seconds */
+static void extra_current(void *ctx, double ma, double seconds)
+{
+	ms1_board_t *b = ctx;
+	b->extra_ma = ma;
+	b->extra_end = b->m->now + mcu_ticks(b->m, seconds);
+}
+
 decoder_feedback_t board_feedback(ms1_board_t *b)
 {
-	return (decoder_feedback_t){ .ctx = b, .carrier = rds_carrier, .bit = rds_bit };
+	return (decoder_feedback_t){ .ctx = b, .carrier = rds_carrier, .bit = rds_bit, .current = extra_current };
 }
 
 static void poll_bus(ms1_board_t *b)
@@ -529,11 +538,24 @@ void board_attach_bus(ms1_board_t *b, canbus_t *bus)
 
 /* ---- analog ---- */
 
+/* The 10-bit counts of ma on ATD0 channel 3, the track current input of version 4011: its
+ * firmware reads ATD0DR3 (left-aligned) * 10 * flash_adc3_scale (0xFF66) >> 16 mA */
+static uint16_t current_counts(ms1_board_t *b, double ma)
+{
+	const uint8_t *w = &b->m->flash[FLASH_PAGES - 1][0xFF66 - 0xC000];
+	unsigned scale = (unsigned)(w[0] << 8 | w[1]);
+	return scale ? (uint16_t)(ma * 65536.0 / (640.0 * scale) + 0.5) : 0;
+}
+
 static uint16_t atd0_input(void *ctx, int ch)
 {
 	ms1_board_t *b = ctx;
 	if ((ch & 7) == 2 && b->rds_carriers > 0)
 		return RDS_CARRIER_LEVEL;
+	if ((ch & 7) == 3 && b->m->now < b->extra_end) {
+		unsigned v = b->atd[3] + current_counts(b, b->extra_ma);
+		return (uint16_t)(v > 0x3FF ? 0x3FF : v);
+	}
 	return b->atd[ch & 7];
 }
 
