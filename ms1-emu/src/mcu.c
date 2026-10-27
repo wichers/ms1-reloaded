@@ -521,6 +521,11 @@ static void fire_events(mcu_t *m)
 	}
 }
 
+void mcu_hold_start(mcu_t *m, double seconds)
+{
+	m->start_hold = mcu_ticks(m, seconds);
+}
+
 uint64_t mcu_run(mcu_t *m, uint64_t until)
 {
 	cpu12_t *c = &m->cpu;
@@ -531,6 +536,17 @@ uint64_t mcu_run(mcu_t *m, uint64_t until)
 		fire_events(m);
 		/* next_event can move earlier while instructions run (a register write schedules) */
 		while (m->now < until && m->now < m->next_event) {
+			if (m->start_hold && c->pc == APP_START && c->state == CPU12_RUN) {
+				if (m->now < m->start_hold) {
+					uint64_t t = m->start_hold < m->next_event ? m->start_hold : m->next_event;
+					m->now = t < until ? t : until;
+					break;
+				}
+				if (m->now > m->start_hold)
+					fprintf(stderr, "warning: the application starts at %.6f s, after the hold\n",
+					        mcu_seconds(m, m->now));
+				m->start_hold = 0;
+			}
 			if (m->breakpoints && !resume && c->state == CPU12_RUN &&
 			    (m->breakpoints[c->pc >> 3] >> (c->pc & 7) & 1)) {
 				m->stop = true;

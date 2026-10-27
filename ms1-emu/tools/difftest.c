@@ -45,6 +45,9 @@
  *                  a normal run of the original; its LCD is read back with the tables
  *                  SYMBOLS names
  *     -I           with -W: interrupt timing after the run (as ms1emu -I, src/irqstat.c)
+ *     -B SECONDS   start the application of each machine (this one and -M's) no earlier than
+ *                  SECONDS after power-on (as ms1emu -B): the original and a rebuild then start
+ *                  at the same moment, whatever the bootloader's CRC check over their flash takes
  *   SYMBOLS: the rebuild's symbol table as `nm -n` prints it ('ADDR TYPE NAME'): function
  *   entries, and the names of RAM variables for the report. A listed function missing from
  *   it (not linked into the rebuild) is reported and not tested.
@@ -658,7 +661,7 @@ static void usage(void)
 {
 	fprintf(stderr, "usage: difftest [-t SECONDS] [-s SCRIPT] [-a CH=V] [-e EEPROM] [-n N] [-m MS] [-v] [-f NAME]...\n"
 			"                [-r ADDR:COUNT]... [-M IMAGE [-S SCRIPT] [-A CH=V]...] [-D SPEC]... [-u NAME[:N]]...\n"
-			"                [-c FILE] [-W] [-y]\n"
+			"                [-c FILE] [-W] [-y] [-B SECONDS]\n"
 			"                ORIGINAL.s19 REBUILD.s19 SYMBOLS FUNCTIONS\n");
 	exit(2);
 }
@@ -669,10 +672,11 @@ int main(int argc, char **argv)
 	const char *script = 0, *eeprom = 0, *peer_image = 0, *peer_script = 0;
 	const char *only[64], *decoder_spec[8], *can_log_path = 0;
 	bool whole = false, irq_timing = false;
+	double hold = 0;
 	int nonly = 0, ndecoder_specs = 0, opt;
 	int atd_set[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	int peer_atd[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-	while ((opt = getopt(argc, argv, "t:s:a:e:n:m:vxf:M:S:r:A:D:u:c:WyI")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:a:e:n:m:vxf:M:S:r:A:D:u:c:WyIB:")) != -1) {
 		switch (opt) {
 		case 't': seconds = atof(optarg); break;
 		case 's': script = optarg; break;
@@ -688,6 +692,7 @@ int main(int argc, char **argv)
 		case 'W': whole = true; break;
 		case 'I': irq_timing = true; break;
 		case 'y': show_times = true; break;
+		case 'B': hold = atof(optarg); break;
 		case 'u': {
 			if (ndirect == 32)
 				usage();
@@ -770,6 +775,8 @@ int main(int argc, char **argv)
 		board_attach_decoder(&board, d);
 	}
 	mcu_reset(&mcu);
+	if (hold > 0)
+		mcu_hold_start(&mcu, hold);
 	if (peer_image) {
 		mcu_init(&peer_mcu, 4000000, 0);
 		if (image_load_s19(peer_image, peer_mcu.flash, err, sizeof err)) {
@@ -781,6 +788,8 @@ int main(int argc, char **argv)
 			if (peer_atd[i] >= 0)
 				peer_board.atd[i] = (uint16_t)peer_atd[i];
 		mcu_reset(&peer_mcu);
+		if (hold > 0)
+			mcu_hold_start(&peer_mcu, hold);
 		board.peer = &peer_board;
 		peer_board.peer = &board;
 		have_peer = true;

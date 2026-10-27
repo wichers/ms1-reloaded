@@ -13,6 +13,7 @@ standing for the original's image and other *.txt words for scenario files. Per 
 - the call times of each side (difftest -y).
 These runs take the rebuild with the original's application version at 0xF704 (INFO AP:, CAN
 identification; tools/mkimage.py --version-from), the rest as built.
+Every machine of every run starts its application START seconds after power-on (difftest -B).
 
 '# expect[ LABEL]: OPTIONS' lines are runs of behaviour the original does not have (DCC): the
 rebuild, as built, runs alone (difftest -W) and what it shows is compared with the file
@@ -49,6 +50,10 @@ ROOT = os.path.dirname(HERE)
 SCENARIOS = os.path.join(HERE, "scenarios")
 CAN_TX_RING = 0x1929          # 4011's address (tools/releases.py maps it), 10 frames
 DUMP = "firmware_20260317_192757_usbdm.s19"
+# every machine starts its application at this time after power-on (difftest -B): the
+# bootloader's CRC check takes a time that depends on the flash contents, which would start the
+# rebuild at another moment relative to its CAN peer than the original (about 0.47 s for both)
+START = 0.5
 
 
 def runs():
@@ -194,7 +199,7 @@ def main():
     sym, tsv = os.path.join(work, "ms1.sym"), os.path.join(work, "functions.tsv")
     shutil.copy(os.path.join(rel.build, "ms1.sym"), sym)
     shutil.copy(rel.functions, tsv)
-    can_ring = ["-r", f"{rel.ram(CAN_TX_RING):04X}:10"]
+    common = ["-r", f"{rel.ram(CAN_TX_RING):04X}:10", "-B", str(START)]
 
     todo = [r for r in runs() if not a.only or r[0] in a.only]
     if not todo:
@@ -207,8 +212,8 @@ def main():
             log_o, log_r = os.path.join(work, name + ".can.orig"), os.path.join(work, name + ".can.rebuild")
             jobs[name] = (
                 None if expect else
-                pool.submit(run, [difftest, "-y", "-n", str(a.n)] + can_ring + ["-s", path, "-c", log_o] + opts + files),
-                pool.submit(run, [difftest, "-W"] + can_ring + ["-s", path, "-c", log_r] + opts + files),
+                pool.submit(run, [difftest, "-y", "-n", str(a.n)] + common + ["-s", path, "-c", log_o] + opts + files),
+                pool.submit(run, [difftest, "-W"] + common + ["-s", path, "-c", log_r] + opts + files),
                 log_o, log_r)
         results = {name: (t.result() if t else None, w.result(), lo, lr) for name, (t, w, lo, lr) in jobs.items()}
 

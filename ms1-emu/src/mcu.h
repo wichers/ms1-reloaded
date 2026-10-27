@@ -155,6 +155,8 @@ struct mcu {
 	 * PC before it; NULL if none */
 	void (*step_hook)(mcu_t *m, uint16_t pc);
 	void *hook_ctx;
+	/* mcu_hold_start: the time the application starts at the earliest; 0 none */
+	uint64_t start_hold;
 
 	/* debugging */
 	uint8_t *breakpoints;       /* 64K bitmap entries, NULL if none */
@@ -167,6 +169,12 @@ struct mcu {
 
 void mcu_init(mcu_t *m, uint32_t osc_hz, FILE *log);
 void mcu_reset(mcu_t *m);
+/* Hold the CPU at APP_START, the first time it gets there, until `seconds` after power-on.
+ * The bootloader's CRC check takes a time that depends on the flash contents; with the hold,
+ * two images start their applications at the same moment, as two machines running the same
+ * image do. A warning goes to stderr when the CPU gets there later. */
+#define APP_START 0xF7FD                /* the bootloader's JMP to the application */
+void mcu_hold_start(mcu_t *m, double seconds);
 /* Run until the given tick, a breakpoint, a CPU halt or m->stop. Returns m->now. */
 uint64_t mcu_run(mcu_t *m, uint64_t until);
 

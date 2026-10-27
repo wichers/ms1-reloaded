@@ -45,6 +45,7 @@ make diff                 # differential CPU test against sim6812
 | `-T FILE` | log every change of the track outputs: time (s), PT3, PT4, PT5 levels |
 | `-F FILE` | after the run, write the flash as S-records (`image_save_s19`: S1 for the fixed pages, S2 for `$3C`/`$3D`, erased records left out): the image with what the firmware programmed, e.g. its device library, for a run that starts from it, through the bootloader's CRC check |
 | `-I` | interrupt timing, after the run: per interrupt vector the bus cycles from entry to the end of its `RTI` (nested interrupts included); for the track signal interrupt (timer channel 4) the latency after its compare, the slack before the next compare (≤ 0: a compare passed before it was set up) and the shortest compare interval; the longest stretch with interrupts masked outside interrupts and where it starts; at the track signal interrupt's entries, the fewest entries and the least signal time in the firmware's staging ring, and how often it was empty (the interrupt then plays an old entry) (`src/irqstat.c`) |
+| `-B SECONDS` | start the application no earlier than `SECONDS` after power-on: the CPU waits at `APP_START` (0xF7FD, where the bootloader jumps) the first time it gets there (`mcu_hold_start`; a warning on stderr if it gets there later). The bootloader's CRC check takes a time that depends on the flash contents (about 0.47 s, a few ms more or less per image); with the hold two images start their applications at the same moment |
 | `-S SYMBOLS` | the image's symbol table (`nm -n`, e.g. `../ms1-firmware/build/ms1.sym`), for the firmware rebuild: the LCD is read back with the tables it names (`board_lcd_symbols`) instead of the original's |
 | `-C BUS` | attach a CAN bus: a SocketCAN interface (`can0`, `vcan0`) or `udp:PORT` (below) |
 | `-r` | run no faster than real time (needed when sharing a bus with real-time partners) |
@@ -146,6 +147,11 @@ build/difftest [-t SECONDS] [-s SCRIPT] [-a CH=V] [-e EEPROM] [-n N] [-m MS] [-v
 - `-c FILE` logs the machine's CAN frames (as `ms1emu -c`).
 - `-I` with `-W`: interrupt timing after the run, as `ms1emu -I`; for a run with a second MS1
   on the bus (`-M`).
+- `-B SECONDS`: every machine (this one and `-M`'s) starts its application at that time, as
+  `ms1emu -B`. Without it a rebuild whose flash makes the bootloader's check take 1.5 ms
+  longer starts that much later than the original would against the same `-M` peer, which
+  can change which of two CAN frames arrives first (`../ms1-firmware/tools/regress.py`
+  passes it to every run).
 - `-W` runs `REBUILD.s19` as the whole machine and tests nothing: with the same options, its
   text lines, decoder events and `-c` log can be compared with a normal run of the original
   (`../ms1-firmware/tools/regress.py` does this for every scenario). Its LCD is read back with

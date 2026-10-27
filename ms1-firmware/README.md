@@ -320,12 +320,13 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
 
   ```sh
   tools/hc12-gcc/run make
-  # the rebuild with the bootloader of the emulator's image of the original
+  # the rebuild with the bootloader and the application version of the emulator's image of
+  # the original
   orig=../ms1-emu/build/ms1_4011.s19
-  python3 tools/mkimage.py --bootloader $orig --s19 rebuild.s19 \
+  python3 tools/mkimage.py --bootloader $orig --s19 rebuild.s19 --version-from $orig \
       build/app.s19 build/page3c.bin build/ident/4011.s19
   # the master run of drive.txt: the original as slave on the same CAN bus
-  ../ms1-emu/build/difftest -t 27 -n 100000 -r 1929:10 -M $orig -A 0=0 \
+  ../ms1-emu/build/difftest -t 27 -n 100000 -r 1929:10 -B 0.5 -M $orig -A 0=0 \
       -S tools/scenarios/slave.txt -s tools/scenarios/drive.txt \
       $orig rebuild.s19 build/ms1.sym tools/functions.tsv
   ```
@@ -380,7 +381,11 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   by up to tens of milliseconds, so more or fewer fit in before the slave's cable is pulled in
   `twolok`). These runs, and the function test, take the rebuild with the original's
   application version at 0xF704 (INFO `AP:`, CAN identification; `tools/mkimage.py
-  --version-from`); the expect runs take it as built. The rebuild's code is somewhat slower
+  --version-from`); the expect runs take it as built. Every machine of every run starts its
+  application at the same time after power-on (`difftest -B`, `START` in `tools/regress.py`):
+  the bootloader's CRC check over the flash takes a time that depends on its contents, so
+  without it the rebuild would start a few milliseconds later than the original against the
+  same CAN peer. The rebuild's code is somewhat slower
   (`difftest -y`; the runner prints the functions with the most extra time), so the same events happen
   milliseconds later — by tens of milliseconds over an mfx registration — and as the main
   loop fills command buffer entries at other moments, the order of track packets can differ
@@ -414,8 +419,8 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   python3 tools/mkimage.py --release 4010 --original $fw/4010_1-8_mobile-station_A.bin \
       $fw/firmware_20260317_192757_usbdm.s19 orig4010.s19
   python3 tools/mkimage.py --release 4010 --bootloader orig4010.s19 --s19 rebuild4010.s19 \
-      build/4010/app.s19 build/4010/page3c.bin build/4010/ident/4010.s19
-  ../ms1-emu/build/difftest -t 16 -r 191E:10 -s tools/scenarios/menu.txt \
+      --version-from orig4010.s19 build/4010/app.s19 build/4010/page3c.bin build/4010/ident/4010.s19
+  ../ms1-emu/build/difftest -t 16 -r 191E:10 -B 0.5 -s tools/scenarios/menu.txt \
       orig4010.s19 rebuild4010.s19 build/4010/ms1.sym tools/functions_4010.tsv
   ```
 - **Calibration**: the images carry the device's calibration words at `0xFF60–0xFF7F` (the

@@ -188,6 +188,8 @@ static void usage(void)
 		"                 [,noread][,frames], dcc:ADDR[,long][,steps=14|28|128][,cv=N:V]...\n"
 		"                 [,ack=MA][,noack][,packets], dccacc:ADDR[,cv=N:V]...[,ack=MA][,noack]\n"
 		"                 [,packets]\n"
+		"  -B SECONDS     start the application no earlier than SECONDS after power-on (mcu_hold_start):\n"
+		"                 the same moment for any image, whatever the bootloader's CRC check takes\n"
 		"  -s FILE        input script: lines 'SECONDS press|release BUTTON', 'SECONDS turn N',\n"
 		"                 'SECONDS lcd', 'SECONDS text', 'SECONDS unplug|plug' (the CAN cable);\n"
 		"                 BUTTON is pa0-pa7, pb0-pb7 or ok, esc, knob, stop, light\n");
@@ -196,7 +198,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-	double seconds = 1, prof = 0;
+	double seconds = 1, prof = 0, hold = 0;
 	int trace_len = 24;
 	unsigned dumps[16][2];
 	int ndumps = 0;
@@ -213,7 +215,7 @@ int main(int argc, char **argv)
 	static uint8_t bp[8192];
 	bool have_bp = false;
 	int opt;
-	while ((opt = getopt(argc, argv, "t:b:p:e:qn:d:lc:s:T:iC:ra:D:S:IF:")) != -1) {
+	while ((opt = getopt(argc, argv, "t:b:p:e:qn:d:lc:s:T:iC:ra:D:S:IF:B:")) != -1) {
 		switch (opt) {
 		case 't': seconds = atof(optarg); break;
 		case 'b': {
@@ -252,6 +254,7 @@ int main(int argc, char **argv)
 		case 'n': trace_len = atoi(optarg) > 4096 ? 4096 : atoi(optarg); break;
 		case 'S': lcd_symbols = optarg; break;
 		case 'I': irq_timing = true; break;
+		case 'B': hold = atof(optarg); break;
 		default: usage();
 		}
 	}
@@ -299,6 +302,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	mcu_reset(m);   /* clears scheduled events: attach the bus after it */
+	if (hold > 0)
+		mcu_hold_start(m, hold);
 	if (bus_spec)
 		board_attach_bus(&board, &bus);
 	if (interactive) {
