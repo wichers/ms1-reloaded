@@ -21,7 +21,8 @@
  * mode with STOP.
  *
  * Jobs (dcc_service_start): a CV read (8 bit verifies, then the byte verified), a CV write, an
- * address (CV1 and CV29 bit 5 clear, or CV17/CV18 and bit 5 set). The job's status: every
+ * address (CV1 and CV29 bit 5 clear, or CV17/CV18 and bit 5 set), an accessory decoder's
+ * address (CV1, CV9). The job's status: every
  * packet acknowledged, or not (a decoder without acknowledgement, or 4010 hardware whose
  * comparator does not see it, still takes the writes).
  *
@@ -186,6 +187,10 @@ u16 dcc_service_start(u16 job, u16 cv, u16 value)
             add_op(CC_WRITE, 1, (u8)cv);
             add_op(CC_BIT, 29, 0xF0 | 5);           /* write: bit 5 is 0 */
         }
+        break;
+    case SVC_ACC_ADDRESS:
+        add_op(CC_WRITE, 1, (u8)(cv & 0x3F));
+        add_op(CC_WRITE, 9, (u8)(cv >> 6));
         break;
     }
     return 1;

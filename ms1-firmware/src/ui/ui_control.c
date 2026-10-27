@@ -531,7 +531,7 @@ static void menus(void)
     lok_state_t *disp;
 
     if (item == 0) {
-        menu_top = (u8)ui_knob_adjust(menu_top, 4, is_master != 0 ? 1 : 4, 0);
+        menu_top = (u8)ui_knob_adjust(menu_top, is_master != 0 ? 5 : 4, is_master != 0 ? 1 : 4, 0);
         if (porta_buttons_raw == 0x66)
             ui_enter_mode(4);
         if (KEY(KEY_OK | KEY_KNOB)) {
@@ -606,6 +606,9 @@ static void menus(void)
             HI8(disp->can_pending) |= 0x10;
             ui_enter_mode(1);
         }
+        return;
+    case 5:                                     /* accessories (ui/accessory.c) */
+        accessory_menu();
         return;
     case 4:                                     /* options */
         sub = menu_sub;
@@ -760,6 +763,9 @@ void ui_task(void)
         return;
     case 3:
         menus();
+        return;
+    case 6:                                     /* accessory mode (ui/accessory.c) */
+        accessory_task();
         return;
     case 4:                                     /* EEPROM records */
         sel = (u8)ui_knob_adjust(menu_top, 3, 1, 0);

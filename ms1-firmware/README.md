@@ -187,6 +187,7 @@ the files group them by what they do.
 | `src/signal/dcc.c` | DCC packets of the slots: jobs, refresh, POM (page $3C) |
 | `src/signal/dcc_service.c` | DCC service mode: CV reads and writes, the acknowledgement (page $3C) |
 | `src/ui/prog.c` | LOK ÄNDERN's programming items: CV LESEN, LESEN, SYMBOL, TASTEN (the key table), FAHRSTUFEN (page $3C) |
+| `src/ui/accessory.c` | DCC accessory devices: the ZUBEHÖR menu and editor, accessory mode, the accessory packets (page $3C) |
 | `src/signal/mfx_feedback.c` | evaluating a captured mfx feedback window (1 bit, data) |
 | `src/signal/feedback_capture.c` | capturing an mfx feedback window: the timer channel 0 interrupt, its start and stop |
 | `src/signal/signal_gen.c` | the track signal generator: the timer channel 4 interrupt, and the main-loop stages that turn command entries into send-buffer pairs into staging entries; the command entry writers it owns |
@@ -266,7 +267,8 @@ pin both layouts to the original's.
 4. **DCC** (RCN-211, -212, -214, -216): DCC locomotives in the slots (`LOK_DCC`, also passed on
    CAN), on the track beside MM and mfx: speed in 128, 28 or 14 steps, F0-F15, CV writes on
    the main (POM); NEUE LOK → DCC adds one by address; service mode reads and writes CVs and
-   the address after "PROG LOK?" (`docs/architecture.md`, 4.9-4.11)
+   the address after "PROG LOK?"; accessory decoders (RCN-213) switched from ZUBEHÖR, their
+   address written in service mode (`docs/architecture.md`, 4.9-4.12)
 
 ## Conventions
 
@@ -345,6 +347,8 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   | `service.txt` | `service`, `service_noack` (expect) | DCC service mode: a new address written (PROG LOK?) and driven, CV8 read; with a decoder that never acknowledges (FEHLER) |
   | `read.txt` | `read` (expect) | LESEN: the address of a decoder with a long address (1027) read into the locomotive |
   | `prog.txt` | `prog` (expect) | TASTEN (F3 on the second left key, its speaker icon, momentary), SYMBOL, FAHRSTUFEN 28, then driven |
+  | `accessory.txt` | `accessory` (expect) | ZUBEHÖR: an accessory device made (address, the icons beside two keys), saved and used: outputs switched by the function keys |
+  | `accprog.txt` | `accprog` (expect) | ZUBEHÖR → PROG: an accessory decoder's address written in service mode (CV1, CV9), then the device saved and used |
 
 - **Expected output**: an `# expect` run runs the rebuild alone (`difftest -W`) and compares
   what it shows — the observables of the whole-firmware comparison below — with
@@ -357,9 +361,10 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   (`difftest -W`) and compares what each scenario shows with the original's run: text lines,
   decoder events (`-D`, `../ms1-emu/docs/decoders.md`) and CAN frames, without times and with
   timing-derived numbers masked (the rebuild's display is read back with the tables its
-  symbol table names, `difftest -W`, `ms1emu -S`); decoder events are compared per decoder and
-  CAN frames per direction and ID, since events of different decoders and frames of different
-  IDs interleave by timing, and a frame repeated unchanged counts once: how often
+  symbol table names, `difftest -W`, `ms1emu -S`); decoder events are compared per decoder, a
+  run of a decoder's speed events in one direction as its last (the steps a ramp passes depend
+  on when the knob is read), and CAN frames per direction and ID, since events of different decoders and frames
+  of different IDs interleave by timing, and a frame repeated unchanged counts once: how often
   a state repeats depends on timing (the master's mfx status frame after each mfx search that
   finds no decoder: the search moves with the main loop's timing, by up to tens of
   milliseconds, so more or fewer fit in before the slave's cable is pulled in `twolok`). The rebuild's code is somewhat slower (`difftest -y`; the

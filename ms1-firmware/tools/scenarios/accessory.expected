@@ -1,0 +1,29 @@
+lcd "NEUE LOK"
+lcd "ZUBEHÖR"
+lcd "NEU"
+lcd "ADRESSE"
+lcd "A 1"
+lcd "A 5"
+lcd "ADRESSE"
+lcd "TASTEN"
+lcd "TASTE?"
+lcd "TASTE?"
+lcd "TASTEN"
+lcd "SPEICHERN"
+lcd "A 5"
+lcd "A 5"
+lcd "A 5"
+lcd "A 5"
+lcd "A 5"
+end LCD "A 5"
+dccacc:2 track voltage on after # ms off
+dccacc:2 track voltage on after # ms off
+dccacc:2 output 5 (port 0) 0 on
+dccacc:2 output 5 (port 0) 0 off
+dccacc:2 output 5 (port 0) 1 on
+dccacc:2 output 5 (port 0) 1 off
+dccacc:2 output 6 (port 1) 0 on
+dccacc:2 output 6 (port 1) 0 off
+dccacc:3 track voltage on after # ms off
+dccacc:3 track voltage on after # ms off
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

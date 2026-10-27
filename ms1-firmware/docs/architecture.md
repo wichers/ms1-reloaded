@@ -409,6 +409,35 @@ glass has beside it, with the function symbol each stands for; a function's key 
 come from the manual. TASTEN numbers the CAN objects as `lok_assign_functions` does but keeps
 the keys the user chose.
 
+### 4.12 Accessories
+
+`src/ui/accessory.c`, in page $3C (state: `acc_dev`, `acc_cmds`, `src/include/accessory.h`):
+basic accessory decoders (RCN-213), on the master. An accessory device is `ACC_ROWS` turnouts
+on consecutive output addresses from its first; the device library keeps it (section 11).
+
+- **ZUBEHÖR** (`menu_top` 5; `accessory_menu`): the library's devices, newest first, then NEU.
+  OK uses a device (accessory mode), a knob push edits it or a new one, ESC goes back.
+- **The editor:** pages chosen with the knob, entered with OK or a knob push, left with ESC:
+
+  | Page | What it does |
+  |---|---|
+  | ADRESSE | the first output address, 1-`ACC_MAX_ADDRESS` |
+  | NAME | edited as in LOK ÄNDERN (the knob the character, a knob push the next, OK done); an empty name is saved as "A" and the address |
+  | TASTEN | a function key, then a knob push for the next icon beside it (`prog_next_icon`, 4.11's key table) |
+  | PROG | "PROG LOK?", then service mode writes decoder address (address − 1) / 4 + 1 into CV1 (bits 0-5) and CV9 (bits 6-8) (`SVC_ACC_ADDRESS`, 4.10) |
+  | SPEICHERN | into the library (`library_save_accessory`; STOP while the flash is written) |
+  | LÖSCHEN | after OK or a knob push, out of it (`library_delete_accessory`) |
+
+- **Accessory mode** (operating mode 6; `accessory_task`): row r of the function keys switches
+  turnout address + r, the left key (PA0-PA3) output 0, the right one (PA4-PA7) output 1; the
+  icon beside the key last pressed in a row is on. The knob goes to the next device, ESC to
+  the list, OK back to the locomotive.
+- **Packets:** `10AAAAAA 1aaaCPPO` (decoder address A, its bits 6-8 complemented in aaa; port
+  P, output O, C on). A key press queues a command in `acc_cmds` (`acc_pending` counts them);
+  `track_scheduler` calls `dcc_accessory_next` while there are any: `ACC_ON_PACKETS` packets
+  with C set, then after `ACC_ON_MS` one with C clear. A second press of a queued turnout
+  replaces its command. Accessories are not passed on CAN.
+
 ## 5. Locomotive slots
 
 `src/include/lokstack.h` owns the layout. `lok_records` (0x13D7) holds what is stored about a
@@ -621,13 +650,14 @@ the receive ring.
 ## 11. Device library
 
 `src/lok/library.c`, in page $3C (`src/include/page3c.h`): locomotives the user saved (MM and
-DCC), in flash page $3C's top 4 KiB, 0xB000-0xBFFF (`LIB_START`; `gcc/page3c.ld` ends the code
+DCC) and accessory devices (4.12), in flash page $3C's top 4 KiB, 0xB000-0xBFFF (`LIB_START`; `gcc/page3c.ld` ends the code
 below it).
 
 - **Use:** LOK ÄNDERN → SPEICHERN (`CHANGE_SAVE`) saves the selected locomotive, replacing its
   record (found by protocol and address) or adding one; NEUE LOK → DATENBANK lists them,
   newest first, and adds the chosen one as the original's database did (`library_to_edit`
-  into `lok_edit`). At most `LIB_MAX` devices.
+  into `lok_edit`). ZUBEHÖR lists, saves and deletes accessory devices (4.12), found by their
+  id. At most `LIB_MAX` devices of both kinds.
 - **Layout:** 8 blocks of 512 bytes (the flash's erase sector), 8 rows of 64 bytes each: kind,
   id, sequence number, the record (name, protocol, symbol, flags, address, functions), a
   check byte, and a correction word for the bootloader's CRC (`docs/bootloader.md`, rule 3;

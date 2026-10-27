@@ -31,14 +31,22 @@
     X(dcc_ack_sample) \
     X(prog_offered) \
     X(prog_item) \
-    X(prog_text)
+    X(prog_text) \
+    X(library_load_accessory) \
+    X(library_save_accessory) \
+    X(library_delete_accessory) \
+    X(accessory_menu) \
+    X(accessory_task) \
+    X(accessory_text) \
+    X(dcc_accessory_next)
 
 /* signal/dcc.c: DCC locomotives on the track */
 u16 dcc_slot_job(u16 slot) __attribute__((far));
 u16 dcc_slot_refresh(u16 slot) __attribute__((far));
 
 /* lok/library.c: the device library */
-#define LIB_LOCO    1                   /* the kind of a record: a locomotive */
+#define LIB_LOCO    1                   /* the kinds of a record: a locomotive */
+#define LIB_ACCESSORY 2                 /* an accessory device (include/accessory.h) */
 #define LIB_DONE    0                   /* library_save: written */
 #define LIB_AGAIN   1                   /* it set STOP for the writing: call it again */
 #define LIB_FULL    2
@@ -47,6 +55,9 @@ u16 library_count(u16 kind) __attribute__((far));
 u16 library_name(u16 kind, u16 index, u8 *dest) __attribute__((far));
 u16 library_to_edit(u16 index) __attribute__((far));
 u16 library_save(u16 slot) __attribute__((far));
+u16 library_load_accessory(u16 index) __attribute__((far));
+u16 library_save_accessory(void) __attribute__((far));
+u16 library_delete_accessory(void) __attribute__((far));
 
 /* signal/dcc_service.c: DCC service mode (include/dcc.h) */
 u16 dcc_service_start(u16 job, u16 cv, u16 value) __attribute__((far));
@@ -59,5 +70,12 @@ u16 dcc_ack_sample(void) __attribute__((far));
 u16 prog_offered(u16 item, u16 slot) __attribute__((far));
 u16 prog_item(u16 slot, u16 sub) __attribute__((far));
 u16 prog_text(u16 slot, u8 *buf) __attribute__((far));
+
+/* ui/accessory.c: DCC accessory devices: the ZUBEHÖR menu (menu_top 5), accessory mode
+ * (operating mode 6), their commands on the track */
+u16 accessory_menu(void) __attribute__((far));
+u16 accessory_task(void) __attribute__((far));
+u16 accessory_text(u8 *buf) __attribute__((far));
+u16 dcc_accessory_next(void) __attribute__((far));
 
 #endif /* PAGE3C_H */

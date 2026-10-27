@@ -8,8 +8,9 @@ standing for the original's image and other *.txt words for scenario files. Per 
 - the whole-firmware comparison: the rebuild run as the whole machine (difftest -W) with the
   same options, its text lines, decoder events and CAN frames compared with the original's,
   times left out and numbers with a fractional part masked (timing-derived values), decoder
-  events per decoder, CAN frames per direction and ID with a frame repeated unchanged counted
-  once;
+  events per decoder with a run of speed events in one direction as its last, CAN frames per
+  direction and ID
+  with a frame repeated unchanged counted once;
 - the call times of each side (difftest -y).
 
 '# expect[ LABEL]: OPTIONS' lines are runs of behaviour the original does not have (DCC): the
@@ -109,10 +110,11 @@ EVENT = re.compile(r"^\s*\d+\.\d+ ((?:mm|mm1|mfx|dcc|dccacc):\S+ .*)$")
 
 def observables(text, can_log):
     """What a scenario shows, without times: text lines and the final LCD, then the decoder
-    events grouped by decoder, then the CAN frames grouped by direction and ID (in order within
-    a group: events of different decoders, frames of different IDs interleave by timing), a
-    frame repeated unchanged counted once (how often a state repeats, such as the mfx search's
-    status frame after each search that finds no decoder, is timing)."""
+    events grouped by decoder, a run of speed events in one direction as its last, then the
+    CAN frames grouped by direction and ID, a frame repeated unchanged counted once. What
+    timing decides is left out: the order of events of different decoders and of frames of
+    different IDs, the speed steps a ramp passes, how often a state repeats (such as the mfx
+    search's status frame after each search that finds no decoder)."""
     out, events = [], []
     for line in text.splitlines():
         m = EVENT.match(line)
@@ -123,7 +125,13 @@ def observables(text, can_log):
         elif re.match(r"^(original|rebuild) at t=", line):
             out.append("end LCD " + line.rsplit("LCD ", 1)[1])
     events.sort(key=lambda e: e.split(" ", 1)[0])    # stable: per-decoder order stays
-    out += events
+    # a run of a decoder's speed events in one direction counts as its last: the steps on the
+    # way depend on when the knob is read
+    def ramp(e):
+        w = e.split(" ")
+        return w[:2] + [w[2][:1]] if len(w) > 2 and w[1] == "speed" else None
+    out += [e for i, e in enumerate(events)
+            if not (ramp(e) and i + 1 < len(events) and ramp(events[i + 1]) == ramp(e))]
     frames = []
     for line in open(can_log, encoding="utf-8", errors="replace"):
         w = line.split()

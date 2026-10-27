@@ -19,17 +19,6 @@ dcc:3 service mode on
 dcc:3 CV 1 = 5 (service)
 dcc:3 CV 29 = 2 (service)
 dcc:3 service mode off
-dcc:3 speed +1/126
-dcc:3 speed +3/126
-dcc:3 speed +5/126
-dcc:3 speed +7/126
-dcc:3 speed +9/126
-dcc:3 speed +11/126
-dcc:3 speed +9/126
-dcc:3 speed +7/126
-dcc:3 speed +5/126
-dcc:3 speed +3/126
-dcc:3 speed +1/126
 dcc:3 speed +0/126
 dcc:3 service mode on
 dcc:3 verify CV 8 bit 0 = 1

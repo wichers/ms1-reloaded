@@ -8,52 +8,11 @@ lcd "3"
 lcd "3"
 end LCD "3"
 dcc:3 track voltage on after # ms off
-dcc:3 speed +1/126
-dcc:3 speed +3/126
-dcc:3 speed +5/126
-dcc:3 speed +9/126
-dcc:3 speed +11/126
-dcc:3 speed +13/126
-dcc:3 speed +15/126
-dcc:3 speed +17/126
-dcc:3 speed +19/126
-dcc:3 speed +23/126
-dcc:3 speed +25/126
-dcc:3 speed +27/126
-dcc:3 speed +29/126
-dcc:3 speed +31/126
-dcc:3 speed +33/126
 dcc:3 speed +35/126
 dcc:3 F0 on
 dcc:3 F1 on
 dcc:3 F2 on
-dcc:3 speed +31/126
-dcc:3 speed +29/126
-dcc:3 speed +27/126
-dcc:3 speed +25/126
-dcc:3 speed +23/126
-dcc:3 speed +21/126
-dcc:3 speed +19/126
-dcc:3 speed +17/126
-dcc:3 speed +15/126
-dcc:3 speed +13/126
-dcc:3 speed +11/126
-dcc:3 speed +9/126
-dcc:3 speed +7/126
-dcc:3 speed +5/126
-dcc:3 speed +3/126
-dcc:3 speed +1/126
 dcc:3 speed +0/126
-dcc:3 speed -0/126
-dcc:3 speed -1/126
-dcc:3 speed -3/126
-dcc:3 speed -5/126
-dcc:3 speed -7/126
-dcc:3 speed -9/126
-dcc:3 speed -11/126
-dcc:3 speed -13/126
-dcc:3 speed -15/126
-dcc:3 speed -17/126
 dcc:3 speed -19/126
 dcc:3 track voltage on after # ms off
 can TX 00000380 [8] 00 00 00 00 00 00 00 00

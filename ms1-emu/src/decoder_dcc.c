@@ -441,7 +441,8 @@ static void packet(dcc_t *d, double t)
 			d->service = true;
 			d->last_n = 0;
 			decoder_say(d->dec, t, "service mode on");
-			set_speed(d, t, 0, d->steps ? d->steps : 126, d->forward, false);
+			if (!d->accessory)
+				set_speed(d, t, 0, d->steps ? d->steps : 126, d->forward, false);
 		}
 		return;
 	}

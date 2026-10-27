@@ -1,0 +1,42 @@
+# A DCC accessory decoder's address in service mode: ZUBEHÖR, NEU, address 5, PROG, PROG LOK?
+# confirmed: decoder address 2 (CV1 = 2, CV9 = 0) into a decoder at address 1, acknowledged;
+# then the device saved and used: output 5 switched.
+# expect: -t 30 -a 3=0 -D dccacc:1
+11.8 text
+12.0 turn 4
+12.6 text
+13.0 press knob
+13.15 release knob
+13.6 text
+14.0 press knob
+14.15 release knob
+14.6 text
+15.0 press knob
+15.15 release knob
+15.6 text
+16.0 turn 4
+16.8 text
+17.0 press ok
+17.15 release ok
+17.6 text
+18.0 turn 3
+18.6 text
+19.0 press knob
+19.15 release knob
+19.6 text
+20.0 press ok
+20.15 release ok
+20.6 text
+23.0 text
+24.0 turn 1
+24.6 text
+25.0 press knob
+25.15 release knob
+26.0 text
+27.0 text
+27.5 press ok
+27.65 release ok
+28.0 text
+28.5 press pa0
+28.65 release pa0
+29.5 text

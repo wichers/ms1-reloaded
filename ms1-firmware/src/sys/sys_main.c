@@ -12,6 +12,7 @@
 #include "../include/track_cmd.h"
 #include "../include/page3c.h"
 #include "../include/dcc.h"
+#include "../include/accessory.h"
 
 /* Show a message for ticks UI passes: system_status_flags bit 7 while it shows, the
  * display (ui/screen_text.c) shows LANG(0x16 + message_id), the UI state machine
@@ -59,6 +60,8 @@ void track_scheduler(void)
             dcc_service_next();
             continue;
         }
+        if (acc_pending != 0 && dcc_accessory_next())   /* accessory packets first */
+            continue;
         pending = track_filler_hold;
         if (!pending) {
             if (track_scheduler_hold == 0 && mfx_cmd_steps == 0) {

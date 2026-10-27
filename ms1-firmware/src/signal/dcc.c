@@ -97,8 +97,9 @@ void dcc_write_entry(const u8 *bytes, u8 n, u8 preamble)
 }
 
 /* a packet for the decoder whose address takes the first na bytes, but an idle packet
- * instead when the entry before is for the same decoder: 0 then, 1 when it wrote the packet */
-static u8 write_packet(const u8 *bytes, u8 n, u8 na)
+ * instead when the entry before is for the same decoder: 0 then, 1 when it wrote the packet
+ * (also ui/accessory.c) */
+u8 dcc_packet(const u8 *bytes, u8 n, u8 na)
 {
     static const u8 idle[2] = { 0xFF, 0x00 };
     u8 *prev = (u8 *)track_cmd_write_ptr - CMD_ENTRY_SIZE;
@@ -154,7 +155,7 @@ static u8 put_group(u8 group, u16 f, u8 *p)
     }
 }
 
-/* the packet of job kind for slot, or the idle packet before it: write_packet */
+/* the packet of job kind for slot, or the idle packet before it: dcc_packet */
 static u8 job_packet(u16 slot, u8 kind)
 {
     lok_record_t *e = &lok_records[slot];
@@ -172,7 +173,7 @@ static u8 job_packet(u16 slot, u8 kind)
     } else {
         n = na + put_group(kind - JOB_GROUP, d->functions, p + na);
     }
-    return write_packet(p, n, na);
+    return dcc_packet(p, n, na);
 }
 
 /* a CV write job: two identical packets */

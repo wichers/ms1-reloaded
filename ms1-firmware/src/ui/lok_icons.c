@@ -43,6 +43,9 @@ void lcd_lok_icons(void)
 
     u8 mode = operating_mode;
 
+    if (mode == 6)                      /* accessory mode draws its own (ui/accessory.c) */
+        return;
+
     /* 3dacf4-3dacff  operating_mode dispatch for lcd_seg_menu_dcc bit 0 */
     s16 slot;
     u8 blink;

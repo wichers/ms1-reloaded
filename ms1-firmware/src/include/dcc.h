@@ -15,6 +15,8 @@
 #define SVC_WRITE       2               /* write value to CV cv */
 #define SVC_ADDRESS     3               /* the address cv, long (value 1) or short: CV1 or
                                          * CV17/CV18, and CV29 bit 5 */
+#define SVC_ACC_ADDRESS 4               /* an accessory decoder's address cv: CV1 (bits 0-5)
+                                         * and CV9 (bits 6-8) */
 
 /* dcc_service_status: low byte */
 #define SVC_BUSY        0
@@ -45,5 +47,7 @@ extern dcc_service_t dcc_svc;           /* src/globals.c */
 
 /* page $3C, between its files */
 void dcc_write_entry(const u8 *bytes, u8 n, u8 preamble);
+u8   dcc_packet(const u8 *bytes, u8 n, u8 na);
+u8   prog_next_icon(u8 key, u8 v);                  /* ui/prog.c */
 
 #endif /* DCC_H */

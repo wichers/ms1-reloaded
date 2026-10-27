@@ -1,13 +1,16 @@
 /*==========================================================================
- * lok/library.c - the device library: the user's locomotives, in flash page $3C
- * (include/page3c.h)
+ * lok/library.c - the device library: the user's locomotives and accessory devices, in flash
+ * page $3C (include/page3c.h)
  *
  * The top LIB_BLOCKS 512-byte blocks of page $3C, from LIB_START (gcc/page3c.ld leaves them
  * out of the link), are a log of 64-byte rows, one record each (lib_row_t):
- *   kind      LIB_LOCO, or LIB_DELETED for a deleted device; 0xFF a free (erased) row
- *   id        the device, 1-254; a locomotive is found by protocol and address
+ *   kind      LIB_LOCO, LIB_ACCESSORY, or LIB_DELETED for a deleted device; 0xFF a free row
+ *   id        the device, 1-254; a locomotive is found by protocol and address, an accessory
+ *             device by its id (acc_dev.id)
  *   seq       rising with each row written: of a device's rows the newest counts
- *   ...       its name, protocol, symbol, flags, address, functions (icon and key)
+ *   ...       a locomotive's name, protocol, symbol, flags, address, functions (icon and key);
+ *             an accessory device's name, its first output address, per function key the
+ *             icon beside it (functions[k][1])
  *   check     the XOR of the bytes before it
  *   correction a word that makes the row change the bootloader's CRC over page $3C exactly as
  *             an erased row does (docs/bootloader.md: Reset), so the application stays
@@ -28,10 +31,13 @@
  * firmware update, which erases the library, brings it back.
  *
  * Functions:
- *   library_count    - the number of locomotives
- *   library_name     - the name of one, newest first
- *   library_to_edit  - one as the locomotive being added (lok_edit)
- *   library_save     - a slot's locomotive into the library
+ *   library_count             - the number of devices of a kind
+ *   library_name              - the name of one, newest first
+ *   library_to_edit           - a locomotive as the locomotive being added (lok_edit)
+ *   library_save              - a slot's locomotive into the library
+ *   library_load_accessory    - an accessory device into acc_dev
+ *   library_save_accessory    - acc_dev into the library
+ *   library_delete_accessory  - acc_dev out of it
  *========================================================================*/
 
 #include "../include/hcs12.h"
@@ -39,6 +45,7 @@
 #include "../include/globals.h"
 #include "../include/lokstack.h"
 #include "../include/page3c.h"
+#include "../include/accessory.h"
 
 #define LIB_START   0xB000              /* page $3C; gcc/page3c.ld ends the code below it */
 #define ROW_SIZE    64
@@ -339,6 +346,50 @@ u16 library_to_edit(u16 index)
     return 1;
 }
 
+/* Writing needs STOP (the track signal waits for the flash): set it and ask to be called
+ * again; library_stop remembers to clear it */
+static u8 need_stop(void)
+{
+    if (system_status_flags & 1)
+        return 0;
+    system_status_flags |= 1;
+    mcan_status_pending |= 1;
+    library_stop = 1;
+    return 1;
+}
+
+/* row into the library, its kind, record and id filled in (0: a new device, which gets the
+ * lowest free id): LIB_DONE, LIB_FULL, LIB_ERROR; STOP back off if need_stop set it */
+static u8 store(lib_row_t *row)
+{
+    walk_t w;
+    u16 seq;
+    u8 r, k, used = 0;
+
+    for (k = 0; k < sizeof row->reserved; k++)
+        row->reserved[k] = 0xFF;
+    walk_start(&w, 0);
+    while ((r = walk_device(&w)) != NO_ROW)
+        if (ROW(r)->kind != LIB_DELETED)
+            used++;
+    if (row->id == 0) {
+        if (used >= LIB_MAX)
+            return LIB_FULL;
+        for (k = 1; w.seen[k >> 3] & (1 << (k & 7)); k++)
+            ;
+        row->id = k;
+    }
+    r = next_free(&seq);
+    row->seq = seq;
+    k = r == NO_ROW || write_row(r, row) ? LIB_ERROR : LIB_DONE;
+    if (library_stop) {
+        library_stop = 0;
+        system_status_flags &= ~1;
+        mcan_status_pending |= 1;
+    }
+    return k;
+}
+
 /* The slot's locomotive (MM or DCC) into the library: its record found by protocol and address
  * is replaced, else a new one added. LIB_DONE, LIB_AGAIN (STOP set for the writing: call
  * again), LIB_FULL, LIB_ERROR (flash). */
@@ -347,31 +398,16 @@ u16 library_save(u16 slot)
     const lok_record_t *e = &lok_records[slot];
     lib_row_t row;
     walk_t w;
-    u16 seq;
-    u8 r, k, id = 0, used = 0;
+    u8 r, k;
 
-    if (!(system_status_flags & 1)) {
-        system_status_flags |= 1;
-        mcan_status_pending |= 1;
-        library_stop = 1;
+    if (need_stop())
         return LIB_AGAIN;
-    }
+    row.id = 0;
     walk_start(&w, LIB_LOCO);
-    while ((r = live_next(&w)) != NO_ROW) {
-        used++;
+    while ((r = live_next(&w)) != NO_ROW)
         if (ROW(r)->protocol == e->protocol && ROW(r)->address == e->address)
-            id = ROW(r)->id;
-    }
-    if (id == 0) {
-        if (used >= LIB_MAX)
-            return LIB_FULL;
-        for (id = 1; w.seen[id >> 3] & (1 << (id & 7)); id++)
-            ;
-    }
-    for (k = 0; k < sizeof row.reserved; k++)
-        row.reserved[k] = 0xFF;
+            row.id = ROW(r)->id;
     row.kind = LIB_LOCO;
-    row.id = id;
     for (k = 0; k < 16; k++)
         row.name[k] = e->name[k];
     row.protocol = e->protocol;
@@ -382,13 +418,71 @@ u16 library_save(u16 slot)
         row.functions[k][0] = e->functions[k].icon;
         row.functions[k][1] = e->functions[k].key;
     }
-    r = next_free(&seq);
-    row.seq = seq;
-    k = r == NO_ROW || write_row(r, &row) ? LIB_ERROR : LIB_DONE;
-    if (library_stop) {
-        library_stop = 0;
-        system_status_flags &= ~1;
-        mcan_status_pending |= 1;
+    return store(&row);
+}
+
+/* the index-th accessory device into acc_dev; 0 when there is none */
+u16 library_load_accessory(u16 index)
+{
+    u8 r = live_row(LIB_ACCESSORY, index), k;
+    const lib_row_t *row;
+
+    if (r == NO_ROW)
+        return 0;
+    row = ROW(r);
+    acc_dev.id = row->id;
+    for (k = 0; k < 16; k++)
+        acc_dev.name[k] = row->name[k];
+    acc_dev.address = row->address;
+    for (k = 0; k < 8; k++)
+        acc_dev.icons[k] = row->functions[k][1];
+    acc_dev.index = (u8)index;
+    acc_dev.state = acc_dev.known = 0;
+    return 1;
+}
+
+/* acc_dev into the library (it keeps its record, or gets one): as library_save */
+u16 library_save_accessory(void)
+{
+    lib_row_t row;
+    u8 k;
+
+    if (need_stop())
+        return LIB_AGAIN;
+    row.kind = LIB_ACCESSORY;
+    row.id = acc_dev.id;
+    for (k = 0; k < 16; k++)
+        row.name[k] = acc_dev.name[k];
+    row.protocol = LOK_DCC;
+    row.symbol = 0;
+    row.protocol_flags = 0;
+    row.address = acc_dev.address;
+    for (k = 0; k < 16; k++) {
+        row.functions[k][0] = 0;
+        row.functions[k][1] = k < 8 ? acc_dev.icons[k] : 0xFF;
     }
+    k = store(&row);
+    if (k == LIB_DONE)
+        acc_dev.id = row.id;
+    return k;
+}
+
+/* acc_dev out of the library: a row that marks its record deleted */
+u16 library_delete_accessory(void)
+{
+    lib_row_t row;
+    u8 k;
+
+    if (acc_dev.id == 0)
+        return LIB_DONE;
+    if (need_stop())
+        return LIB_AGAIN;
+    for (k = 0; k < sizeof row; k++)
+        ((u8 *)&row)[k] = 0xFF;
+    row.kind = LIB_DELETED;
+    row.id = acc_dev.id;
+    k = store(&row);
+    if (k == LIB_DONE)
+        acc_dev.id = 0;
     return k;
 }

@@ -102,6 +102,7 @@ PAGE3C_SOURCES = \
 	src/signal/dcc_service.c \
 	src/lok/library.c \
 	src/ui/prog.c \
+	src/ui/accessory.c \
 
 PAGE3C_OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(PAGE3C_SOURCES))
 

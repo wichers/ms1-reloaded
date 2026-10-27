@@ -146,8 +146,8 @@ static void put_function(u16 slot, u8 key, u8 fn, u8 v, u8 momentary)
     changed(slot);
 }
 
-/* the next icon variant beside key after v: the glass's, then none */
-static u8 next_variant(u8 key, u8 v)
+/* the next icon variant beside key after v: the glass's, then none (also ui/accessory.c) */
+u8 prog_next_icon(u8 key, u8 v)
 {
     do
         v = v == PROG_NO_ICON ? 0 : v + 1;
@@ -306,7 +306,7 @@ static void keys_item(u16 slot, u8 sub)
             fn = NO_FUNCTION;
         put_function(slot, k, fn, v, 0);
     } else if (fn != NO_FUNCTION && KEY(KEY_KNOB)) {
-        put_function(slot, k, fn, next_variant(k, v), f[fn].icon & 0x80);
+        put_function(slot, k, fn, prog_next_icon(k, v), f[fn].icon & 0x80);
     } else if (fn != NO_FUNCTION && KEY(KEY_OK)) {
         put_function(slot, k, fn, v, !(f[fn].icon & 0x80));
     }

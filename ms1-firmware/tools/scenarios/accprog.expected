@@ -1,0 +1,28 @@
+lcd "NEUE LOK"
+lcd "ZUBEHÖR"
+lcd "NEU"
+lcd "ADRESSE"
+lcd "A 1"
+lcd "A 5"
+lcd "ADRESSE"
+lcd "PROG"
+lcd "PROG LOK?"
+lcd "PROG"
+lcd "PROG"
+lcd "SPEICHERN"
+lcd "A 5"
+lcd "A 5"
+lcd "A 5"
+lcd "A 5"
+end LCD "A 5"
+dccacc:1 track voltage on after # ms off
+dccacc:1 service mode on
+dccacc:1 CV 1 = 2 (service)
+dccacc:1 ack
+dccacc:1 CV 9 = 0 (service)
+dccacc:1 ack
+dccacc:1 track voltage on after # ms off
+dccacc:1 service mode off
+dccacc:1 output 5 (port 0) 0 on
+dccacc:1 output 5 (port 0) 0 off
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

@@ -45,12 +45,5 @@ dcc:1027 verify CV 18 bit 7 = 1: no
 dcc:1027 verify CV 18 = 3
 dcc:1027 ack
 dcc:1027 service mode off
-dcc:1027 speed +1/126
-dcc:1027 speed +3/126
-dcc:1027 speed +5/126
-dcc:1027 speed +7/126
-dcc:1027 speed +9/126
-dcc:1027 speed +11/126
-dcc:1027 speed +13/126
 dcc:1027 speed +15/126
 can TX 00000380 [8] 00 00 00 00 00 00 00 00

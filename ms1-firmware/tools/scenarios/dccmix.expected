@@ -13,15 +13,6 @@ lcd "3"
 lcd "3"
 end LCD "3"
 dcc:5 track voltage on after # ms off
-dcc:5 speed +1/126
-dcc:5 speed +3/126
-dcc:5 speed +5/126
-dcc:5 speed +7/126
-dcc:5 speed +9/126
-dcc:5 speed +13/126
-dcc:5 speed +15/126
-dcc:5 speed +21/126
-dcc:5 speed +23/126
 dcc:5 speed +27/126
 dcc:5 F0 on
 mfx:7A3F0012 track voltage on after # ms off
@@ -117,12 +108,5 @@ mfx:7A3F0012 read CV 03A/00: 10
 mfx:7A3F0012 read CV 03A/01: 02 02
 mfx:7A3F0012 read CV 049/00: 10 C0
 mm:3 track voltage on after # ms off
-mm:3 speed +1
-mm:3 speed +2
-mm:3 speed +3
-mm:3 speed +4
-mm:3 speed +3
-mm:3 speed +2
-mm:3 speed +1
 mm:3 speed +0
 can TX 00000380 [8] 00 00 00 00 00 00 00 00

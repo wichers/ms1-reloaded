@@ -15,6 +15,7 @@
 #include "include/lokstack.h"
 #include "include/globals.h"
 #include "include/dcc.h"
+#include "include/accessory.h"
 
 /* .bss.* and .data.* names give the sections the types GCC gives .bss and .data */
 #define RAM(addr)      __attribute__((section(".bss.ram." #addr)))
@@ -200,3 +201,6 @@ u16 dcc_cv_address;
 u8  flash_ram[FLASH_RAM_SIZE];
 u8  library_stop;
 dcc_service_t dcc_svc;
+acc_device_t acc_dev;
+acc_cmd_t acc_cmds[ACC_CMDS];
+u8  acc_pending;

@@ -43,6 +43,11 @@ void ui_screen_text(void)
         lcd_text_layout();
         return;
     }
+    if (operating_mode == 6 || (operating_mode == 3 && menu_top == 5)) {
+        accessory_text(buf);                    /* ui/accessory.c */
+        lcd_text_layout();
+        return;
+    }
     switch (operating_mode) {
     case 0:
         str_format(buf, (const u8 *)"MaRKLIN");
