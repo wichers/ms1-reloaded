@@ -175,13 +175,10 @@ extern u8  menu_item;                       /* 0x13B7: level 2, the item of menu
 extern u8  menu_sub;                        /* 0x13B8: level 3 */
 extern u8  menu_sub2;                       /* 0x13B9: level 4, 1 when entered */
 extern u16 menu_value;                      /* 0x10B0: the value being edited */
-extern u16 menu_value2;                     /* 0x10B2: a second one: database record count, the new
-                                             * address, the CV value */
-extern u16 menu_value3;                     /* 0x10B4: the chosen symbol; database: article number bit 16 */
-extern u16 menu_value4;                     /* 0x10B6: database: article number, low 16 bits; address
-                                             * entry: the protocol flags */
-extern u16 menu_db_brand;                   /* 0x10B8: 'M' or 'T' (Trix) before the article number */
-extern u8  lok_name_edit_buf[56];           /* 0x10BA: a database record (page $3C), the name being edited */
+extern u16 menu_value2;                     /* 0x10B2: a second one: the new address, the CV value */
+extern u16 menu_value3;                     /* 0x10B4: the chosen symbol */
+extern u16 menu_value4;                     /* 0x10B6: address entry: the protocol flags */
+extern u8  lok_name_edit_buf[56];           /* 0x10BA: the name being edited; the original's size */
 extern u8  ui_settings;                     /* 0x13BA: EEPROM 0x0801: bits 0-1 knob speed mode,
                                              * 2-3 text display (4 alternative glyphs, 8 scrolling),
                                              * 4 knob push drives */
@@ -234,9 +231,6 @@ extern void enter_bootloader(void) __attribute__((noreturn)); /* 0x407C: hand ov
 #define mcan_rx_data45          (*(u16 *)&can_rx_frame_buf[8])     /* data[4..5] */
 #define mcan_rx_data67          (*(u16 *)&can_rx_frame_buf[10])    /* data[6..7] */
 #define mcan_rx_dlc             (can_rx_frame_buf[12])
-#define lokdb_rec_info          (lok_name_edit_buf[2])  /* bits 0-3 icons, 4-5 symbol, 6 Trix, 7 article bit 16 */
-#define lokdb_rec_protocol      (lok_name_edit_buf[3])  /* bits 0-1 protocol - 2, 2-7 protocol flags */
-#define lokdb_rec_address       (lok_name_edit_buf[4])  /* bits 0-6 address, 7 another locomotive follows */
 #define lcd_seg_menu_dcc        (lcd_buf[0x11])         /* bit 0 MENU, 4 DCC */
 #define lcd_seg_controller      (lcd_buf[0x13])         /* bit 4 another device controls the slot */
 #define lcd_seg_sein            (lcd_buf[0x1B])         /* bit 4 ICON_SEIN, 5 right arrow */

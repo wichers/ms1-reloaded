@@ -138,8 +138,6 @@ def entries(tool, path):
             if (offset - 1) % 3:
                 sys.exit(f"banks: {sym}: not a 3-byte JMP in {ENTRY_SECTION}")
             out.append(f"{sym} = {BANKED_PAGE3C + offset - 1:#x};")
-    if not out:
-        sys.exit(f"banks: no entries in {path}")
     print("/* The page-$3C entry table (tools/banks.py entries) */")
     print("\n".join(out))
 

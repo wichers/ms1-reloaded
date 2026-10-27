@@ -88,20 +88,8 @@ void ui_screen_text(void)
                 str_format(buf, (const u8 *)"%s", LANG(0x1E));
             else
                 str_format(buf, (const u8 *)"");
-        } else if (item == 3) {
+        } else {
             str_format(buf, (const u8 *)"");
-        } else if (item == 1) {
-            if (sub <= 1) {
-                str_format(buf, (const u8 *)"");
-            } else {
-                u8 sign = (s8)lokdb_rec_address < 0 ? '+' : ' ';
-                u16 a = menu_value4;
-                if (menu_value3 == 0)
-                    str_format(buf, (const u8 *)"%c %4ud%ud%c", menu_db_brand, a / 10, a % 10, sign);
-                else
-                    str_format(buf, (const u8 *)"%c %4ud%ud%c", menu_db_brand, (u16)(a + 6) / 10 + 0x1999,
-                                (u16)(a + 6) % 10, sign);
-            }
         }
         lcd_text_layout();
         return;

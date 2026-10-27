@@ -114,7 +114,6 @@ RAM(0x10B0) u16 menu_value;
 RAM(0x10B2) u16 menu_value2;
 RAM(0x10B4) u16 menu_value3;
 RAM(0x10B6) u16 menu_value4;
-RAM(0x10B8) u16 menu_db_brand;
 RAM(0x10BA) u8 lok_name_edit_buf[56];
 #if MS1_RELEASE != 0x4010
 RAM(0x10F2) u16 track_current;

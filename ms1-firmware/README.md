@@ -3,16 +3,17 @@
 A C source of the Märklin Mobile Station 1 (MS1) application firmware, with inline assembly
 where the cycles count (the interrupt handlers), built with GCC, that behaves like the original:
 verified function by function and as a whole against the original running in the emulator
-(`../ms1-emu`), and buildable as the official release images from this repository alone (the
-original's data it needs, the locomotive database and the update file loader, are in
+(`../ms1-emu`). It leaves out the original's locomotive database: NEUE LOK → DATENBANK offers
+nothing, and flash page $3C, which held it, takes new code (*Image layout*). It builds the
+release images from this repository alone (the original's update file loader is in
 `third_party/`, see [third_party/README.md](third_party/README.md)).
 
 ## Project Goal
 
-Produce a C source of the MS1 firmware that behaves like the original. The original binary is
-the reference: `../ms1-ghidra` (decompilation, instruction listing) for what the code does and
-`../ms1-emu` (the emulator running the original) for how it behaves; comments in the sources
-are hints, not facts.
+Produce a C source of the MS1 firmware that behaves like the original, but for the locomotive
+database it leaves out. The original binary is the reference: `../ms1-ghidra` (decompilation,
+instruction listing) for what the code does and `../ms1-emu` (the emulator running the
+original) for how it behaves; comments in the sources are hints, not facts.
 
 - [docs/architecture.md](docs/architecture.md): how the parts of the firmware fit together —
   start-up, scheduling, the track signal (MM, mfx, feedback), the locomotive slots, CAN, the
@@ -85,7 +86,7 @@ byte at 0xFF1B set to 0x10 (`tools/mkimage.py` does so when the check fails, and
 | `src/sys/crt0.c` | start-up, in the `.crt0` section at 0x4000, laid out as the original's 0x4000-0x40A2 (MMC, PLL, then `crt_restart` = the original's 0x403C: .data copy, .bss clear, stack, `main(1, {"main"})`; `enter_bootloader`) |
 | `src/sys/vectors.c` | interrupt trampolines 0xF740-0xF7FF: the bootloader's vectors point at 0xF740 + 3n; unused vectors stop in `unexpected_interrupt` (BGND) |
 | `gcc/ms1.ld` | linker script template: memory map (the application up to 0xF67F), the fixed-flash code first (`@FIXED_TEXT@`, checked to end below the window, read-only data above it); symbols for the bootloader's flash metadata words the code reads by name (`docs/bootloader.md`); INCLUDEs `build/page3c_symbols.ld` |
-| `gcc/page3c.ld`, `src/include/page3c.h`, `tools/lokdb.py` | page $3C, linked after the application against its symbols, at the linker's banked address 0x100000: the entry table (`src/sys/page3c_entries.c`) at 0x8000, the functions behind it, the locomotive database (`third_party/lokdb.tsv`, turned into the page's format by `tools/lokdb.py asm`) |
+| `gcc/page3c.ld`, `src/include/page3c.h` | page $3C, linked after the application against its symbols, at the linker's banked address 0x100000: the entry table (`src/sys/page3c_entries.c`) at 0x8000 and the functions behind it |
 | `tools/banks.py` | the code that must stay in fixed flash, placed first in `build/ms1.ld` (`place`); the application's addresses of the page-$3C entry table, `build/page3c_symbols.ld` (`entries`) |
 | `gcc/ident.ld` | the identification area of a release (`src/sys/ident.c`), linked on its own: 0xF700-0xF73F, its strings from 0xF680 |
 | `tools/releases.py` | the versions: RAM layout, the per-version files |
@@ -94,7 +95,7 @@ byte at 0xFF1B set to 0x10 (`tools/mkimage.py` does so when the check fails, and
 | `tools/mkimage.py` | the images: application + page $3C + identification area + CRC, and a dump's bootloader for the `.s19` |
 | `tools/regress.py`, `tools/scenarios/`, `tools/functions.tsv`, `tools/functions_4010.tsv`, `tools/calpatch.py` | verification against the original with `../ms1-emu` (*Verification*) |
 | `tools/objcmp.py` | two builds compared function by function, for changes meant to keep the code |
-| `third_party/` | the original's parts the build uses: the locomotive database, the update file loader ([third_party/README.md](third_party/README.md)) |
+| `third_party/` | the original's part the build uses: the update file loader ([third_party/README.md](third_party/README.md)) |
 
 **Image layout.** The application (code, read-only data, the .data image) takes
 0x4000-0xF67F; page $3D is mapped into the 0x8000 window, as in the original, except while the
@@ -184,8 +185,6 @@ the files group them by what they do.
 | `src/signal/track_monitor.c` | track current, overload shutdown, operating counters |
 | `src/lok/lokstack.c` | slot lookups, CAN objects of a slot, address conflicts, unique names |
 | `src/lok/lok_functions.c` | a locomotive's functions: CAN object numbers and keys |
-| `src/lok/lokdb.c` | the locomotive database accessors, in page $3C (`gcc/page3c.ld`) |
-| `src/lok/lokdb_access.c` | the application's calls of those accessors |
 | `src/sys/page3c_entries.c` | the page-$3C entry table (`src/include/page3c.h`) |
 | `src/ui/ui_control.c` | the UI state machine: knob, keys, menus |
 | `src/ui/ui_mode.c` | switching the operating mode |
@@ -224,7 +223,7 @@ the files group them by what they do.
 | Main ROM | `0x4000–0xBFFF` | Application code; `0x8000–0xBFFF` is page $3D, mapped for good |
 | Fixed ROM | `0xC000–0xF7FF` | Application code and data up to `0xF67F`, the identification strings and area (`0xF680–0xF73F`), interrupt trampolines (`0xF740–0xF7FF`) |
 | Bootloader | `0xF800–0xFFFF` | Start-up check, CAN update protocol, flash metadata (`0xFF00–0xFF7F`), 64 vectors (`0xFF80–0xFFFF`) pointing at the trampolines (`docs/bootloader.md`) |
-| Paged ROM (0x3C) | `0x3C8000+` | The entry table at 0x8000, the functions behind it (`src/include/page3c.h`), the locomotive database |
+| Paged ROM (0x3C) | `0x3C8000+` | The entry table at 0x8000 and the functions behind it (`src/include/page3c.h`) |
 
 ### Data Structures
 
@@ -318,12 +317,12 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   |---|---|---|
   | `menu.txt` | `menu`, `overload` | boot, NEUE LOK, the menus down to SPRACHE; with a track current over the limit |
   | `drive.txt` | `drive`, `master` | adding a locomotive by address, speed up and down, light, function keys, direction change, reverse, OK, STOP; the functions no scenario reaches, called directly (`-u`); as master of the original running `slave.txt` |
-  | `database.txt` | `database` | adding locomotives from the database, an address conflict (ADR.FEHLER), unique names |
+  | `conflict.txt` | `conflict` | two locomotives added on one address (ADR.FEHLER, address conflict), unique names |
   | `slave.txt` | `slave` | slave of the original running `drive.txt`: registration with the master, its locomotive's state, names and parameters, the slave's menus |
   | `twolok.txt` | `twolok` | master with two locomotives, handed over to the original as slave (`slaveswitch.txt`), which then vanishes from the bus: the master's timeout |
   | `slaveswitch.txt` | `slaveswitch` | slave taking the original master's locomotives in turn, driving one, then the CAN cable pulled (KEIN MASTER) |
   | `mfx.txt` | `mfx` | an mfx decoder (`-D`): UID search, SID assignment, configuration read-out, driving (speed, functions, emergency stop, reverse, STOP) |
-  | `mfxedit.txt` | `mfxedit` | the mfx locomotive's name, Vmax, acceleration, braking, volume changed (CV writes); ESC out of the database list and the address entry |
+  | `mfxedit.txt` | `mfxedit` | the mfx locomotive's name, Vmax, acceleration, braking, volume changed (CV writes); ESC out of the address entry |
   | `mfxfault.txt` | `mfxfault` | mfx decoders with a bad configuration (another address, slot dropped) and without data answers (read-out given up, decoder deleted) |
   | `bootloader.txt` | `bootloader` | OPTIONEN, RESET, PA3+PA7: the jump to the bootloader |
 

@@ -1,6 +1,6 @@
-# mfx locomotive changes: after the registration (to about 31 s), ESC out of the database
-# list and the address entry, then LOKÄNDERN: name, VMAX, ACC, DEC, VOL, each written to the
-# decoder's configuration.
+# mfx locomotive changes: after the registration (to about 31 s), NEUE LOK and ESC out of the
+# address entry, then LOKÄNDERN: name, VMAX, ACC, DEC, VOL, each written to the decoder's
+# configuration.
 # run: -t 71 -D 'mfx:7A3F0012,name=BR 185'
 32.00 press esc
 32.15 release esc
@@ -8,11 +8,7 @@
 32.85 press knob
 33.00 release knob
 33.70 text
-33.70 press knob
-33.85 release knob
 34.55 text
-34.55 press esc
-34.70 release esc
 35.40 text
 35.40 turn 1
 36.08 text

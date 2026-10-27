@@ -50,8 +50,6 @@ static const s16 lok_cv_value_range[5][2] = {
 };
 
 extern void show_message(u8 message, u8 ticks);       /* 0xDCA9: show a message */
-extern u16  lokdb_count(void);             /* database: number of records */
-extern void lokdb_read(u16 index, u8 *dest); /* database: copy record index */
 
 /* keys pressed now (pressed and newly pressed) */
 #define KEY(mask)        (button_state_edge & button_state_raw & (mask))
@@ -192,107 +190,6 @@ static void drive(void)
         ui_enter_mode(3);
     else if (KEY(KEY_OK))
         ui_enter_mode(2);
-}
-
-/* menu_top 1, menu_item 1: a new locomotive from the database (page $3C) */
-static void new_from_database(u8 sub)
-{
-    u8 b, n, i, v;
-    u8 *p, *q;
-    lok_function_t *fn;
-    u16 addr;
-
-    switch (sub) {
-    case 1:
-        menu_value = 0;
-        menu_value2 = lokdb_count();
-        if (menu_value2 == 0) {
-            menu_back();
-            return;
-        }
-        menu_sub++;
-        /* fall through */
-    case 2:
-        menu_value = ui_knob_adjust(menu_value, menu_value2 - 1, 0, 4);
-        lokdb_read(menu_value, lok_name_edit_buf);
-        menu_value4 = *(u16 *)lok_name_edit_buf;
-        b = lokdb_rec_info;
-        menu_value3 = (s8)b < 0 ? 1 : 0;
-        menu_db_brand = (b & 0x40) ? 'T' : 'M';
-        if (KEY(KEY_OK | KEY_KNOB)) {
-            menu_sub++;
-            return;
-        }
-        if (KEY(KEY_ESC))
-            menu_back();
-        return;
-    case 3:
-        if (lok_edit.unused != 0xFF) {
-            if (lok_edit.unused == 0) {
-                show_message(2, 0x3E);
-                ui_enter_mode(1);
-            }
-            return;
-        }
-        b = lokdb_rec_info;
-        lok_edit.symbol = (b >> 4) & 3;
-        lok_edit.kinds[0] = 0x80;
-        lok_edit.kinds[1] = 0x82;
-        lok_edit.kinds[2] = 0;
-        lok_edit.protocol = (lokdb_rec_protocol & 3) + 2;
-        addr = (u8)(lokdb_rec_protocol >> 2);
-        lok_edit.protocol_flags = addr;
-        n = b & 0x0F;
-        v = lok_name_edit_buf[5 + n];
-        if ((s8)v < 0) {
-            lok_edit.protocol_flags = addr | 0x1000;
-            lok_name_edit_buf[5 + n] = v & 0x7F;
-            b = lokdb_rec_info;
-        }
-        lok_edit.address = lokdb_rec_address & 0x7F;
-        lok_edit.default_address = lokdb_rec_address & 0x7F;
-        LO8(lok_edit.mfx_uid_lo) = 0;
-        HI8(lok_edit.mfx_uid_lo) = 0;
-        LO8(lok_edit.mfx_uid_hi) = 0;
-        HI8(lok_edit.mfx_uid_hi) = 0;
-        lok_edit.speed_object = 1;
-        if ((s8)lok_name_edit_buf[6 + (b & 0x0F)] < 0) {
-            lok_name_edit_buf[5 + (b & 0x0F)] &= 0x7F;
-            lok_edit.speed_object = 0;
-            b = lokdb_rec_info;
-        }
-        charset_to_utf8(&lok_name_edit_buf[5 + (b & 0x0F)], lok_edit.name, 0x10);
-        n = lokdb_rec_info & 0x0F;
-        fn = lok_edit.functions;
-        q = &lok_name_edit_buf[5];
-        for (i = 0; i < 16; i++, fn++, q++)
-            fn->icon = i < n ? *q : 0;
-        lok_assign_functions(10);
-        lok_edit.vmax = 0xFF;
-        lok_edit.accel = 4;
-        lok_edit.decel = 3;
-        lok_edit.volume = 0xFF;
-        lok_edit.flags = 0;
-        lok_edit.unused = 0;
-        sub = ++menu_sub;
-        /* fall through */
-    case 4:
-        if ((s8)lokdb_rec_address >= 0) {
-            ui_enter_mode(1);
-            return;
-        }
-        /* the record continues with another locomotive: move it to the front */
-        p = &lok_name_edit_buf[5 + (lokdb_rec_info & 0x0F)];
-        q = lok_name_edit_buf;
-        while (*p++ != 0)
-            ;
-        while (p < lok_name_edit_buf + sizeof lok_name_edit_buf)
-            *q++ = *p++;
-        menu_sub = sub - 1;
-        return;
-    default:
-        return;
-    }
 }
 
 /* menu_top 1, menu_item 2: a new locomotive by address */
@@ -586,8 +483,8 @@ static void menus(void)
                 menu_enter();
             return;
         }
-        if (item == 1)
-            new_from_database(sub);
+        if (item == 1)                          /* DATENBANK: nothing to choose from */
+            menu_back();
         else if (item == 2)
             new_by_address();
         return;

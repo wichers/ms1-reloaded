@@ -130,8 +130,6 @@ BA96	encoder_set_count	v
 BAB1	encoder_sample	v
 DCCF	eeprom_erase_sector	v
 DCE8	eeprom_program_word	v
-DCFE	lokdb_count	w
-DD07	lokdb_read	v
 DD98	can_poll	v
 DDB5	can_controller_full_init	v
 DE43	can_tx_enqueue_frame	w

@@ -127,8 +127,6 @@ B8DC	encoder_set_count	v
 B8F7	encoder_sample	v
 DB55	eeprom_erase_sector	v
 DB6E	eeprom_program_word	v
-DB84	lokdb_count	w
-DB8D	lokdb_read	v
 DC1E	can_poll	v
 DC3B	can_controller_full_init	v
 DCC9	can_tx_enqueue_frame	w

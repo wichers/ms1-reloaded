@@ -17,12 +17,6 @@
 
 #include "hcs12.h"
 
-#define PAGE3C_ENTRIES(X) \
-    X(lokdb_p3c_count) \
-    X(lokdb_p3c_read)
-
-/* lok/lokdb.c: the locomotive database */
-u16  lokdb_p3c_count(void) __attribute__((far));
-void lokdb_p3c_read(u16 entry, u8 *dest) __attribute__((far));
+#define PAGE3C_ENTRIES(X)
 
 #endif /* PAGE3C_H */

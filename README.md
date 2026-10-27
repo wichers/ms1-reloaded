@@ -9,7 +9,7 @@ and builds the official release images; it is the base for new firmware for this
 
 | Project | What it is |
 |---|---|
-| [`ms1-firmware/`](ms1-firmware/README.md) | The firmware in C, with inline assembly for its interrupt handlers (the original's locomotive database and update file loader are in [`third_party/`](ms1-firmware/third_party/README.md)), built with GCC for the MC9S12D64; the release images 4011, c011, 4010 and c010; verification against the original (`tools/regress.py`); [architecture](ms1-firmware/docs/architecture.md), [bootloader interface](ms1-firmware/docs/bootloader.md) |
+| [`ms1-firmware/`](ms1-firmware/README.md) | The firmware in C, with inline assembly for its interrupt handlers (the original's update file loader is in [`third_party/`](ms1-firmware/third_party/README.md)), built with GCC for the MC9S12D64; the release images 4011, c011, 4010 and c010; verification against the original (`tools/regress.py`); [architecture](ms1-firmware/docs/architecture.md), [bootloader interface](ms1-firmware/docs/bootloader.md) |
 | [`ms1-emu/`](ms1-emu/README.md) | MC9S12D64 + MS1 board emulator: CPU, timers, ATD, SPI/LCD, MSCAN on a real or virtual CAN bus, EEPROM, track output with MM and mfx decoders; `difftest` runs a rebuild against the original |
 | [`ms1-ghidra/`](ms1-ghidra/README.md) | Ghidra project of the original application: HCS12 language fixes, memory model, function boundaries, the rebuild's names; exports the listing and pseudocode the other projects use |
 | [`ms1-master/`](ms1-master/README.md) | C99 CAN master libraries: M-CAN for MS1 handhelds as slaves, and the CS2 protocol |

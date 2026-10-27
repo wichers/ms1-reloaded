@@ -6,7 +6,6 @@
 #   tools/hc12-gcc/run make DEBUG=1    -> with SCI0 debug output (MS1_DEBUG_SERIAL)
 #   tools/hc12-gcc/run make RELEASE=4010  -> version 4010, in build/4010/
 CC      = m68hc11-gcc
-AS      = m68hc11-as
 OBJCOPY = m68hc11-objcopy
 OBJDUMP = m68hc11-objdump
 NM      = m68hc11-nm
@@ -80,7 +79,6 @@ SOURCES = \
 	src/signal/signal_gen.c \
 	src/signal/feedback_capture.c \
 	src/lok/lokstack.c \
-	src/lok/lokdb_access.c \
 	src/lok/lok_functions.c \
 	src/ui/lang.c \
 	src/ui/lcd_tables.c \
@@ -96,13 +94,12 @@ SOURCES = \
 
 OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(SOURCES))
 
-# flash page $3C (include/page3c.h, gcc/page3c.ld): its entry table, the code the application
-# calls there, the locomotive database; linked after the application, against its symbols
+# flash page $3C (include/page3c.h, gcc/page3c.ld): its entry table and the code the
+# application calls there; linked after the application, against its symbols
 PAGE3C_SOURCES = \
 	src/sys/page3c_entries.c \
-	src/lok/lokdb.c \
 
-PAGE3C_OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(PAGE3C_SOURCES)) $(B)/page3c/lokdb.o
+PAGE3C_OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(PAGE3C_SOURCES))
 
 # the flashable images, with a device dump's bootloader
 ifneq ($(wildcard $(ORIGINAL)),)
@@ -126,19 +123,11 @@ $(B)/mc9s12d64.inc: gcc/mc9s12d64.h
 	@mkdir -p $(dir $@)
 	sed -n 's/^#define \([A-Z0-9_]*\) *_REG\(8\|16\)(\(0x[0-9A-F]*\)).*/\t.equ\t\1,\3/p' $< > $@
 
-# page $3C: the locomotive database (third_party/lokdb.tsv)
-$(B)/page3c/lokdb.s: third_party/lokdb.tsv tools/lokdb.py
-	@mkdir -p $(dir $@)
-	$(PYTHON) tools/lokdb.py asm $< $@
-
-$(B)/page3c/lokdb.o: $(B)/page3c/lokdb.s
-	$(AS) -m68hcs12 -o $@ $<
-
 # page $3C, linked against the application's symbols (its RAM variables, the fixed-flash
 # functions it calls), but for the entry-table names the page defines itself
 $(B)/app_symbols.elf: $(B)/ms1.elf $(B)/page3c_symbols.ld
 	sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\) = .*/\1/p' $(B)/page3c_symbols.ld > $@.names
-	$(OBJCOPY) --strip-symbols=$@.names $< $@
+	if [ -s $@.names ]; then $(OBJCOPY) --strip-symbols=$@.names $< $@; else cp $< $@; fi
 	rm $@.names
 
 $(B)/page3c.elf: $(PAGE3C_OBJS) gcc/page3c.ld $(B)/app_symbols.elf
@@ -202,9 +191,9 @@ $(B)/%.bci: $(B)/%.bin third_party/loader/$(RELEASE).s19 ../tools/bci.py
 clean:
 	rm -rf build
 
-# keep what the pattern rules make on the way (the identification parts, the page-$3C objects)
+# keep what the pattern rules make on the way (the identification parts)
 .SECONDARY:
 
 .PHONY: all images clean
 
--include $(patsubst %.o,%.d,$(OBJS) $(filter $(B)/obj/%,$(PAGE3C_OBJS)))
+-include $(patsubst %.o,%.d,$(OBJS) $(PAGE3C_OBJS))

@@ -1,8 +1,7 @@
 /* Flash page $3C, linked on its own, after the application and against its symbols
  * (build/app_symbols.elf: build/ms1.elf without the entry-table names): the entry table
  * (src/sys/page3c_entries.c) at 0x8000, then the code the application calls there and its
- * read-only data, the locomotive database (generated from third_party/lokdb.tsv).
- * tools/mkimage.py places it in page $3C. Its RAM variables belong to the application
+ * read-only data. tools/mkimage.py places it in page $3C. Its RAM variables belong to the application
  * (src/globals.c): the page has none of its own.
  *
  * The page is linked at its banked address, 0x100000 for page $3C 0x8000: the linker turns
