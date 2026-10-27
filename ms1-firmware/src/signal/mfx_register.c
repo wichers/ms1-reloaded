@@ -596,7 +596,7 @@ u16 mfx_registration_process(void)
     lok_record_t *rec;
     u8 st = mfx_state;
     u8 r, s2, start, s, cur, f;
-    u16 x;
+    u16 x, cap;
     s16 n;
     lok_state_t *d;
 
@@ -642,8 +642,9 @@ u16 mfx_registration_process(void)
                     ui_enter_mode(1);
             }
         }
-    } else if (timer_capture_ptr != 0 && timer_capture_mode == 0 && timer_capture_ptr != 0xFFFF) {
-        /* the feedback of the last command */
+    } else if ((cap = timer_capture_ptr) != 0 && timer_capture_mode == 0 && cap != 0xFFFF) {
+        /* the feedback of the last command. The pointer is read once, before the mode: a
+         * capture the signal interrupt starts in between leaves cap at 0xFFFF */
         mfx_cmd_steps = 3;
         switch (st) {
         case 1:
