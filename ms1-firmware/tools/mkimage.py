@@ -4,8 +4,8 @@ identification area, with the application CRC made valid for the bootloader.
 The parts, as the Makefile builds them:
   <app.s19>     the application (S-records from objcopy, CPU addresses): 0x4000 up to the
                 identification part, and the interrupt trampolines at 0xF740-0xF7FF
-  <page3c.bin>  flash page $3C (0x8000-0xBFFF in the window, 16 KiB): the locomotive database
-                and its accessors
+  <page3c.bin>  flash page $3C (0x8000-0xBFFF in the window, 16 KiB): the entry table and the
+                code behind it, the device library's blocks erased
   <ident.s19>   the release's identification area 0xF700-0xF73F and its strings below it
                 (src/sys/ident.c), with the application version word at 0xF73C, which must be
                 the version's
@@ -30,12 +30,16 @@ a 4011 device refuses 4010. When the check fails, the low byte at 0xFF1B becomes
 application's, which passes it for 4010 and c010 with a 4011 device's bootloader; the
 S-record image says so on its line. A 4011 image keeps the bootloader as it is.
 
+--version-from IMAGE.s19 takes the application version at 0xF704 (INFO AP:, CAN
+identification) from IMAGE instead of <ident.s19>: tools/regress.py compares the rebuild with
+the original that way, so that the version, a deliberate difference, does not show as one.
+
 --original writes the image of an original release, for the emulator: everything below
 0xF800 from <release.bin> (a decoded update file), the bootloader from <dump.s19> (with the
 0xFF1B rule above).
 
 Usage: python3 tools/mkimage.py [--release R] [--bin OUT.bin] [--bootloader DUMP.s19 --s19 OUT.s19]
-                                <app.s19> <page3c.bin> <ident.s19>
+                                [--version-from IMAGE.s19] <app.s19> <page3c.bin> <ident.s19>
        python3 tools/mkimage.py [--release R] --original <release.bin> <dump.s19> <out.s19>
 """
 import os
@@ -47,6 +51,7 @@ import releases
 PAGE = 0x4000
 COMP = 0xF73E
 VERSION = 0xF73C        # the application version word
+AP_VERSION = 0xF704     # the application version, major.minor
 BOOT_VERSION = 0xFF1A   # the bootloader's: the application version it starts
 
 
@@ -215,8 +220,9 @@ def add_bootloader(pages, boot_path):
         pages[page][off] = boot[(page, off)]
 
 
-def image(rel, app_path, page3c_path, ident_path):
-    """The four pages with the parts placed, the CRC word set; 0xF800-0xFFFF 0xFF."""
+def image(rel, app_path, page3c_path, ident_path, version_from=None):
+    """The four pages with the parts placed, the CRC word set; 0xF800-0xFFFF 0xFF. With
+    version_from, the version at AP_VERSION from that S-record image."""
     pages = {p: bytearray([0xFF] * PAGE) for p in (0x3C, 0x3D, 0x3E, 0x3F)}
     page3c = open(page3c_path, "rb").read()
     if len(page3c) != PAGE:
@@ -236,6 +242,11 @@ def image(rel, app_path, page3c_path, ident_path):
         pages[page][off] = b
     for (page, off), b in ident.items():
         pages[page][off] = b
+    if version_from:
+        other = read_srec(version_from)
+        for a in (AP_VERSION, AP_VERSION + 1):
+            page, off = cpu_to_flash(a)
+            pages[page][off] = other[(page, off)]
     if word(pages, VERSION) != rel.version:
         sys.exit(f"{ident_path}: application version 0x{word(pages, VERSION):04X}, not {rel.name} (--release)")
     comp = solve_compensation(pages)
@@ -248,7 +259,8 @@ def image(rel, app_path, page3c_path, ident_path):
 def main():
     args = sys.argv[1:]
     opts = {}
-    while args[:1] and args[0] in ("--release", "--bin", "--bootloader", "--s19") and len(args) >= 2:
+    while args[:1] and args[0] in ("--release", "--bin", "--bootloader", "--s19", "--version-from") \
+            and len(args) >= 2:
         opts[args[0]], args = args[1], args[2:]
     rel = releases.get(opts.get("--release"))
     if args[:1] == ["--original"] and len(args) == 4:
@@ -256,7 +268,7 @@ def main():
         return
     if len(args) != 3 or ("--s19" in opts) != ("--bootloader" in opts) or not ({"--bin", "--s19"} & set(opts)):
         sys.exit(__doc__)
-    pages, summary = image(rel, *args)
+    pages, summary = image(rel, *args, version_from=opts.get("--version-from"))
     if "--bin" in opts:
         data = bytearray()
         for page in (0x3C, 0x3E, 0x3D, 0x3F):

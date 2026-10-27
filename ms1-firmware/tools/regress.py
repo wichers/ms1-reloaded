@@ -9,12 +9,13 @@ standing for the original's image and other *.txt words for scenario files. Per 
   same options, its text lines, decoder events and CAN frames compared with the original's,
   times left out and numbers with a fractional part masked (timing-derived values), decoder
   events per decoder with a run of speed events in one direction as its last, CAN frames per
-  direction and ID
-  with a frame repeated unchanged counted once;
+  direction and ID with a frame repeated unchanged counted once;
 - the call times of each side (difftest -y).
+These runs take the rebuild with the original's application version at 0xF704 (INFO AP:, CAN
+identification; tools/mkimage.py --version-from), the rest as built.
 
 '# expect[ LABEL]: OPTIONS' lines are runs of behaviour the original does not have (DCC): the
-rebuild runs alone (difftest -W) and what it shows is compared with the file
+rebuild, as built, runs alone (difftest -W) and what it shows is compared with the file
 tools/scenarios/LABEL.expected (LABEL defaults to the scenario's name; version 4010 takes
 LABEL.4010.expected where that exists). --update writes those files from the rebuild instead.
 
@@ -167,17 +168,18 @@ def main():
     if rel.name == "4011":
         base = os.path.join(emu, "build", "ms1_4011.s19")
     else:
-        base = os.path.join(os.path.abspath(a.firmware), rel.images[0] + ".bin")
+        base = os.path.join(os.path.abspath(a.firmware), rel.originals[0] + ".bin")
     dump = os.path.join(os.path.abspath(a.firmware), DUMP)
     app = os.path.join(rel.build, "app.s19")
     page3c = os.path.join(rel.build, "page3c.bin")
-    ident = os.path.join(rel.build, "ident", rel.images[0] + ".s19")
+    ident = os.path.join(rel.build, "ident", rel.name + ".s19")      # its first release's
     for need in (difftest, base, app, page3c, ident) + ((dump,) if rel.name != "4011" else ()):
         if not os.path.exists(need):
             sys.exit(f"missing {need}: build ms1-emu (make build/ms1emu build/difftest, the image) and this firmware")
     work = a.keep or tempfile.mkdtemp(prefix="regress.")
     os.makedirs(work, exist_ok=True)
     orig, rebuild = os.path.join(work, "orig.s19"), os.path.join(work, "rebuild.s19")
+    compared = os.path.join(work, "rebuild_compared.s19")
     py = [sys.executable, "-I"]
     mkimage = py + [os.path.join(HERE, "mkimage.py"), "--release", rel.name]
     if rel.name == "4011":
@@ -186,6 +188,9 @@ def main():
         subprocess.run(mkimage + ["--original", base, dump, orig], check=True, capture_output=True)
     subprocess.run(mkimage + ["--bootloader", orig, "--s19", rebuild, app, page3c, ident], check=True,
                    capture_output=True)
+    # compared with the original: with its version (mkimage.py --version-from)
+    subprocess.run(mkimage + ["--bootloader", orig, "--s19", compared, "--version-from", orig, app, page3c,
+                              ident], check=True, capture_output=True)
     sym, tsv = os.path.join(work, "ms1.sym"), os.path.join(work, "functions.tsv")
     shutil.copy(os.path.join(rel.build, "ms1.sym"), sym)
     shutil.copy(rel.functions, tsv)
@@ -198,7 +203,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.j) as pool:
         for name, path, words, expect in todo:
             opts = resolve(words, orig)
-            files = [orig, rebuild, sym, tsv]
+            files = [orig, rebuild if expect else compared, sym, tsv]
             log_o, log_r = os.path.join(work, name + ".can.orig"), os.path.join(work, name + ".can.rebuild")
             jobs[name] = (
                 None if expect else

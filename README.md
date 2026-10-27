@@ -4,13 +4,15 @@ An open re-implementation of the firmware of the **Märklin Mobile Station 1** (
 60651/60652), the handheld controller for Märklin model railways, and the tools that check it
 against the original: an emulator of the MS1 that runs the unmodified firmware, a Ghidra
 analysis of it, and CAN master libraries that drive MS1 handhelds. The firmware rebuild is
-verified function by function and as a whole against the original running in the emulator,
-and builds the official release images; it is the base for new firmware for this hardware.
+verified function by function and as a whole against the original running in the emulator.
+It adds DCC (locomotives driven and programmed, accessories switched) beside MM and mfx,
+replaces the original's locomotive database by a library of the user's own devices in flash,
+and builds release images in the original's format.
 
 | Project | What it is |
 |---|---|
-| [`ms1-firmware/`](ms1-firmware/README.md) | The firmware in C, with inline assembly for its interrupt handlers (the original's update file loader is in [`third_party/`](ms1-firmware/third_party/README.md)), built with GCC for the MC9S12D64; the release images 4011, c011, 4010 and c010; verification against the original (`tools/regress.py`); [architecture](ms1-firmware/docs/architecture.md), [bootloader interface](ms1-firmware/docs/bootloader.md) |
-| [`ms1-emu/`](ms1-emu/README.md) | MC9S12D64 + MS1 board emulator: CPU, timers, ATD, SPI/LCD, MSCAN on a real or virtual CAN bus, EEPROM, track output with MM and mfx decoders; `difftest` runs a rebuild against the original |
+| [`ms1-firmware/`](ms1-firmware/README.md) | The firmware in C, with inline assembly for its interrupt handlers (the original's update file loader is in [`third_party/`](ms1-firmware/third_party/README.md)), built with GCC for the MC9S12D64: MM, mfx and DCC, the device library; the release images 4011, c011, 4010 and c010; verification against the original and expected-output runs for DCC (`tools/regress.py`); [architecture](ms1-firmware/docs/architecture.md), [bootloader interface](ms1-firmware/docs/bootloader.md) |
+| [`ms1-emu/`](ms1-emu/README.md) | MC9S12D64 + MS1 board emulator: CPU, timers, ATD, SPI/LCD, MSCAN on a real or virtual CAN bus, EEPROM, track output with MM, mfx and DCC decoders, the flash controller; `difftest` runs a rebuild against the original |
 | [`ms1-ghidra/`](ms1-ghidra/README.md) | Ghidra project of the original application: HCS12 language fixes, memory model, function boundaries, the rebuild's names; exports the listing and pseudocode the other projects use |
 | [`ms1-master/`](ms1-master/README.md) | C99 CAN master libraries: M-CAN for MS1 handhelds as slaves, and the CS2 protocol |
 | [`tools/bci.py`](tools/bci.py) | decode and encode the firmware update files (`.bci`) |
@@ -23,9 +25,10 @@ and builds the official release images; it is the base for new firmware for this
 | Display | PT6547 LCD driver on SPI0: a 38×5 text matrix, icons, speed bar |
 | Input | pushable rotary knob, 12 keys |
 | CAN | MSCAN0, 250 kbit/s, 29-bit IDs (M-CAN): master of other MS1s, or slave of an MS1, CS1 or ECoS |
-| Track | timer-driven H-bridge signal for MM and mfx (as master), mfx feedback receiver |
+| Track | timer-driven H-bridge signal for MM and mfx (as master), mfx feedback receiver; DCC from the same outputs in the rebuild |
 
-Firmware releases (update files `<release>_1-8_mobile-station[-2]_A.bci`): 4011 (60652) and
+The original's firmware releases (update files `<release>_1-8_mobile-station[-2]_A.bci`; the
+rebuild's carry its own version in the name): 4011 (60652) and
 c011 (60651) are the same code with their own data; 4010 (60652) and c010 (60651) are its
 version for the hardware without track current measurement
 ([architecture](ms1-firmware/docs/architecture.md), section 12).

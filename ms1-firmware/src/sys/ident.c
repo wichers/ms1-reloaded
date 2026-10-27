@@ -2,16 +2,20 @@
  * sys/ident.c - the identification area 0xF700-0xF73F and its strings
  *
  * The area the bootloader and the CAN identification read by address (docs/bootloader.md:
- * The application's side), with the values of the original release being built: the Makefile
- * compiles this file per release (MS1_RELEASE, MS1_ARTICLE) and links it on its own
- * (gcc/ident.ld), the strings below the area; tools/mkimage.py adds it to the release's image
- * and sets the CRC compensation word.
+ * The application's side), with the values of the original release being built but for the
+ * application version: the Makefile compiles this file per release (MS1_RELEASE,
+ * MS1_ARTICLE, AP_VERSION) and links it on its own (gcc/ident.ld), the strings below the area;
+ * tools/mkimage.py adds it to the release's image and sets the CRC compensation word.
  *========================================================================*/
 
 #include "../include/hcs12.h"
 
 #ifndef MS1_ARTICLE
 #define MS1_ARTICLE 60652
+#endif
+
+#ifndef AP_VERSION                  /* major << 8 | minor, from the Makefile's VERSION */
+#error "AP_VERSION: the application version, as the Makefile passes it"
 #endif
 
 struct ms1_ident {
@@ -71,7 +75,7 @@ struct ms1_ident {
 #endif
 
 const struct ms1_ident ms1_ident __attribute__((section(".ident"))) = {
-    0, MS1_RELEASE, 0x0108, BUILD, BUILD_TIME, 0, HW_CODE,
+    0, MS1_RELEASE, AP_VERSION, BUILD, BUILD_TIME, 0, HW_CODE,
     { 0, 0, 0, 0, 0, 0, 0, 0 },
     T(PRODUCT), T(BUILD_DATE), T("Peter Schaeffer"), T("(c) ESU 2006"),
     { 0, 0, 0, 0, 0, 0, 0, 0, 0 },

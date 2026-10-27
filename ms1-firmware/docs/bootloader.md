@@ -115,7 +115,7 @@ What belongs to what:
 
 | Address | Content | Read by |
 |---|---|---|
-| 0xF700-0xF70F | the application's identification words (`struct ms1_ident` in `src/sys/ident.c`): 0xF702 its version word, 0xF704 its version (major.minor), 0xF706 and 0xF708 per release build, 0xF70E the hardware code of its article | identification 3/0-3/2, 4/0; registration steps 6 and 7; INFO `AP:` |
+| 0xF700-0xF70F | the application's identification words (`struct ms1_ident` in `src/sys/ident.c`): 0xF702 its version word, 0xF704 its version (major.minor; `AP_VERSION`), 0xF706 and 0xF708 per release build, 0xF70E the hardware code of its article | identification 3/0-3/2, 4/0; registration steps 6 and 7; INFO `AP:` |
 | 0xF720 | pointers to the application's strings | identification 3/3 sends the first, the product name |
 | 0xF73A | pointer to the article number string | INFO `AN:` |
 | 0xF73C | the application version word | the bootloader's check |

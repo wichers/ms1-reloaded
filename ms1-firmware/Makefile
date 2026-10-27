@@ -21,16 +21,26 @@ RELEASE   ?= 4011
 # for the flashable images (its bootloader)
 FIRMWARE  ?= ../original-firmware
 ORIGINAL  ?= $(FIRMWARE)/firmware_20260317_192757_usbdm.s19
+# The application version, major.minor (src/sys/ident.c AP_VERSION: INFO AP:, the CAN
+# identification), also in the release image names
+VERSION    = 2.0
+V_MAJOR    = $(word 1,$(subst ., ,$(VERSION)))
+V_MINOR    = $(word 2,$(subst ., ,$(VERSION)))
+
 ifeq ($(RELEASE),4011)
 B          = build
-# the releases with this application (the same code, their own data and article number)
-RELEASES   = 4011_1-8_mobile-station-2_A c011_1-8_mobile-station-2_A
+# the releases with this application (the same code, their own data and article number), by
+# release code and product as the original's update files are named
+CODES      = 4011 c011
+PRODUCT    = mobile-station-2_A
 else ifeq ($(RELEASE),4010)
 B          = build/4010
-RELEASES   = 4010_1-8_mobile-station_A c010_1-8_mobile-station_A
+CODES      = 4010 c010
+PRODUCT    = mobile-station_A
 else
 $(error RELEASE is 4011 or 4010)
 endif
+RELEASES   = $(foreach c,$(CODES),$(c)_$(V_MAJOR)-$(V_MINOR)_$(PRODUCT))
 
 CFLAGS  = -MMD -MP -m68hcs12 -mshort -O1 -fomit-frame-pointer -ffunction-sections -fdata-sections -g -Igcc -Isrc/include -Isrc
 CFLAGS += -DMS1_RELEASE=0x$(RELEASE)
@@ -147,10 +157,12 @@ $(B)/page3c_symbols.ld: $(B)/obj/sys/page3c_entries.o tools/banks.py
 	$(PYTHON) tools/banks.py entries $(OBJDUMP) $< > $@.tmp
 	mv $@.tmp $@
 
-# the identification area of each release (src/sys/ident.c; c0... the 60651's), linked on its own
+# the identification area of each release, ident/<release code> (src/sys/ident.c; c0... the
+# 60651's), linked on its own
 $(B)/ident/%.o: src/sys/ident.c Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -DMS1_ARTICLE=$(if $(filter c%,$*),60651,60652) -c $< -o $@
+	$(CC) $(CFLAGS) -DMS1_ARTICLE=$(if $(filter c%,$*),60651,60652) \
+		-DAP_VERSION='($(V_MAJOR) << 8 | $(V_MINOR))' -c $< -o $@
 
 $(B)/ident/%.elf: $(B)/ident/%.o gcc/ident.ld
 	$(CC) -m68hcs12 -mshort -nostdlib -T gcc/ident.ld -o $@ $<
@@ -178,12 +190,15 @@ $(B)/ms1.sym: $(B)/ms1.elf
 	$(NM) -n $< > $@
 
 PARTS = $(B)/app.s19 $(B)/page3c.bin tools/mkimage.py tools/releases.py
+# a release image's identification part, by the release code its name starts with
+IDENT = $(B)/ident/$(firstword $(subst _, ,$*)).s19
 
-$(B)/%.bin: $(PARTS) $(B)/ident/%.s19
-	$(PYTHON) tools/mkimage.py --release $(RELEASE) --bin $@ $(B)/app.s19 $(B)/page3c.bin $(B)/ident/$*.s19
+.SECONDEXPANSION:
+$(B)/%.bin: $(PARTS) $$(IDENT)
+	$(PYTHON) tools/mkimage.py --release $(RELEASE) --bin $@ $(B)/app.s19 $(B)/page3c.bin $(IDENT)
 
-$(B)/%.s19: $(PARTS) $(B)/ident/%.s19 $(ORIGINAL)
-	$(PYTHON) tools/mkimage.py --release $(RELEASE) --bootloader $(ORIGINAL) --s19 $@ $(B)/app.s19 $(B)/page3c.bin $(B)/ident/$*.s19
+$(B)/%.s19: $(PARTS) $$(IDENT) $(ORIGINAL)
+	$(PYTHON) tools/mkimage.py --release $(RELEASE) --bootloader $(ORIGINAL) --s19 $@ $(B)/app.s19 $(B)/page3c.bin $(IDENT)
 
 # the version's first release, flashable, for the emulator
 $(B)/ms1.s19: $(B)/$(firstword $(RELEASES)).s19

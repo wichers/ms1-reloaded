@@ -4,9 +4,10 @@ A C source of the Märklin Mobile Station 1 (MS1) application firmware, with inl
 where the cycles count (the interrupt handlers), built with GCC, that behaves like the original:
 verified function by function and as a whole against the original running in the emulator
 (`../ms1-emu`). In place of the original's locomotive database it keeps a library of the
-user's own locomotives in flash (NEUE LOK → DATENBANK, LOK ÄNDERN → SPEICHERN), and it drives
-DCC locomotives beside MM and mfx, both from flash page $3C, where the database was (*Image
-layout*, `docs/architecture.md` 4.9 and 11). It builds the
+user's own locomotives and accessories in flash (NEUE LOK → DATENBANK, LOK ÄNDERN →
+SPEICHERN, ZUBEHÖR), drives and programs DCC locomotives beside MM and mfx, and switches DCC
+accessories, all from flash page $3C, where the database was (*Image layout*,
+`docs/architecture.md` 4.9-4.12 and 11). It builds the
 release images from this repository alone (the original's update file loader is in
 `third_party/`, see [third_party/README.md](third_party/README.md)).
 
@@ -14,7 +15,7 @@ release images from this repository alone (the original's update file loader is 
 
 Produce a C source of the MS1 firmware that behaves like the original where the original has
 the behaviour; it replaces the locomotive database by a device library and adds DCC
-(`docs/architecture.md`, 4.9 and 11). The original binary is the reference: `../ms1-ghidra`
+(`docs/architecture.md`, 4.9-4.12 and 11). The original binary is the reference: `../ms1-ghidra`
 (decompilation, instruction listing) for what the code does and `../ms1-emu` (the emulator
 running the original) for how it behaves; comments in the sources are hints, not facts.
 
@@ -54,7 +55,9 @@ needed to build, as `make` variables:
 
 **Release images.** Releases 4011 (article 60652) and c011 (60651) have the same code and
 differ only in their identification area (`src/sys/ident.c`: the article number, build strings
-and words), so one application builds both. Per release (the Makefile's `RELEASES`):
+and words), so one application builds both. Per release (the Makefile's `RELEASES`, named as
+the original's update files are: `<code>_<major>-<minor>_<product>`, the version the
+Makefile's `VERSION`; its identification part `build/ident/<code>.s19`):
 `build/<release>.bin` is the application, page $3C and the release's identification area in
 the update file's page order, 0xF800-0xFFFF zero as in a release image; `build/<release>.bci` is
 the update file of it: the release files' header, made from the image's identification area,
@@ -62,6 +65,11 @@ the version's loader (`third_party/loader/<version>.s19`), then every 0x200-byte
 image below 0xF800 (`../tools/bci.py`; it decodes back to the image, it has not been tried on
 a device); with `ORIGINAL`, `build/<release>.s19` is the flashable image with the
 dump's bootloader, and `build/ms1.s19` the version's first release.
+
+The application version in INFO (`AP:`) and the CAN identification (word 0xF704,
+`AP_VERSION` in `src/sys/ident.c`) is the Makefile's `VERSION`. The version word at 0xF73C and the product string stay the
+original release's: the bootloader starts an application by the version word, and both go
+out in the CAN identification as the original's do.
 
 Releases 4010 and c010 are application version 4010, for the MS1 hardware without track
 current measurement, and `make RELEASE=4010` builds them the same way into
@@ -215,11 +223,13 @@ the files group them by what they do.
 | Component | Detail |
 |-----------|--------|
 | **MCU** | Freescale MC9S12D64 (HCS12), 4 MHz crystal, 24 MHz bus (PLL) |
-| **CAN** | MSCAN module — connects to Märklin Central Station / track bus |
+| **CAN** | MSCAN module — connects to Märklin Central Station / track bus; L9615 CAN transceiver |
 | **Display** | PT6547 LCD driver IC (Princeton Technology), 304-segment capability, SPI interface |
 | **Input** | Pushable rotary encoder (speed knob) + 12 buttons (Lok/OK, Menu/ESC, Headlights, STOP, Aux F1-F8) |
 | **Storage** | On-chip EEPROM for persistent config (lok slots, language, calibration) |
-| **Track Output** | Timer-driven signal generator for MM/mfx waveforms |
+| **Track Output** | Timer-driven signal generator for MM, mfx and DCC waveforms |
+| **mfx feedback** | PT2579(S), an RDS demodulator: its clock, data and quality outputs fit the three inputs the feedback capture samples (PT0, PT1, PB5; `src/signal/feedback_capture.c`) |
+| **Other logic** | HEF4555B (dual 1-of-4 decoder) and LM339 (quad comparator), at the track output and feedback; their wiring is not traced, so the firmware assigns them no role |
 
 ## Firmware Analysis Summary
 
@@ -313,7 +323,7 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   # the rebuild with the bootloader of the emulator's image of the original
   orig=../ms1-emu/build/ms1_4011.s19
   python3 tools/mkimage.py --bootloader $orig --s19 rebuild.s19 \
-      build/app.s19 build/page3c.bin build/ident/4011_1-8_mobile-station-2_A.s19
+      build/app.s19 build/page3c.bin build/ident/4011.s19
   # the master run of drive.txt: the original as slave on the same CAN bus
   ../ms1-emu/build/difftest -t 27 -n 100000 -r 1929:10 -M $orig -A 0=0 \
       -S tools/scenarios/slave.txt -s tools/scenarios/drive.txt \
@@ -363,12 +373,15 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   timing-derived numbers masked (the rebuild's display is read back with the tables its
   symbol table names, `difftest -W`, `ms1emu -S`); decoder events are compared per decoder, a
   run of a decoder's speed events in one direction as its last (the steps a ramp passes depend
-  on when the knob is read), and CAN frames per direction and ID, since events of different decoders and frames
-  of different IDs interleave by timing, and a frame repeated unchanged counts once: how often
-  a state repeats depends on timing (the master's mfx status frame after each mfx search that
-  finds no decoder: the search moves with the main loop's timing, by up to tens of
-  milliseconds, so more or fewer fit in before the slave's cable is pulled in `twolok`). The rebuild's code is somewhat slower (`difftest -y`; the
-  runner prints the functions with the most extra time), so the same events happen
+  on when the knob is read), and CAN frames per direction and ID, since events of different
+  decoders and frames of different IDs interleave by timing, and a frame repeated unchanged
+  counts once: how often a state repeats depends on timing (the master's mfx status frame
+  after each mfx search that finds no decoder: the search moves with the main loop's timing,
+  by up to tens of milliseconds, so more or fewer fit in before the slave's cable is pulled in
+  `twolok`). These runs, and the function test, take the rebuild with the original's
+  application version at 0xF704 (INFO `AP:`, CAN identification; `tools/mkimage.py
+  --version-from`); the expect runs take it as built. The rebuild's code is somewhat slower
+  (`difftest -y`; the runner prints the functions with the most extra time), so the same events happen
   milliseconds later — by tens of milliseconds over an mfx registration — and as the main
   loop fills command buffer entries at other moments, the order of track packets can differ
   (an MM refresh packet between two mfx frames). Bit timing, pauses and
@@ -401,7 +414,7 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   python3 tools/mkimage.py --release 4010 --original $fw/4010_1-8_mobile-station_A.bin \
       $fw/firmware_20260317_192757_usbdm.s19 orig4010.s19
   python3 tools/mkimage.py --release 4010 --bootloader orig4010.s19 --s19 rebuild4010.s19 \
-      build/4010/app.s19 build/4010/page3c.bin build/4010/ident/4010_1-8_mobile-station_A.s19
+      build/4010/app.s19 build/4010/page3c.bin build/4010/ident/4010.s19
   ../ms1-emu/build/difftest -t 16 -r 191E:10 -s tools/scenarios/menu.txt \
       orig4010.s19 rebuild4010.s19 build/4010/ms1.sym tools/functions_4010.tsv
   ```

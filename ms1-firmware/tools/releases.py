@@ -21,13 +21,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Release:
-    def __init__(self, name, version, ram_gap, functions, build, images):
+    def __init__(self, name, version, ram_gap, functions, build, originals):
         self.name = name
         self.version = version            # application version word at 0xF73C
         self.ram_gap = ram_gap            # 4011 RAM addresses this version does not have
         self.functions = os.path.join(ROOT, functions)
         self.build = os.path.join(ROOT, build)
-        self.images = images              # its release images (original-firmware/<name>.bin)
+        self.originals = originals        # the original's release images (original-firmware/<name>.bin)
 
     def ram(self, addr):
         """This version's address of the RAM byte at addr in 4011 (src/globals.c), or None."""
