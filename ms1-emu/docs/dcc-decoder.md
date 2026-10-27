@@ -91,7 +91,10 @@ board adds `ACK_MA` to the track current for `ACK_S`, on ATD0 channel 3 — vers
 current input — in counts of the device's calibration word `flash_adc3_scale` (0xFF66):
 `ATD0DR3 × 10 × scale >> 16` mA, about 67 mA per 10-bit count with the dump's 0x1AA2. Add the
 current to the scenario's channel 3 value with `-a 3=V` (the default 512 reads as 0 mA there,
-the firmware's product overflows). Version 4010 has no current input.
+the firmware's product overflows). Version 4010 has no current input: the board pulls PB6, its
+over-current comparator, low while the decoder's extra current is above the threshold the
+firmware sets with PWM channels 2-3 (`comparator_tripped`: duty = L (L + 1000) / 1550 for L
+mA, as `signal_gen_init` computes it); the firmware lowers that threshold in service mode.
 
 ## Analysis
 

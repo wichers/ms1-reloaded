@@ -1,0 +1,71 @@
+# The programming items of a DCC locomotive (address 3): TASTEN - the second key on the left
+# (PA1) switches F3 with the speaker icon, momentary (OK); SYMBOL electric; FAHRSTUFEN 28;
+# then driven: 28-step packets, F3 while PA1 is held, nothing on PA2 (F3 left it).
+# expect: -t 37 -D dcc:3
+12.0 press knob
+12.15 release knob
+13.0 turn 2
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 press esc
+17.15 release esc
+17.8 turn 1
+18.5 press knob
+18.65 release knob
+19.2 turn -2
+19.7 text
+19.9 press knob
+20.05 release knob
+20.5 text
+20.6 press pa1
+20.75 release pa1
+21.2 text
+21.4 turn 1
+22.0 text
+22.2 press knob
+22.35 release knob
+22.8 text
+23.0 press ok
+23.15 release ok
+23.6 text
+24.0 press esc
+24.15 release esc
+24.6 text
+25.0 press esc
+25.15 release esc
+25.8 turn 1
+26.5 press knob
+26.65 release knob
+27.2 turn -3
+27.7 text
+27.9 press knob
+28.05 release knob
+28.5 turn -2
+29.0 text
+29.2 press ok
+29.35 release ok
+29.8 press esc
+29.95 release esc
+30.5 turn 1
+31.2 press knob
+31.35 release knob
+31.9 turn -1
+32.4 text
+32.6 press knob
+32.75 release knob
+33.0 turn 1
+33.4 text
+33.6 press ok
+33.75 release ok
+34.0 turn 5
+35.0 press pa1
+35.7 release pa1
+36.0 press pa2
+36.15 release pa2
+36.5 text

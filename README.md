@@ -28,7 +28,7 @@ and builds the official release images; it is the base for new firmware for this
 Firmware releases (update files `<release>_1-8_mobile-station[-2]_A.bci`): 4011 (60652) and
 c011 (60651) are the same code with their own data; 4010 (60652) and c010 (60651) are its
 version for the hardware without track current measurement
-([architecture](ms1-firmware/docs/architecture.md), section 11).
+([architecture](ms1-firmware/docs/architecture.md), section 12).
 
 ## What you provide
 

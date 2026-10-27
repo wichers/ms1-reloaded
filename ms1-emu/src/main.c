@@ -176,6 +176,8 @@ static void usage(void)
 		"  -r             run no faster than real time (for a shared bus)\n"
 		"  -a CH=VALUE    ATD0 channel input, 10-bit (default 512); 0=0 starts the MS1 as a CAN slave\n"
 		"  -T FILE        log track output changes: time, PT3, PT4, PT5\n"
+		"  -F FILE        write the flash after the run as S-records (the image with what the\n"
+		"                 firmware programmed), for a run that starts from it\n"
 		"  -I             interrupt timing: per interrupt its time from entry to RTI, and the track\n"
 		"                 signal interrupt's latency and slack (src/irqstat.c), after the run\n"
 		"  -S SYMBOLS     the image's symbol table (`nm -n`), for a rebuild: the LCD is read back with\n"
@@ -204,13 +206,14 @@ int main(int argc, char **argv)
 	int atd_set[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	static canbus_t bus;
 	FILE *can_log = 0, *track_log = 0;
+	const char *flash_out = 0;
 	const char *script = 0, *lcd_symbols = 0;
 	const char *decoder_spec[8];
 	int ndecoder_specs = 0;
 	static uint8_t bp[8192];
 	bool have_bp = false;
 	int opt;
-	while ((opt = getopt(argc, argv, "t:b:p:e:qn:d:lc:s:T:iC:ra:D:S:I")) != -1) {
+	while ((opt = getopt(argc, argv, "t:b:p:e:qn:d:lc:s:T:iC:ra:D:S:IF:")) != -1) {
 		switch (opt) {
 		case 't': seconds = atof(optarg); break;
 		case 'b': {
@@ -241,6 +244,7 @@ int main(int argc, char **argv)
 			break;
 		}
 		case 'T': track_log = fopen(optarg, "w"); break;
+		case 'F': flash_out = optarg; break;
 		case 'D':
 			if (ndecoder_specs < 8)
 				decoder_spec[ndecoder_specs++] = optarg;
@@ -333,5 +337,12 @@ int main(int argc, char **argv)
 		irqstat_print(m, stdout);
 	if (prof > 0 && !m->stop)
 		profile(m, prof, stdout);
+	if (flash_out) {
+		char err[300];
+		if (image_save_s19(flash_out, m->flash, err, sizeof err)) {
+			fprintf(stderr, "%s\n", err);
+			return 1;
+		}
+	}
 	return 0;
 }

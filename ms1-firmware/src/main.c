@@ -11,6 +11,8 @@
 #include "include/mcan.h"
 #include "include/ui.h"
 #include "include/track_cmd.h"
+#include "include/page3c.h"
+#include "include/dcc.h"
 
 extern void app_main_init(void);                       /* 0xD34F */
 extern void adc_read_and_scale_voltages(void);         /* 0xD750 */
@@ -35,6 +37,8 @@ int main(void)
         encoder_sample();
         if (is_master != 0)
             signal_gen_send_buf_executor(8);
+        if (dcc_svc.state != 0)
+            dcc_ack_sample();
         switch (ms_tick & 3) {
         case 0:
             mcan_process();

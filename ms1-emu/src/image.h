@@ -13,4 +13,8 @@
  * records PPAGE:addr for windowed pages. Unwritten bytes are erased (0xFF). */
 int image_load_s19(const char *path, uint8_t flash[FLASH_PAGES][PAGE_SIZE], char *err, size_t errsize);
 
+/* Write the flash in the same form (records of erased bytes only are left out): 0, or -1 with
+ * a message in err. */
+int image_save_s19(const char *path, const uint8_t flash[FLASH_PAGES][PAGE_SIZE], char *err, size_t errsize);
+
 #endif

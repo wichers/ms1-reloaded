@@ -37,7 +37,9 @@ extern const u8 lcd_text_dots[];
 extern const u8 charset_index_map[CHARSET_INDEX_MAP_SIZE];
 
 /* Per language (language_index) LANG_COUNT texts (ui/lang.c), in the display character set */
-#define LANG_COUNT  33
+#define LANG_COUNT  35
+#define LANG_SAVE   33                  /* the texts the original does not have */
+#define LANG_ERROR  34
 extern const u8 *const *const lang_table[];
 #define LANG(k) (lang_table[language_index][k])
 

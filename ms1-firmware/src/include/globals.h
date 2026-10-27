@@ -225,6 +225,11 @@ extern u16 dcc_cv;                          /* a CV write on the main: the CV (1
 extern u8  dcc_cv_value;                    /* its value */
 extern u16 dcc_cv_address;                  /* the decoder's address */
 
+/*--- The device library (lok/library.c); the original has none of these ---*/
+#define FLASH_RAM_SIZE 48
+extern u8  flash_ram[FLASH_RAM_SIZE];       /* the flash command routine, copied here to run */
+extern u8  library_stop;                    /* nonzero: library_save set STOP for its writing */
+
 /* Start-up code (sys/crt0.c) */
 extern void crt_restart(void) __attribute__((noreturn));      /* 0x403C: restart the application */
 extern void enter_bootloader(void) __attribute__((noreturn)); /* 0x407C: hand over to the bootloader */

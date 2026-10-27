@@ -1,0 +1,23 @@
+lcd "3"
+lcd "TASTEN"
+lcd "TASTE?"
+lcd "F2"
+lcd "F3"
+lcd "F3"
+lcd "F3 M"
+lcd "3"
+lcd "SYMBOL"
+lcd "SYMBOL?"
+lcd "FAHRSTUFEN"
+lcd "28"
+lcd "3"
+end LCD "3"
+dcc:3 track voltage on after # ms off
+dcc:3 speed +0/28
+dcc:3 speed +1/28
+dcc:3 speed +2/28
+dcc:3 speed +3/28
+dcc:3 speed +4/28
+dcc:3 F3 on
+dcc:3 F3 off
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

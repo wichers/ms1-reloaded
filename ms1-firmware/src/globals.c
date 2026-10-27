@@ -14,6 +14,7 @@
 #include "include/hcs12.h"
 #include "include/lokstack.h"
 #include "include/globals.h"
+#include "include/dcc.h"
 
 /* .bss.* and .data.* names give the sections the types GCC gives .bss and .data */
 #define RAM(addr)      __attribute__((section(".bss.ram." #addr)))
@@ -196,3 +197,6 @@ RAM(0x1BB5) volatile u16 rtc_ms_counter;
 u16 dcc_cv;
 u8  dcc_cv_value;
 u16 dcc_cv_address;
+u8  flash_ram[FLASH_RAM_SIZE];
+u8  library_stop;
+dcc_service_t dcc_svc;

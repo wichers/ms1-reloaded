@@ -12,7 +12,7 @@ signal, CAN, LCD, EEPROM), and how the code drives the hardware.
   `build/ms1.sym`). The original's read-only tables are C in this build, with the original's
   contents (README *Image layout*); the addresses given with them are the original's.
 - **Version 4010** (releases 4010 and c010) differs in the track current, the booster line, a
-  few functions and its addresses: section 11.
+  few functions and its addresses: section 12.
 - **Timer ticks:** the timer runs at 6 MHz (24 MHz bus, prescaler 4 set by `signal_gen_init`),
   so 6 ticks = 1 µs.
 
@@ -73,7 +73,7 @@ signal, CAN, LCD, EEPROM), and how the code drives the hardware.
    - slots (section 1); `ui_enter_mode(0)`; `can_controller_full_init`; `lcd_buf_load` (a blank
      display); `timer_modulus_read`; interrupts on.
 5. `ui_task` in operating mode 0 (the start-up screen) averages `track_current` into
-   `track_current_offset`, the current-sense zero (not in version 4010, section 11). On the
+   `track_current_offset`, the current-sense zero (not in version 4010, section 12). On the
    master it then clears STOP, so the track signal starts (4.6), and switches to mode 1.
 
 Leaving the application:
@@ -225,7 +225,7 @@ An entry is a 16-bit word: a control byte and a low byte.
 - On the master outside operating mode 0, `track_current_monitor` sets TIOS bit 3 on every pass
   unless STOP (`system_status_flags` bit 0) or an overload shutdown (bit 6) is on.
   `crt_restart`, `enter_bootloader` and the restart paths in `src/ui/ui_control.c` clear it.
-- Version 4010 drives bit 7 on PB7 instead, inverted and at once (section 11).
+- Version 4010 drives bit 7 on PB7 instead, inverted and at once (section 12).
 
 ### 4.5 What goes on the track: `track_scheduler`
 
@@ -247,7 +247,8 @@ nonzero, it gives each free entry to the first of these that writes one:
    `mfx_reg_counter`) with an MM idle packet.
 
 The code also checks `track_filler_hold` (0x105B) and `track_scheduler_hold` (0x1036), but
-nothing sets either of them, in the original too, so they stay 0.
+nothing sets either of them, in the original too, so they stay 0. While DCC service mode is
+on, `dcc_service_next` gets every entry instead (4.10).
 
 ### 4.6 STOP, track current and overload
 
@@ -275,7 +276,7 @@ nothing sets either of them, in the original too, so they stay 0.
     sets STOP.
   - Counters: operating minutes every 60000 passes (`minute_countdown`), and the entries into
     overload (`operating_minutes`, `overload_events`, section 9).
-- Version 4010 has no current measurement and a simpler monitor (section 11).
+- Version 4010 has no current measurement and a simpler monitor (section 12).
 
 ### 4.7 MM
 
@@ -298,7 +299,7 @@ nothing sets either of them, in the original too, so they stay 0.
 - `mfx_put_bits` (0xCA80) writes plain bits into the entry. The cells, the bit stuffing and
   the sync patterns come from the generator (4.3).
 - A frame entry (header of `src/signal/mfx_encode.c`): a leading 1 outside the CRC, the address
-  (`mfx_frame_begin`: 0 + 7, 10 + 9, 110 + 11 or 111 + 14 bits; version 4010: section 11), the commands
+  (`mfx_frame_begin`: 0 + 7, 10 + 9, 110 + 11 or 111 + 14 bits; version 4010: section 12), the commands
   (`mfx_put_command` and the `mfx_put_*`), then the CRC-8 (polynomial 0x07, start 0xFF,
   `mfx_frame_end`). The bit position is `mfx_bit_pos` / `mfx_byte_idx` (0x12A2 / 0x12A3) and
   the running CRC `mfx_crc_state` (0x12A4).
@@ -356,7 +357,7 @@ file's header.
 - **Jobs** (`track_pending`): VMAX, ACC, DEC, REG (`prog_cv`, `prog_value`) and RESET as POM
   writes of CV5, CV3, CV4, the CV and CV8 = 8 (RESET then sets the entry to `default_address`,
   as for MM); then speed and direction; then the groups of the changed functions. An address
-  change only changes the entry.
+  change confirmed with "PROG LOK?" programs the decoder in service mode (4.10).
 - **Refresh:** a slot's speed and its used function groups (a function with a key or one that
   is on) in turn, one packet per call (`mm_phase`), then the next slot.
 - **Signal** (measured with `../ms1-emu`'s DCC decoder, `tools/scenarios/dcc.txt`): halves
@@ -365,6 +366,48 @@ file's header.
   MM and mfx (README *Interrupt timing*).
 - **New locomotive:** NEUE LOK → DCC (`menu_item` 3) asks for the address (1-9999) and the
   symbol as ADRESSE does for MM, with 128 speed steps.
+
+### 4.10 DCC service mode
+
+`src/signal/dcc_service.c`, in page $3C (state: `dcc_svc`, `src/include/dcc.h`). Service mode
+(RCN-216, direct mode) reads and writes CVs of the decoder on the track, and of every other
+decoder there, so it starts only after "PROG LOK?".
+
+- **The track:** while `dcc_svc.state` is set, `track_scheduler` hands every command entry to
+  `dcc_service_next`: no locomotive packets, no mfx, no filler. STOP is switched off meanwhile
+  (the track needs power) and back on at the end if it was on; `system_status_flags` bit 3
+  shows PROG.
+- **A job:** a list of operations (a CV read: 8 bit verifies, then the byte; a write; an
+  address: CV1 and CV29 bit 5, or CV17, CV18 and bit 5). Per operation 3 resets (20 at the
+  start: the decoders' power-on), 5 instruction packets, then resets until 60 ms after the last
+  instruction was written (the command buffer runs at most that far ahead). Preamble 22 bits.
+- **The acknowledgement:** `dcc_ack_sample`, every main-loop pass while service mode is on.
+  Version 4011: `track_current` at least 50 mA above its running baseline for 4 passes.
+  Version 4010: its over-current comparator, PB6 low for 4 passes, with the threshold lowered
+  to about 60 mA (PWM channels 2-3, duty 41) and its overload check paused; the threshold
+  goes back at the end. Over 500 mA for 100 ms (4011) ends service mode with STOP.
+- **Uses:** LOK ÄNDERN → ADRESSE after "PROG LOK?" (`dcc_slot_job`, track_pending bit 2), CV
+  LESEN, LESEN (4.11). A job without an acknowledgement shows FEHLER; the writes have reached a
+  decoder that does not acknowledge all the same.
+
+### 4.11 The programming items
+
+`src/ui/prog.c`, in page $3C: LOK ÄNDERN's items after SPEICHERN (`CHANGE_SAVE`), on the master,
+for MM and DCC locomotives (`include/ui.h`: `PROG_READ_CV` ... `CHANGE_LAST`):
+
+| Item | What it does |
+|---|---|
+| CV LESEN (DCC) | "PROG LOK?", then CV after CV: the knob chooses, OK reads (service mode): `CV8=13` |
+| LESEN (DCC) | "PROG LOK?", then CV29, CV1 or CV17/CV18 read: the locomotive takes the decoder's address, long form and speed steps (14, else 128) |
+| SYMBOL | the symbol, shown while the knob turns; ESC keeps the old one |
+| TASTEN | a function key or LIGHT selects a key (its icon blinks); the knob sets the function it switches (F0-F15, none: another key that had it loses it), a knob push the next icon beside the key, OK momentary or not |
+| FAHRSTUFEN (DCC) | 128, 28 or 14 speed steps |
+
+The keys: `prog_keys` gives per key its input (PORTA bit, the light key PB2) and the icons the
+glass has beside it, with the function symbol each stands for; a function's key byte is key
+<< 4 | icon variant, variant 3 none. The places of the PORTA bits (left F1-F4 from the top)
+come from the manual. TASTEN numbers the CAN objects as `lok_assign_functions` does but keeps
+the keys the user chose.
 
 ## 5. Locomotive slots
 
@@ -560,7 +603,7 @@ the receive ring.
 | clocks, memory map | `_start` (PLL, INITRG/INITRM/INITEE, PPAGE $3D) | — |
 | timer: TSCR1 | `timer_atd_init`, `timer_modulus_init`, `signal_gen_init` (timer on, fast flag clear) | — |
 | timer: TSCR2 | `signal_gen_init` (prescaler 4) | — |
-| timer channels 3-5 (output compare) | `signal_gen_init` | `isr_timer_ch4_signal_gen`; TIOS bit 3: `track_current_monitor`, `crt_restart`, `enter_bootloader`, the restart paths in `src/ui/ui_control.c` (version 4010: channels 4 and 5 only, section 11) |
+| timer channels 3-5 (output compare) | `signal_gen_init` | `isr_timer_ch4_signal_gen`; TIOS bit 3: `track_current_monitor`, `crt_restart`, `enter_bootloader`, the restart paths in `src/ui/ui_control.c` (version 4010: channels 4 and 5 only, section 12) |
 | timer channel 0 (input capture) | `timer_capture_start_bit_mode`, `timer_capture_start_adc_mode` (TCTL4 edges) | `isr_feedback_capture` |
 | timer channels 6, 7 | `timer_atd_init` (no capture edges) | PT6/PT7 are read as port bits by `encoder_sample` |
 | modulus down-counter | `timer_modulus_init` (1 ms) | `isr_ms_tick`; `timer_modulus_read` reloads it at the end of `app_main_init` |
@@ -569,13 +612,41 @@ the receive ring.
 | MSCAN0 | `can_controller_full_init` | `can0_tx_isr`, `can0_rx_isr`, `can0_error_isr`, `can_tx_enqueue_frame` |
 | EEPROM (ECLKDIV, ECMD, ESTAT) | `eeprom_erase_sector` | `eeprom_program_word` |
 | PORTA | pull-ups (`timer_atd_init`) | function keys |
-| PORTB | PB7 output low, pull-ups (`timer_atd_init`) | PB0-PB4 keys; PB5 feedback quality; version 4010: PB6 over-current, PB7 booster line (section 11) |
-| PWM channels 0-3 | version 4010 only: `signal_gen_init` (section 11) | — |
+| PORTB | PB7 output low, pull-ups (`timer_atd_init`) | PB0-PB4 keys; PB5 feedback quality; version 4010: PB6 over-current, PB7 booster line (section 12) |
+| PWM channels 0-3 | version 4010 only: `signal_gen_init` (section 12) | — |
 | PTT | PT3-PT5 outputs (`signal_gen_init`) | PT0 feedback clock, PT1 feedback data, PT3-PT5 track, PT6/PT7 knob |
 | PORTE bit 2 | output, low (`lcd_init`) | high from `app_main_init` once the display is up; low again in `crt_restart` and `enter_bootloader` |
 | SCI0 | `src/hal/serial_debug.c`, only with `DEBUG=1` (`MS1_DEBUG_SERIAL`) | — |
 
-## 11. Version 4010
+## 11. Device library
+
+`src/lok/library.c`, in page $3C (`src/include/page3c.h`): locomotives the user saved (MM and
+DCC), in flash page $3C's top 4 KiB, 0xB000-0xBFFF (`LIB_START`; `gcc/page3c.ld` ends the code
+below it).
+
+- **Use:** LOK ÄNDERN → SPEICHERN (`CHANGE_SAVE`) saves the selected locomotive, replacing its
+  record (found by protocol and address) or adding one; NEUE LOK → DATENBANK lists them,
+  newest first, and adds the chosen one as the original's database did (`library_to_edit`
+  into `lok_edit`). At most `LIB_MAX` devices.
+- **Layout:** 8 blocks of 512 bytes (the flash's erase sector), 8 rows of 64 bytes each: kind,
+  id, sequence number, the record (name, protocol, symbol, flags, address, functions), a
+  check byte, and a correction word for the bootloader's CRC (`docs/bootloader.md`, rule 3;
+  the computation in the file's header).
+- **Log:** rows are written in ring order with rising sequence numbers. Before the writing
+  moves into a block, the block after it is collected: its devices' newest rows move to the
+  new block with new numbers and it is erased, so one block is always erased. Walking back
+  from the newest row meets every device's newest row first (`walk_device`), a single pass.
+- **Writing** (`flash_run`): the flash cannot be read while it programs or erases, so a short
+  routine is copied to RAM (`flash_ram`) and runs with interrupts masked, about 1.5 ms per row
+  and 20-27 ms per erased block (190 kHz flash clock, `FCLKDIV` set on first use). The track
+  signal interrupt waits meanwhile, so `library_save` sets STOP first, writes on its next
+  call, and clears STOP if it set it.
+- **Tested** with `../ms1-emu`'s flash model: saving one locomotive 70 times (the ring wraps,
+  blocks are collected) and eight locomotives with one of them saved 60 more times (live rows
+  of the collected block move on); the flash written out with `-F` boots through the
+  bootloader's CRC check and lists them all (`tools/scenarios/library.txt` covers one run).
+
+## 12. Version 4010
 
 Releases 4010 and c010 run application version 4010, for the MS1 hardware without track current
 measurement. The source builds it with `MS1_RELEASE` 0x4010 (README *Release images*); its
@@ -594,3 +665,4 @@ function entries are in `tools/functions_4010.tsv`. Everything not listed here i
 | RAM (`tools/releases.py`) | `src/globals.c` | no variables at 0x10F2-0x10FC (`track_current` … `shutdown_ticks`); every variable from 0x10FD up 0x0B lower, the GCC soft registers at 0x1BAC |
 | Flash, in the original | application 0x4000-0xE11A, its read-only data from 0xE11B | 0x4000-0xDFA0, from 0xDFA1; the tables hold the same bytes, so this build has one set (README *Image layout*) |
 | Identification area (`src/sys/ident.c`) | "Mobile Station 2 MFx Motorola", version word 0x4011 | "Mobile Station MFx Motorola", 0x4010 |
+| DCC service mode's acknowledgement (4.10) | `track_current` against a baseline | PB6, the comparator threshold lowered to about 60 mA meanwhile, its overload check paused |

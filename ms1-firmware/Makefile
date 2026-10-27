@@ -99,6 +99,9 @@ OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(SOURCES))
 PAGE3C_SOURCES = \
 	src/sys/page3c_entries.c \
 	src/signal/dcc.c \
+	src/signal/dcc_service.c \
+	src/lok/library.c \
+	src/ui/prog.c \
 
 PAGE3C_OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(PAGE3C_SOURCES))
 

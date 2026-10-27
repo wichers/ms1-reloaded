@@ -36,7 +36,7 @@
 23.7 turn 1
 24.4 press knob
 24.55 release knob
-25.1 turn -2
+25.1 turn 5
 25.6 text
 25.8 press knob
 25.95 release knob
@@ -56,7 +56,7 @@
 30.7 turn 1
 31.4 press knob
 31.55 release knob
-32.1 turn -1
+31.8 turn 6
 32.6 text
 32.8 press knob
 32.95 release knob

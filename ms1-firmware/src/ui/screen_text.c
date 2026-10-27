@@ -13,6 +13,7 @@
 #include "../include/rom_tables.h"
 #include "../include/lcd.h"
 #include "../include/lokstack.h"
+#include "../include/page3c.h"
 
 /*--------------------------------------------------------------------------
  * ui_screen_text - The text of the current screen (0xB2D2)
@@ -88,6 +89,8 @@ void ui_screen_text(void)
                 str_format(buf, (const u8 *)"%s", LANG(0x1E));
             else
                 str_format(buf, (const u8 *)"");
+        } else if (item == 1 && sub == 2) {     /* a library locomotive: its name */
+            utf8_to_charset(lok_name_edit_buf, buf, 0x10);
         } else {
             str_format(buf, (const u8 *)"");
         }
@@ -95,8 +98,13 @@ void ui_screen_text(void)
         return;
     case 2:                                     /* change locomotive */
         sub = menu_sub;
+        if (item > CHANGE_SAVE) {               /* ui/prog.c */
+            prog_text(lok_current_slot, buf);
+            lcd_text_layout();
+            return;
+        }
         if (sub == 0) {
-            str_format(buf, (const u8 *)"%s", LANG(item + 6));
+            str_format(buf, (const u8 *)"%s", item == CHANGE_SAVE ? LANG(LANG_SAVE) : LANG(item + 6));
             lcd_text_layout();
             return;
         }
@@ -148,6 +156,10 @@ void ui_screen_text(void)
             return;
         case 8:
             str_format(buf, (const u8 *)"%s?", LANG(0x0E));
+            lcd_text_layout();
+            return;
+        case CHANGE_SAVE:
+            str_format(buf, (const u8 *)"%s?", LANG(LANG_SAVE));
             lcd_text_layout();
             return;
         default:

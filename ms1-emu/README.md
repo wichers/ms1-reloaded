@@ -9,10 +9,11 @@ it, and the application drives the LCD itself — all segments on during start-u
 menu (`NEUE LOK`) — probes the CAN bus and generates the track signal (MM and mfx). It can be
 used interactively in a terminal (`-i`) or driven from a script, and attached to a CAN bus
 (SocketCAN or a local UDP bus shared with other processes), and given locomotive decoders on
-the track (`-D`): MM decoders that act on its packets, and mfx decoders that answer through the
-modelled feedback receiver, so the firmware registers them and reads their configuration. As a
-CAN slave it works with the `ms1-master` library as master (see *CAN*). Not there yet: EEPROM
-persistence across runs.
+the track (`-D`): MM and DCC decoders that act on its packets (a DCC decoder also acknowledges
+in service mode), and mfx decoders that answer through the modelled feedback receiver, so the
+firmware registers them and reads their configuration. As a CAN slave it works with the
+`ms1-master` library as master (see *CAN*). The flash the firmware programs can be written out
+(`-F`) and run again; the EEPROM is not kept across runs (`-e` loads one).
 
 ## Usage
 
@@ -42,6 +43,7 @@ make diff                 # differential CPU test against sim6812
 | `-c FILE` | log CAN frames (`-` = stdout): time, `TX`/`RX`, 29-bit ID, DLC, data |
 | `-s FILE` | input script (below) |
 | `-T FILE` | log every change of the track outputs: time (s), PT3, PT4, PT5 levels |
+| `-F FILE` | after the run, write the flash as S-records (`image_save_s19`: S1 for the fixed pages, S2 for `$3C`/`$3D`, erased records left out): the image with what the firmware programmed, e.g. its device library, for a run that starts from it, through the bootloader's CRC check |
 | `-I` | interrupt timing, after the run: per interrupt vector the bus cycles from entry to the end of its `RTI` (nested interrupts included); for the track signal interrupt (timer channel 4) the latency after its compare, the slack before the next compare (≤ 0: a compare passed before it was set up) and the shortest compare interval; the longest stretch with interrupts masked outside interrupts and where it starts; at the track signal interrupt's entries, the fewest entries and the least signal time in the firmware's staging ring, and how often it was empty (the interrupt then plays an old entry) (`src/irqstat.c`) |
 | `-S SYMBOLS` | the image's symbol table (`nm -n`, e.g. `../ms1-firmware/build/ms1.sym`), for the firmware rebuild: the LCD is read back with the tables it names (`board_lcd_symbols`) instead of the original's |
 | `-C BUS` | attach a CAN bus: a SocketCAN interface (`can0`, `vcan0`) or `udp:PORT` (below) |
@@ -193,6 +195,7 @@ C11, no dependencies. Sources in `src/`:
 | `spi.c` | SPI0 |
 | `atd.c` | ATD0 |
 | `eeprom.c` | EEPROM controller |
+| `flash.c` | flash controller: programming and erasing, the read-while-busy check |
 | `mscan.c` | MSCAN0 |
 | `board.h`, `board.c` | MS1 board: buttons, encoder, LCD driver, analog inputs, track output, mfx feedback receiver, CAN log |
 | `irqstat.h`, `irqstat.c` | interrupt timing (`-I`), through `mcu_t.step_hook` |
@@ -264,8 +267,14 @@ Sources: MC9S12DJ64 Device User Guide V01.20 and the S12 block guides (`../doc/`
 - **ATD0:** sequences, SCAN/MULT, 8/10-bit, justification and sign, conversion time from
   ATDCTL4, AFFC. Not modelled: external trigger, FIFO mode.
 - **EEPROM:** word program, sector erase, sector modify, mass erase, erase verify; one command
-  executing plus one buffered; CCIF/CBEIF/ACCERR; durations from fNVMOP. Flash programming is
-  not modelled (writes are logged).
+  executing plus one buffered; CCIF/CBEIF/ACCERR; durations from fNVMOP.
+- **Flash** (`flash.c`): the same command interface at 0x0100 (FCLKDIV write-once, FSTAT,
+  FCMD): word program, sector erase (512 bytes), mass erase, erase verify, on the page the
+  array write addresses as the CPU sees it (PPAGE's in the window); a word programmed twice
+  sets ACCERR. The array is one block: a CPU read of it while a command runs stops the run
+  ("flash read while a flash command runs"), as the part cannot deliver it. FPROT and FSEC
+  come from 0xFF0D and 0xFF0F at reset; protection is not modelled. `-F` writes the flash
+  out after the run.
 - **MSCAN0:** init/sleep handshakes, bit timing, three transmit buffers with priority, five-deep
   receive FIFO, acceptance filters, overrun, listen-only, loopback; an error-free bus. Not
   modelled: error counters, time stamps, wake-up.
@@ -280,7 +289,7 @@ Wiring, as the firmware uses the pins:
 | rotary encoder A/B | PTT 6/7, active low | `encoder_sample` |
 | LCD driver | SPI0 (MOSI, SCK on port M via MODRR), CE = PM3 | `isr_spi0_lcd` |
 | track output | PT3, PT4, PT5 (timer output compare) | `isr_timer_ch4_signal_gen` |
-| version 4010: booster line, over-current input | PB7 (not in `-T`'s log), PB6 active low (the `pb6` button) | `track_current_monitor` in ms1-firmware |
+| version 4010: booster line, over-current input | PB7 (not in `-T`'s log), PB6 active low (the `pb6` button, or a DCC decoder's acknowledgement over the PWM threshold: `comparator_tripped`) | `track_current_monitor` in ms1-firmware |
 | track feedback (RDS receiver: RDCL, RDDA, QUAL) | PT0 (input capture 0), PTT 1, PORTB 5 | `isr_feedback_capture` |
 | track / decoder voltage | ATD0 channels 0 / 1 | `adc_read_and_scale_voltages` |
 | feedback carrier level | ATD0 channel 2 | `isr_feedback_capture`, `mfx_feedback_bit` |

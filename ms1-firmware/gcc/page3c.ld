@@ -12,7 +12,8 @@ ENTRY(page3c_entry_table)
 
 MEMORY
 {
-  page3c (rx) : ORIGIN = 0x100000, LENGTH = 0x4000
+  page3c (rx) : ORIGIN = 0x100000, LENGTH = 0x3000     /* 0xB000-0xBFFF: the device library
+                                                        * (src/lok/library.c, LIB_START) */
 }
 
 SECTIONS
@@ -22,6 +23,8 @@ SECTIONS
     KEEP (*(.page3c_entry))
     *(.rodata) *(.rodata.*) *(.text) *(.text.*)
   } > page3c
+
+  ASSERT (flash_routine_end - flash_routine <= 48, "the flash routine is larger than flash_ram (FLASH_RAM_SIZE)")
 
   .ram (NOLOAD) : { *(.data) *(.data.*) *(.bss) *(.bss.*) *(COMMON) }
   ASSERT (SIZEOF(.ram) == 0, "a variable in page $3C: define it in src/globals.c")

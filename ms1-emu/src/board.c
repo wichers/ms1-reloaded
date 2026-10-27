@@ -14,7 +14,8 @@
  *   end in block codes 0-3. Bytes arrive MSB first, the driver takes them LSB first;
  * - analog: ATD0 channel 0 track voltage, channel 1 decoder voltage
  *   (adc_read_and_scale_voltages), channel 2 sampled by the track capture, channel 3 the track
- *   current (version 4011), which a decoder's acknowledgement raises (extra_current).
+ *   current (version 4011), which a decoder's acknowledgement raises (extra_current); version
+ *   4010 sees that current on its over-current comparator, PB6 (comparator_tripped).
  *
  * The LCD is rendered with the firmware's own glass map: the 38x5 dot matrix at 0xF46C (per
  * column, five (display_buffer offset, mask) pairs, top row first) and the 14-segment speed bar
@@ -25,6 +26,7 @@
  * here (pb6). */
 #include "board.h"
 
+#include <math.h>
 #include <string.h>
 
 /* mfx feedback receiver: an RDS demodulator for the 52.63 kHz carrier. Its bit clock RDCL
@@ -128,12 +130,24 @@ static uint8_t rev8(uint8_t v)
 
 /* ---- pins ---- */
 
+/* Version 4010's over-current comparator (PB6, active low): the booster current, here a
+ * decoder's extra current (extra_current), over the threshold the firmware sets with PWM
+ * channels 2-3 (signal_gen_init: duty L (L + 1000) / 1550 of 0xFFF for a limit of L mA) */
+static bool comparator_tripped(ms1_board_t *b)
+{
+	if (b->m->now >= b->extra_end || (mcu_peek(b->m, 0xF73C) << 8 | mcu_peek(b->m, 0xF73D)) != 0x4010)
+		return false;
+	unsigned duty = (unsigned)(b->m->regs[0xBE] << 8 | b->m->regs[0xBF]);
+	double limit = (-1000.0 + sqrt(1e6 + 6200.0 * duty)) / 2;
+	return b->extra_ma > limit;
+}
+
 static uint8_t pins_in(void *ctx, int port)
 {
 	ms1_board_t *b = ctx;
 	switch (port) {
 	case PORT_A: return b->porta;
-	case PORT_B: return b->portb;
+	case PORT_B: return comparator_tripped(b) ? (uint8_t)(b->portb & ~0x40) : b->portb;
 	case PORT_T: return b->ptt;
 	default: return 0xFF;
 	}

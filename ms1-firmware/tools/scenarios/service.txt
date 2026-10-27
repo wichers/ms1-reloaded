@@ -1,0 +1,60 @@
+# DCC service mode: a DCC locomotive (address 3) gets address 5 (LOKÄNDERN, ADRESSE, PROG
+# LOK? confirmed): CV1 and CV29 bit 5 written in service mode, acknowledged; driven at 5;
+# then CV LESEN reads CV8 bit by bit (13). The second run's decoder never acknowledges:
+# FEHLER after the address writing, the CV read gives up.
+# expect: -t 40 -a 3=0 -D dcc:3
+# expect service_noack: -t 40 -a 3=0 -D dcc:3,noack
+12.0 press knob
+12.15 release knob
+13.0 turn 2
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 press esc
+17.15 release esc
+17.8 turn 1
+18.5 press knob
+18.65 release knob
+19.0 text
+19.9 press knob
+20.05 release knob
+20.5 text
+20.6 turn 2
+21.2 text
+21.3 press ok
+21.45 release ok
+21.9 text
+22.2 press ok
+22.35 release ok
+22.6 text
+24.0 text
+25.0 turn 4
+26.0 text
+27.0 turn -4
+28.0 press esc
+28.15 release esc
+28.8 turn 1
+29.5 press knob
+29.65 release knob
+30.2 turn -5
+30.7 text
+30.9 press knob
+31.05 release knob
+31.5 text
+31.6 press ok
+31.75 release ok
+32.2 text
+32.4 turn 7
+33.0 text
+33.2 press ok
+33.35 release ok
+33.6 text
+37.0 text
+38.0 press esc
+38.15 release esc
+39.0 text

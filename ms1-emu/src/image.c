@@ -1,6 +1,7 @@
 /* Flash image loading: S-records in the banked layout of tools/compose_image.py. */
 #include "image.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,4 +66,52 @@ bad:
 	snprintf(err, errsize, "%s:%d: bad or out-of-range S-record", path, lineno);
 	fclose(f);
 	return -1;
+}
+
+int image_save_s19(const char *path, const uint8_t flash[FLASH_PAGES][PAGE_SIZE], char *err, size_t errsize)
+{
+	FILE *f = fopen(path, "w");
+	if (!f) {
+		snprintf(err, errsize, "%s: cannot write", path);
+		return -1;
+	}
+	/* the fixed pages as the CPU sees them, then the windowed ones */
+	static const int order[FLASH_PAGES] = { 0x3E, 0x3F, 0x3C, 0x3D };
+	for (int k = 0; k < FLASH_PAGES; k++) {
+		int page = order[k];
+		const uint8_t *p = flash[page - FIRST_PAGE];
+		for (unsigned off = 0; off < PAGE_SIZE; off += 32) {
+			bool erased = true;
+			for (int i = 0; i < 32; i++)
+				erased &= p[off + i] == 0xFF;
+			if (erased)
+				continue;
+			unsigned long addr;
+			int alen;
+			if (page == 0x3E || page == 0x3F) {
+				addr = (page == 0x3E ? 0x4000u : 0xC000u) + off;
+				alen = 2;
+			} else {
+				addr = (unsigned long)page << 16 | (0x8000u + off);
+				alen = 3;
+			}
+			unsigned sum = 32 + alen + 1;
+			fprintf(f, "S%d%02X", alen == 2 ? 1 : 2, 32 + alen + 1);
+			for (int i = alen - 1; i >= 0; i--) {
+				fprintf(f, "%02lX", addr >> (8 * i) & 0xFF);
+				sum += (unsigned)(addr >> (8 * i) & 0xFF);
+			}
+			for (int i = 0; i < 32; i++) {
+				fprintf(f, "%02X", p[off + i]);
+				sum += p[off + i];
+			}
+			fprintf(f, "%02X\n", ~sum & 0xFF);
+		}
+	}
+	fprintf(f, "S9030000FC\n");
+	if (fclose(f)) {
+		snprintf(err, errsize, "%s: cannot write", path);
+		return -1;
+	}
+	return 0;
 }

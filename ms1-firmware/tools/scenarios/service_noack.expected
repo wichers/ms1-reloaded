@@ -1,0 +1,45 @@
+lcd "3"
+lcd "ADRESSE"
+lcd "A   3"
+lcd "A   5"
+lcd "PROG LOK?"
+lcd "PROG"
+lcd "FEHLER"
+lcd "3"
+lcd "CV LESEN"
+lcd "PROG LOK?"
+lcd "CV1"
+lcd "CV??|"
+lcd "PROG"
+lcd "CV8"
+lcd "3"
+end LCD "3"
+dcc:3 track voltage on after # ms off
+dcc:3 service mode on
+dcc:3 CV 1 = 5 (service)
+dcc:3 CV 29 = 2 (service)
+dcc:3 service mode off
+dcc:3 speed +1/126
+dcc:3 speed +3/126
+dcc:3 speed +5/126
+dcc:3 speed +7/126
+dcc:3 speed +9/126
+dcc:3 speed +11/126
+dcc:3 speed +9/126
+dcc:3 speed +7/126
+dcc:3 speed +5/126
+dcc:3 speed +3/126
+dcc:3 speed +1/126
+dcc:3 speed +0/126
+dcc:3 service mode on
+dcc:3 verify CV 8 bit 0 = 1
+dcc:3 verify CV 8 bit 1 = 1: no
+dcc:3 verify CV 8 bit 2 = 1
+dcc:3 verify CV 8 bit 3 = 1
+dcc:3 verify CV 8 bit 4 = 1: no
+dcc:3 verify CV 8 bit 5 = 1: no
+dcc:3 verify CV 8 bit 6 = 1: no
+dcc:3 verify CV 8 bit 7 = 1: no
+dcc:3 verify CV 8 = 0: no
+dcc:3 service mode off
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

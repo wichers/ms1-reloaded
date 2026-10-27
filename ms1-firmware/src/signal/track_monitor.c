@@ -19,6 +19,7 @@
 #include "../include/hcs12.h"
 #include "../include/globals.h"
 #include "../include/rom_tables.h"
+#include "../include/dcc.h"
 
 /* 0xE097: count a big-endian 24-bit counter up */
 void counter_inc_24bit(u8 *counter)
@@ -58,7 +59,9 @@ void track_current_monitor(void)
     track_fault_prev = fault;
 
     v = adc_track_voltage;
-    if (!((PORTB & 0x80) && !(PORTB & 0x40)) && v > 11999 && v <= 25000) {
+    /* DCC service mode lowers the comparator's threshold to see acknowledgements: no
+     * overload then (signal/dcc_service.c) */
+    if ((!((PORTB & 0x80) && !(PORTB & 0x40)) || dcc_svc.state != 0) && v > 11999 && v <= 25000) {
         if (track_fault_timer != 0)
             track_fault_timer--;
         if (status & 2) {

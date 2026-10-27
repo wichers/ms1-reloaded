@@ -45,6 +45,8 @@ static const u8 *const lang_en[LANG_COUNT] = {   /* English */
     T("SYMBOL?"),               /* 30 */
     T("DELETE?"),               /* 31 */
     T("PROG LOC?"),             /* 32 */
+    T("SAVE"),                  /* 33 */
+    T("ERROR"),                 /* 34 */
 };
 
 static const u8 *const lang_de[LANG_COUNT] = {   /* German */
@@ -81,6 +83,8 @@ static const u8 *const lang_de[LANG_COUNT] = {   /* German */
     T("SYMBOL?"),               /* 30 */
     T("LoSCHEN?"),              /* 31 */   /* LÖSCHEN? */
     T("PROG LOK?"),             /* 32 */
+    T("SPEICHERN"),             /* 33 */
+    T("FEHLER"),                /* 34 */
 };
 
 static const u8 *const lang_fr[LANG_COUNT] = {   /* French */
@@ -117,6 +121,8 @@ static const u8 *const lang_fr[LANG_COUNT] = {   /* French */
     T("SYMBOLE?"),              /* 30 */
     T("SUPPR?"),                /* 31 */
     T("PROG LOC?"),             /* 32 */
+    T("SAUVER"),                /* 33 */
+    T("ERREUR"),                /* 34 */
 };
 
 static const u8 *const lang_nl[LANG_COUNT] = {   /* Dutch */
@@ -153,6 +159,8 @@ static const u8 *const lang_nl[LANG_COUNT] = {   /* Dutch */
     T("SYMBOOL?"),              /* 30 */
     T("WISSEN?"),               /* 31 */
     T("PROG LOC?"),             /* 32 */
+    T("OPSLAAN"),               /* 33 */
+    T("FOUT"),                  /* 34 */
 };
 
 const u8 *const *const lang_table[] = { lang_en, lang_de, lang_fr, lang_nl };

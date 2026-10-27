@@ -11,14 +11,14 @@ LISTING ?= ../ms1-ghidra/out/listing.tsv
 IMAGE ?= build/ms1_4011.s19
 
 CORE = src/cpu12.c src/cpu12_dis.c src/image.c
-MCU = src/mcu.c src/ect.c src/spi.c src/eeprom.c src/atd.c src/mscan.c src/board.c src/tui.c src/canbus.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/decoder_dcc.c src/irqstat.c
+MCU = src/mcu.c src/ect.c src/spi.c src/eeprom.c src/flash.c src/atd.c src/mscan.c src/board.c src/tui.c src/canbus.c src/decoder.c src/decoder_mm.c src/decoder_mfx.c src/decoder_dcc.c src/irqstat.c
 
 build/ms1emu: src/main.c $(CORE) $(MCU) src/*.h src/cpu12_cycles.inc | build
-	$(CC) $(CFLAGS) -o $@ src/main.c $(CORE) $(MCU)
+	$(CC) $(CFLAGS) -o $@ src/main.c $(CORE) $(MCU) -lm
 
 # function-level differential test of a rebuild against the original (tools/difftest.c)
 build/difftest: tools/difftest.c $(CORE) $(MCU) src/*.h src/cpu12_cycles.inc | build
-	$(CC) $(CFLAGS) -o $@ tools/difftest.c $(CORE) $(MCU)
+	$(CC) $(CFLAGS) -o $@ tools/difftest.c $(CORE) $(MCU) -lm
 
 # disassembler for a range of an image (tools/dis.c)
 build/dis: tools/dis.c src/cpu12_dis.c src/image.c src/cpu12.h | build

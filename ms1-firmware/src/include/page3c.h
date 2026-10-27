@@ -19,10 +19,45 @@
 
 #define PAGE3C_ENTRIES(X) \
     X(dcc_slot_job) \
-    X(dcc_slot_refresh)
+    X(dcc_slot_refresh) \
+    X(library_count) \
+    X(library_name) \
+    X(library_to_edit) \
+    X(library_save) \
+    X(dcc_service_start) \
+    X(dcc_service_status) \
+    X(dcc_service_end) \
+    X(dcc_service_next) \
+    X(dcc_ack_sample) \
+    X(prog_offered) \
+    X(prog_item) \
+    X(prog_text)
 
 /* signal/dcc.c: DCC locomotives on the track */
 u16 dcc_slot_job(u16 slot) __attribute__((far));
 u16 dcc_slot_refresh(u16 slot) __attribute__((far));
+
+/* lok/library.c: the device library */
+#define LIB_LOCO    1                   /* the kind of a record: a locomotive */
+#define LIB_DONE    0                   /* library_save: written */
+#define LIB_AGAIN   1                   /* it set STOP for the writing: call it again */
+#define LIB_FULL    2
+#define LIB_ERROR   3                   /* the flash reported an error */
+u16 library_count(u16 kind) __attribute__((far));
+u16 library_name(u16 kind, u16 index, u8 *dest) __attribute__((far));
+u16 library_to_edit(u16 index) __attribute__((far));
+u16 library_save(u16 slot) __attribute__((far));
+
+/* signal/dcc_service.c: DCC service mode (include/dcc.h) */
+u16 dcc_service_start(u16 job, u16 cv, u16 value) __attribute__((far));
+u16 dcc_service_status(void) __attribute__((far));
+u16 dcc_service_end(void) __attribute__((far));
+u16 dcc_service_next(void) __attribute__((far));
+u16 dcc_ack_sample(void) __attribute__((far));
+
+/* ui/prog.c: the programming items of LOK ÄNDERN (include/ui.h) */
+u16 prog_offered(u16 item, u16 slot) __attribute__((far));
+u16 prog_item(u16 slot, u16 sub) __attribute__((far));
+u16 prog_text(u16 slot, u8 *buf) __attribute__((far));
 
 #endif /* PAGE3C_H */

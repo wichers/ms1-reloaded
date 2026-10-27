@@ -1,0 +1,30 @@
+# LESEN: a DCC locomotive (address 3) takes the address of the decoder on the track, a long
+# one (1027): CV29, then CV17 and CV18 read in service mode; driven at 1027.
+# expect: -t 28 -a 3=0 -D dcc:1027
+12.0 press knob
+12.15 release knob
+13.0 turn 2
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 press esc
+17.15 release esc
+17.8 turn 1
+18.5 press knob
+18.65 release knob
+19.2 turn -4
+19.7 text
+19.9 press knob
+20.05 release knob
+20.5 text
+20.6 press ok
+20.75 release ok
+21.0 text
+26.0 text
+26.5 turn 5
+27.5 text

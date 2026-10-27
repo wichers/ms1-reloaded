@@ -135,7 +135,11 @@ linked on its own with its strings from 0xF680 (`gcc/ident.ld`); `tools/mkimage.
    0xF73C passes that device's 0xFF1A (*What belongs to what*).
 3. **CRC:** let `tools/mkimage.py` write 0xF73E; every image the Makefile builds goes through it.
    The application must end below the identification strings (the `rom` region of
-   `gcc/ms1.ld`; `tools/mkimage.py` checks it).
+   `gcc/ms1.ld`; `tools/mkimage.py` checks it). Flash the application programs at run time
+   is in the CRC too: the device library (`src/lok/library.c`, page $3C 0xB000-0xBFFF) ends
+   every 64-byte row in a correction word that makes the row count as an erased one, so the
+   CRC holds whatever the library contains. A row cut off by a power loss breaks it; the
+   bootloader then waits in update mode, and an update (which erases the library) recovers.
 4. **A way into update mode:** the bootloader enters it at reset only when a check fails. A
    firmware that passes the checks but hangs, or has neither the menu nor the CAN path to
    `enter_bootloader`, can then be recovered only over BDM. Enter it with the 24 MHz bus clock

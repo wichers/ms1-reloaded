@@ -24,6 +24,7 @@
 #include "../include/ui.h"
 #include "../include/lokstack.h"
 #include "../include/delay.h"
+#include "../include/page3c.h"
 
 /* {min, max} per protocol (lok_record_t.protocol), for the knob: the address, the CV number
  * and the CV value of a locomotive */
@@ -106,8 +107,10 @@ static u8 change_item_offered(u8 item, u8 slot)
         if (e->kinds[0] == 0x82)
             return 0;
         return (u8)(proto - 1) <= 1 || (proto == LOK_MM && (LO8(e->protocol_flags) & LOKP_PROGRAMMABLE));
+    case CHANGE_SAVE:                           /* on the master: the writing needs STOP */
+        return is_master != 0 && (proto == LOK_MM || proto == LOK_DCC);
     default:
-        return 0;
+        return item > CHANGE_SAVE ? (u8)prog_offered(item, slot) : 0;
     }
 }
 
@@ -190,6 +193,47 @@ static void drive(void)
         ui_enter_mode(3);
     else if (KEY(KEY_OK))
         ui_enter_mode(2);
+}
+
+/* menu_top 1, menu_item 1 (DATENBANK): a locomotive from the device library (lok/library.c),
+ * newest first; the knob chooses, OK or a knob push adds it. lok_name_edit_buf holds the
+ * chosen one's name for the display. */
+static void new_from_library(u8 sub)
+{
+    switch (sub) {
+    case 1:
+        menu_value = 0;
+        menu_value2 = library_count(LIB_LOCO);
+        if (menu_value2 == 0) {
+            menu_back();
+            return;
+        }
+        menu_sub++;
+        /* fall through */
+    case 2:
+        menu_value = ui_knob_adjust(menu_value, menu_value2 - 1, 0, 4);
+        library_name(LIB_LOCO, menu_value, lok_name_edit_buf);
+        if (KEY(KEY_OK | KEY_KNOB))
+            menu_sub++;
+        else if (KEY(KEY_ESC))
+            menu_back();
+        return;
+    case 3:
+        if (lok_edit.unused != 0xFF) {
+            if (lok_edit.unused == 0) {
+                show_message(2, 0x3E);
+                ui_enter_mode(1);
+            }
+            return;
+        }
+        if (library_to_edit(menu_value))
+            ui_enter_mode(1);
+        else
+            menu_back();
+        return;
+    default:
+        return;
+    }
 }
 
 /* menu_top 1, menu_item 2 (ADRESSE, MM) and 3 (DCC): a new locomotive by address */
@@ -407,7 +451,29 @@ static void change_item(u8 slot, u8 sub)
             menu_back();
         }
         return;
+    case CHANGE_SAVE:                           /* into the device library, after OK */
+        if (sub == 1) {
+            if (KEY(KEY_OK | KEY_KNOB))
+                menu_sub = 2;
+            else if (KEY(KEY_ESC))
+                menu_back();
+            return;
+        }
+        switch (library_save(slot)) {
+        case LIB_AGAIN:
+            return;
+        case LIB_FULL:
+            show_message(2, 0x3E);
+            break;
+        case LIB_ERROR:
+            show_message(LANG_ERROR - 0x16, 0x3E);
+            break;
+        }
+        ui_enter_mode(1);
+        return;
     default:
+        if (menu_item > CHANGE_SAVE)
+            prog_item(slot, sub);
         return;
     }
 }
@@ -424,8 +490,8 @@ static void change_choose_item(u8 slot)
             item += (u8)d;
             menu_item = item;
             if (item == 0)
-                menu_item = item = 8;
-            if (item > 8)
+                menu_item = item = CHANGE_LAST;
+            if (item > CHANGE_LAST)
                 menu_item = item = 1;
         } while (!change_item_offered(item, lok_current_slot));
     }
@@ -488,8 +554,8 @@ static void menus(void)
                 menu_enter();
             return;
         }
-        if (item == 1)                          /* DATENBANK: nothing to choose from */
-            menu_back();
+        if (item == 1)
+            new_from_library(sub);
         else
             new_by_address();
         return;

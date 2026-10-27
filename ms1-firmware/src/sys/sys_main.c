@@ -10,6 +10,8 @@
 #include "../include/globals.h"
 #include "../include/lokstack.h"
 #include "../include/track_cmd.h"
+#include "../include/page3c.h"
+#include "../include/dcc.h"
 
 /* Show a message for ticks UI passes: system_status_flags bit 7 while it shows, the
  * display (ui/screen_text.c) shows LANG(0x16 + message_id), the UI state machine
@@ -35,8 +37,9 @@ extern u16  lok_packets_next(void);
  * track_filler (unless track_filler_hold), lok_packets_next (unless track_scheduler_hold, or
  * an mfx registration command is under way), mfx_registration_process (unless
  * track_scheduler_hold) and
- * lok_packets_refresh that does work, track_filler when none does. As slave (no track
- * signal) it clears the slots' track work (track_pending, track_functions). */
+ * lok_packets_refresh that does work, track_filler when none does; DCC service mode
+ * (signal/dcc_service.c) has all of them. As slave (no track signal) it clears the slots'
+ * track work (track_pending, track_functions). */
 void track_scheduler(void)
 {
     lok_state_t *d;
@@ -52,6 +55,10 @@ void track_scheduler(void)
         return;
     }
     while (track_cmd_free != 0) {
+        if (dcc_svc.state != 0) {               /* DCC service mode has the track */
+            dcc_service_next();
+            continue;
+        }
         pending = track_filler_hold;
         if (!pending) {
             if (track_scheduler_hold == 0 && mfx_cmd_steps == 0) {

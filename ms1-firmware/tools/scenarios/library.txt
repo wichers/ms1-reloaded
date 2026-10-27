@@ -1,0 +1,53 @@
+# The device library: a DCC locomotive (NEUE LOK, DCC, address 3) saved (LOKÄNDERN,
+# SPEICHERN: STOP for the flash writing, then off again), deleted (LOKLÖSCHEN), added again
+# from NEUE LOK, DATENBANK and driven. ms1emu -F writes the flash for a run that starts from
+# it (docs/architecture.md, 11).
+# expect: -t 32 -D dcc:3
+12.0 press knob
+12.15 release knob
+13.0 turn 2
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 press esc
+17.15 release esc
+17.8 turn 1
+18.5 press knob
+18.65 release knob
+19.2 turn -1
+19.7 text
+19.9 press knob
+20.05 release knob
+20.5 text
+20.6 press ok
+20.75 release ok
+21.5 text
+22.0 press esc
+22.15 release esc
+22.7 turn 2
+23.2 text
+23.4 press knob
+23.55 release knob
+24.0 text
+24.2 press ok
+24.35 release ok
+25.0 text
+26.0 press esc
+26.15 release esc
+26.6 text
+27.0 press knob
+27.15 release knob
+27.6 text
+28.0 press knob
+28.15 release knob
+28.6 text
+29.0 press ok
+29.15 release ok
+29.6 text
+30.0 turn 5
+31.0 text

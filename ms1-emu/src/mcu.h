@@ -28,6 +28,7 @@ enum {
 	EV_SPI0,     /* SPI0 transfer complete */
 	EV_ATD0,     /* ATD0 sequence complete */
 	EV_EEPROM,   /* EEPROM command complete */
+	EV_FLASH,    /* flash command complete */
 	EV_CAN0,     /* MSCAN0: transmit/receive completion, mode change */
 	EV_BOARD,    /* board model */
 	EV_COUNT
@@ -140,6 +141,7 @@ struct mcu {
 	ect_t ect;
 	spi_t spi0;
 	eeprom_t ee;
+	eeprom_t fl;                /* the flash controller (flash.c): addr indexes all four pages */
 	atd_t atd0;
 	mscan_t can0;
 	uint8_t pins_reported[PORT_COUNT][2];
@@ -213,6 +215,11 @@ void eeprom_init(mcu_t *m);
 void eeprom_reset(mcu_t *m);
 void eeprom_event(mcu_t *m);
 bool eeprom_array_write(mcu_t *m, uint16_t index, uint8_t v);
+void flash_init(mcu_t *m);
+void flash_reset(mcu_t *m);
+void flash_event(mcu_t *m);
+bool flash_array_write(mcu_t *m, uint32_t index, uint8_t v);
+bool flash_busy(const mcu_t *m);
 void atd_init(mcu_t *m);
 void atd_reset(mcu_t *m);
 void atd_event(mcu_t *m);

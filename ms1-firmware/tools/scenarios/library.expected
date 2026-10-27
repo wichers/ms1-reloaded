@@ -1,0 +1,15 @@
+lcd "3"
+lcd "FAHRSTUFEN"
+lcd "128"
+lcd "3"
+lcd "LOKLÖSCHEN"
+lcd "3"
+lcd "NEUE LOK"
+lcd "NEUE LOK"
+lcd "DATENBANK"
+lcd "DATENBANK"
+lcd "DATENBANK"
+lcd "DCC"
+end LCD "DCC"
+dcc:3 track voltage on after # ms off
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

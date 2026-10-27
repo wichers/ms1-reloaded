@@ -36,6 +36,16 @@ s16  ui_knob_adjust(s16 value, s16 max, s16 min, u8 flags);         /* 0xDB3C */
 void encoder_set_count(u8 value, u8 max, u8 mode);                  /* 0xBA96 */
 void encoder_sample(void);                                          /* 0xBAB1 */
 
+/* menu_items of LOK ÄNDERN (menu_top 2) beyond the original's 1-8: the locomotive into the
+ * device library; the programming items (ui/prog.c, page $3C) */
+#define CHANGE_SAVE     9
+#define PROG_READ_CV    10
+#define PROG_READ       11
+#define PROG_SYMBOL     12
+#define PROG_KEYS       13
+#define PROG_STEPS      14
+#define CHANGE_LAST     PROG_STEPS
+
 /* ui/lcd_text.c: text placement and menu levels */
 void lcd_scroll_step(u16 cols);                                     /* 0x9144 */
 void lcd_text_layout(void);                                         /* 0x9196 */

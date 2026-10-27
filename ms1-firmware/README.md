@@ -3,19 +3,20 @@
 A C source of the Märklin Mobile Station 1 (MS1) application firmware, with inline assembly
 where the cycles count (the interrupt handlers), built with GCC, that behaves like the original:
 verified function by function and as a whole against the original running in the emulator
-(`../ms1-emu`). It leaves out the original's locomotive database (NEUE LOK → DATENBANK offers
-nothing) and drives DCC locomotives beside MM and mfx, from code in flash page $3C, where the
-database was (*Image layout*, `docs/architecture.md` 4.9). It builds the
+(`../ms1-emu`). In place of the original's locomotive database it keeps a library of the
+user's own locomotives in flash (NEUE LOK → DATENBANK, LOK ÄNDERN → SPEICHERN), and it drives
+DCC locomotives beside MM and mfx, both from flash page $3C, where the database was (*Image
+layout*, `docs/architecture.md` 4.9 and 11). It builds the
 release images from this repository alone (the original's update file loader is in
 `third_party/`, see [third_party/README.md](third_party/README.md)).
 
 ## Project Goal
 
 Produce a C source of the MS1 firmware that behaves like the original where the original has
-the behaviour; it leaves out the locomotive database and adds DCC (`docs/architecture.md`,
-4.9). The original binary is the reference: `../ms1-ghidra` (decompilation, instruction
-listing) for what the code does and `../ms1-emu` (the emulator running the original) for how
-it behaves; comments in the sources are hints, not facts.
+the behaviour; it replaces the locomotive database by a device library and adds DCC
+(`docs/architecture.md`, 4.9 and 11). The original binary is the reference: `../ms1-ghidra`
+(decompilation, instruction listing) for what the code does and `../ms1-emu` (the emulator
+running the original) for how it behaves; comments in the sources are hints, not facts.
 
 - [docs/architecture.md](docs/architecture.md): how the parts of the firmware fit together —
   start-up, scheduling, the track signal (MM, mfx, feedback, DCC), the locomotive slots, CAN, the
@@ -65,7 +66,7 @@ dump's bootloader, and `build/ms1.s19` the version's first release.
 Releases 4010 and c010 are application version 4010, for the MS1 hardware without track
 current measurement, and `make RELEASE=4010` builds them the same way into
 `build/4010/`. The version is one source with `#if MS1_RELEASE == 0x4010` points (in C and
-in the inline assembly); `docs/architecture.md` section 11 lists what differs:
+in the inline assembly); `docs/architecture.md` section 12 lists what differs:
 
 | | 4011 | 4010 |
 |---|---|---|
@@ -108,7 +109,9 @@ application runs code in page $3C. Two parts are linked on their own:
   (`build/page3c_symbols.ld`). While page $3C is in the window, interrupts stay on: the
   interrupt handlers, the application's functions page-$3C code calls and what these call lie
   in fixed flash, first from 0x4000 on (`tools/banks.py place`, computed from the objects'
-  relocations; `gcc/ms1.ld` checks that they end below the window);
+  relocations; `gcc/ms1.ld` checks that they end below the window). Its code takes
+  0x8000-0xAFFF; 0xB000-0xBFFF is the device library, which the firmware programs at run time
+  (`docs/architecture.md`, 11) and the build leaves erased;
 - per release the identification area 0xF700-0xF73F with its strings from 0xF680
   (`src/sys/ident.c`), which the bootloader and the CAN identification read by address
   (`docs/bootloader.md`).
@@ -182,6 +185,8 @@ the files group them by what they do.
 | `src/signal/mfx_encode.c` | mfx frames for the command buffer |
 | `src/signal/mfx_register.c` | mfx decoder search, registration and read-out |
 | `src/signal/dcc.c` | DCC packets of the slots: jobs, refresh, POM (page $3C) |
+| `src/signal/dcc_service.c` | DCC service mode: CV reads and writes, the acknowledgement (page $3C) |
+| `src/ui/prog.c` | LOK ÄNDERN's programming items: CV LESEN, LESEN, SYMBOL, TASTEN (the key table), FAHRSTUFEN (page $3C) |
 | `src/signal/mfx_feedback.c` | evaluating a captured mfx feedback window (1 bit, data) |
 | `src/signal/feedback_capture.c` | capturing an mfx feedback window: the timer channel 0 interrupt, its start and stop |
 | `src/signal/signal_gen.c` | the track signal generator: the timer channel 4 interrupt, and the main-loop stages that turn command entries into send-buffer pairs into staging entries; the command entry writers it owns |
@@ -189,6 +194,7 @@ the files group them by what they do.
 | `src/lok/lokstack.c` | slot lookups, CAN objects of a slot, address conflicts, unique names |
 | `src/lok/lok_functions.c` | a locomotive's functions: CAN object numbers and keys |
 | `src/sys/page3c_entries.c` | the page-$3C entry table (`src/include/page3c.h`) |
+| `src/lok/library.c` | the device library in flash: saving, listing, the flash commands from RAM (page $3C) |
 | `src/ui/ui_control.c` | the UI state machine: knob, keys, menus |
 | `src/ui/ui_mode.c` | switching the operating mode |
 | `src/ui/screen_text.c`, `lcd_text.c` | the text line: composing it per screen, placing and scrolling it; menu levels |
@@ -226,7 +232,7 @@ the files group them by what they do.
 | Main ROM | `0x4000–0xBFFF` | Application code; `0x8000–0xBFFF` is page $3D, mapped for good |
 | Fixed ROM | `0xC000–0xF7FF` | Application code and data up to `0xF67F`, the identification strings and area (`0xF680–0xF73F`), interrupt trampolines (`0xF740–0xF7FF`) |
 | Bootloader | `0xF800–0xFFFF` | Start-up check, CAN update protocol, flash metadata (`0xFF00–0xFF7F`), 64 vectors (`0xFF80–0xFFFF`) pointing at the trampolines (`docs/bootloader.md`) |
-| Paged ROM (0x3C) | `0x3C8000+` | The entry table at 0x8000 and the functions behind it (`src/include/page3c.h`) |
+| Paged ROM (0x3C) | `0x3C8000+` | The entry table at 0x8000 and the functions behind it (`src/include/page3c.h`), up to 0xAFFF; the device library at 0xB000-0xBFFF (`src/lok/library.c`) |
 
 ### Data Structures
 
@@ -257,9 +263,10 @@ pin both layouts to the original's.
    - Firmware flash update over CAN
 2. **mfx** — Märklin digital track protocol (via signal generator)
 3. **MM** (Märklin Motorola) — Legacy 18-pulse digital format
-4. **DCC** (RCN-211, -212, -214): DCC locomotives in the slots (`LOK_DCC`, also passed on CAN),
-   on the track beside MM and mfx: speed in 128, 28 or 14 steps, F0-F15, CV writes on the
-   main (POM); NEUE LOK → DCC adds one by address (`docs/architecture.md`, 4.9)
+4. **DCC** (RCN-211, -212, -214, -216): DCC locomotives in the slots (`LOK_DCC`, also passed on
+   CAN), on the track beside MM and mfx: speed in 128, 28 or 14 steps, F0-F15, CV writes on
+   the main (POM); NEUE LOK → DCC adds one by address; service mode reads and writes CVs and
+   the address after "PROG LOK?" (`docs/architecture.md`, 4.9-4.11)
 
 ## Conventions
 
@@ -334,6 +341,10 @@ Slot data is reached through `lok_record_t *` / `lok_state_t *` (`&lok_records[s
   | `dcc.txt` | `dcc` (expect) | a DCC locomotive added (NEUE LOK → DCC) and driven as in `drive.txt`, read by a DCC decoder |
   | `dccpom.txt` | `dccpom` (expect) | a DCC locomotive's VMAX, a REG CV and RESET written on the main (POM) |
   | `dccmix.txt` | `dccmix` (expect) | MM, DCC and mfx on one track: an MM and a DCC locomotive driven while an mfx decoder registers |
+  | `library.txt` | `library` (expect) | a DCC locomotive saved into the device library (SPEICHERN), deleted, added again from NEUE LOK → DATENBANK and driven |
+  | `service.txt` | `service`, `service_noack` (expect) | DCC service mode: a new address written (PROG LOK?) and driven, CV8 read; with a decoder that never acknowledges (FEHLER) |
+  | `read.txt` | `read` (expect) | LESEN: the address of a decoder with a long address (1027) read into the locomotive |
+  | `prog.txt` | `prog` (expect) | TASTEN (F3 on the second left key, its speaker icon, momentary), SYMBOL, FAHRSTUFEN 28, then driven |
 
 - **Expected output**: an `# expect` run runs the rebuild alone (`difftest -W`) and compares
   what it shows — the observables of the whole-firmware comparison below — with

@@ -180,16 +180,29 @@ void mcu_write(mcu_t *m, uint16_t addr, uint8_t v)
 				mcu_seconds(m, m->now), addr, v, m->cpu.insn_pc);
 		return;
 	}
-	if (flash_at(m, addr)) {
-		if (m->log)
-			fprintf(m->log, "[%.6f] flash write $%04X=$%02X at PC $%04X (flash programming not modelled)\n",
+	const uint8_t *f = flash_at(m, addr);
+	if (f) {
+		if (!flash_array_write(m, (uint32_t)(f - &m->flash[0][0]), v) && m->log)
+			fprintf(m->log, "[%.6f] flash write $%04X=$%02X outside a command sequence at PC $%04X\n",
 				mcu_seconds(m, m->now), addr, v, m->cpu.insn_pc);
 		return;
 	}
 	unmapped(m, addr, "write to");
 }
 
-static uint8_t bus_read(void *ctx, uint16_t a) { return mcu_read(ctx, a); }
+/* The CPU's reads; the flash array cannot be read while a flash command runs */
+static uint8_t bus_read(void *ctx, uint16_t a)
+{
+	mcu_t *m = ctx;
+	if (flash_busy(m) && flash_at(m, a) && !(a >= reg_base(m) && a - reg_base(m) < REG_SIZE)) {
+		if (!m->stop && m->log)
+			fprintf(m->log, "[%.6f] flash read $%04X while a flash command runs, at PC $%04X\n",
+				mcu_seconds(m, m->now), a, m->cpu.insn_pc);
+		m->stop = true;
+		m->stop_reason = "flash read while a flash command runs";
+	}
+	return mcu_read(m, a);
+}
 static void bus_write(void *ctx, uint16_t a, uint8_t v) { mcu_write(ctx, a, v); }
 static uint8_t get_ppage(void *ctx) { return ((mcu_t *)ctx)->regs[R_PPAGE]; }
 static void set_ppage(void *ctx, uint8_t p) { ((mcu_t *)ctx)->regs[R_PPAGE] = p & 0x3F; }
@@ -444,6 +457,7 @@ void mcu_init(mcu_t *m, uint32_t osc_hz, FILE *log)
 	ect_init(m);
 	spi_init(m);
 	eeprom_init(m);
+	flash_init(m);
 	atd_init(m);
 	mscan_init(m);
 }
@@ -478,6 +492,7 @@ void mcu_reset(mcu_t *m)
 	ect_reset(m);
 	spi_reset(m);
 	eeprom_reset(m);
+	flash_reset(m);
 	atd_reset(m);
 	mscan_reset(m);
 	mcu_ports_update(m);
@@ -499,6 +514,7 @@ static void fire_events(mcu_t *m)
 		case EV_SPI0: spi_event(m); break;
 		case EV_ATD0: atd_event(m); break;
 		case EV_EEPROM: eeprom_event(m); break;
+		case EV_FLASH: flash_event(m); break;
 		case EV_CAN0: mscan_event(m); break;
 		case EV_BOARD: if (m->board.event) m->board.event(m->board.ctx); break;
 		}

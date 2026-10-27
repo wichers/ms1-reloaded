@@ -21,7 +21,8 @@
  * track_pending: the CV writes first (VMAX CV5, ACC CV3, DEC CV4, REG prog_cv, RESET CV8 = 8
  * to the old address, which then becomes default_address as for MM); then speed and
  * direction (twice after a direction change); then the groups of the changed functions
- * (track_functions). An address change (bit 2) and the name (bit 3) change only the entry.
+ * (track_functions). An address change (bit 2, set after PROG LOK?) programs the decoder in
+ * service mode (signal/dcc_service.c); the name (bit 3) changes only the entry.
  * The refresh (dcc_slot_refresh) sends a slot's speed and its used function groups in turn,
  * one packet per call, mm_phase the next.
  *
@@ -35,8 +36,8 @@
 #include "../include/lokstack.h"
 #include "../include/page3c.h"
 #include "../include/track_cmd.h"
+#include "../include/dcc.h"
 
-#define DCC_PREAMBLE    16
 #define CMD_ENTRY_SIZE  12
 
 /* pkt_kind of a DCC job */
@@ -76,15 +77,16 @@ static u8 put_address(const lok_record_t *e, u16 address, u8 *p)
     return 1;
 }
 
-/* the entry of a packet: n bytes, the XOR byte added */
-static void write_entry(const u8 *bytes, u8 n)
+/* the entry of a packet: a preamble of preamble ones, n bytes, the XOR byte added (also
+ * signal/dcc_service.c) */
+void dcc_write_entry(const u8 *bytes, u8 n, u8 preamble)
 {
     u8 *e = (u8 *)track_cmd_write_ptr;
     u8 x = 0, i;
 
     e[0] = CMD_DCC;
     e[1] = n + 2;                       /* steps: the preamble, each byte, the XOR byte */
-    e[2] = DCC_PREAMBLE;
+    e[2] = preamble;
     e[3] = n + 1;
     for (i = 0; i < n; i++) {
         e[4 + i] = bytes[i];
@@ -104,10 +106,10 @@ static u8 write_packet(const u8 *bytes, u8 n, u8 na)
     if (prev < track_cmd_buf)
         prev += sizeof track_cmd_buf;
     if (prev[0] == CMD_DCC && prev[4] == bytes[0] && (na == 1 || prev[5] == bytes[1])) {
-        write_entry(idle, 2);
+        dcc_write_entry(idle, 2, DCC_PREAMBLE);
         return 0;
     }
-    write_entry(bytes, n);
+    dcc_write_entry(bytes, n, DCC_PREAMBLE);
     return 1;
 }
 
@@ -193,6 +195,13 @@ u16 dcc_slot_job(u16 slot)
     if (pkt_steps == 0) {
         x = d->track_pending;
         d->track_pending = x & ~(PEND_ADDRESS | PEND_NAME | PEND_VOLUME);
+        if (x & PEND_ADDRESS) {
+            /* the new address into the decoder: service mode, after PROG LOK? */
+            dcc_service_start(SVC_ADDRESS, e->address,
+                              e->address > 127 || (e->protocol_flags & LOKP_DCC_LONG));
+            dcc_svc.auto_end = 1;
+            return dcc_service_next();
+        }
         if (x & PEND_VMAX) {
             d->track_pending &= ~PEND_VMAX;
             start_cv(5, e->vmax, e->address);
