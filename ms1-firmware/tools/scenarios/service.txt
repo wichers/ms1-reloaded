@@ -50,7 +50,7 @@
 31.75 release ok
 32.2 text
 32.4 turn 7
-33.0 text
+33.1 text
 33.2 press ok
 33.35 release ok
 33.6 text
