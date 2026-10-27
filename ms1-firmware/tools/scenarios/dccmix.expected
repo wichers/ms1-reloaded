@@ -1,0 +1,128 @@
+lcd "3"
+lcd "3"
+lcd "DATENBANK"
+lcd "DCC"
+lcd "A   5"
+lcd "5"
+lcd "5"
+lcd "3"
+lcd "3"
+lcd "3"
+lcd "3"
+lcd "3"
+lcd "3"
+end LCD "3"
+dcc:5 track voltage on after # ms off
+dcc:5 speed +1/126
+dcc:5 speed +3/126
+dcc:5 speed +5/126
+dcc:5 speed +7/126
+dcc:5 speed +9/126
+dcc:5 speed +13/126
+dcc:5 speed +15/126
+dcc:5 speed +21/126
+dcc:5 speed +23/126
+dcc:5 speed +27/126
+dcc:5 F0 on
+mfx:7A3F0012 track voltage on after # ms off
+mfx:7A3F0012 central 000752E2, registration counter 0
+mfx:7A3F0012 search C0: answering
+mfx:7A3F0012 search C32: answering
+mfx:7A3F0012 registered: SID 2 (central 000752E2, counter 0)
+mfx:7A3F0012 read CV 000/02: 01
+mfx:7A3F0012 read CV 000/05: 06
+mfx:7A3F0012 read CV 001/00: 10
+mfx:7A3F0012 read CV 002/00: 16
+mfx:7A3F0012 read CV 003/00: 18
+mfx:7A3F0012 read CV 004/00: 17
+mfx:7A3F0012 read CV 005/00: 14
+mfx:7A3F0012 read CV 005/01: 01
+mfx:7A3F0012 read CV 005/04: 00
+mfx:7A3F0012 read CV 005/05: 05
+mfx:7A3F0012 read CV 002/01: 01 09
+mfx:7A3F0012 read CV 003/01: 42 52
+mfx:7A3F0012 read CV 003/03: 20 31
+mfx:7A3F0012 read CV 003/05: 38 35
+mfx:7A3F0012 read CV 003/07: 00 00
+mfx:7A3F0012 read CV 004/01: 02
+mfx:7A3F0012 read CV 008/01: 02 01
+mfx:7A3F0012 read CV 008/04: 02 01
+mfx:7A3F0012 read CV 004/02: 03
+mfx:7A3F0012 read CV 00C/01: 04 01
+mfx:7A3F0012 read CV 00C/05: 03
+mfx:7A3F0012 read CV 004/03: 10
+mfx:7A3F0012 read CV 040/01: 05 01
+mfx:7A3F0012 read CV 040/05: 07
+mfx:7A3F0012 read CV 004/04: 12
+mfx:7A3F0012 read CV 048/01: 08 01
+mfx:7A3F0012 read CV 048/05: 02
+mfx:7A3F0012 read CV 004/05: 00
+mfx:7A3F0012 read CV 009/00: 10 01
+mfx:7A3F0012 read CV 041/00: 10
+mfx:7A3F0012 read CV 041/01: 01
+mfx:7A3F0012 read CV 042/00: 11
+mfx:7A3F0012 read CV 043/00: 13
+mfx:7A3F0012 read CV 044/00: 14
+mfx:7A3F0012 read CV 045/00: 17
+mfx:7A3F0012 read CV 00A/00: 11 01
+mfx:7A3F0012 read CV 045/02: C0
+mfx:7A3F0012 read CV 043/01: 10 0C
+mfx:7A3F0012 read CV 00A/01: 01
+mfx:7A3F0012 read CV 00D/00: 10
+mfx:7A3F0012 read CV 00D/01: 03 03
+mfx:7A3F0012 read CV 00A/02: 04
+mfx:7A3F0012 read CV 010/00: 10
+mfx:7A3F0012 read CV 010/01: 05 05
+mfx:7A3F0012 read CV 00A/03: 07
+mfx:7A3F0012 read CV 013/00: 10
+mfx:7A3F0012 read CV 013/01: 07 07
+mfx:7A3F0012 read CV 00A/04: 0A
+mfx:7A3F0012 read CV 016/00: 10
+mfx:7A3F0012 read CV 016/01: 0A 0A
+mfx:7A3F0012 read CV 00A/05: 0D
+mfx:7A3F0012 read CV 019/00: 10
+mfx:7A3F0012 read CV 019/01: 0B 0B
+mfx:7A3F0012 read CV 00A/06: 10
+mfx:7A3F0012 read CV 01C/00: 10
+mfx:7A3F0012 read CV 01C/01: 87 07
+mfx:7A3F0012 read CV 00A/07: 13
+mfx:7A3F0012 read CV 01F/00: 10
+mfx:7A3F0012 read CV 01F/01: 06 06
+mfx:7A3F0012 read CV 00A/08: 16
+mfx:7A3F0012 read CV 022/00: 10
+mfx:7A3F0012 read CV 022/01: 04 04
+mfx:7A3F0012 read CV 00A/09: 19
+mfx:7A3F0012 read CV 025/00: 10
+mfx:7A3F0012 read CV 025/01: 02 02
+mfx:7A3F0012 read CV 00A/0A: 1C
+mfx:7A3F0012 read CV 028/00: 10
+mfx:7A3F0012 read CV 028/01: 02 02
+mfx:7A3F0012 read CV 00A/0B: 1F
+mfx:7A3F0012 read CV 02B/00: 10
+mfx:7A3F0012 read CV 02B/01: 02 02
+mfx:7A3F0012 read CV 00A/0C: 22
+mfx:7A3F0012 read CV 02E/00: 10
+mfx:7A3F0012 read CV 02E/01: 02 02
+mfx:7A3F0012 read CV 00A/0D: 25
+mfx:7A3F0012 read CV 031/00: 10
+mfx:7A3F0012 read CV 031/01: 02 02
+mfx:7A3F0012 read CV 00A/0E: 28
+mfx:7A3F0012 read CV 034/00: 10
+mfx:7A3F0012 read CV 034/01: 02 02
+mfx:7A3F0012 read CV 00A/0F: 2B
+mfx:7A3F0012 read CV 037/00: 10
+mfx:7A3F0012 read CV 037/01: 02 02
+mfx:7A3F0012 read CV 00A/10: 2E
+mfx:7A3F0012 read CV 03A/00: 10
+mfx:7A3F0012 read CV 03A/01: 02 02
+mfx:7A3F0012 read CV 049/00: 10 C0
+mm:3 track voltage on after # ms off
+mm:3 speed +1
+mm:3 speed +2
+mm:3 speed +3
+mm:3 speed +4
+mm:3 speed +3
+mm:3 speed +2
+mm:3 speed +1
+mm:3 speed +0
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

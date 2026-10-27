@@ -18,6 +18,7 @@
  *   0     speed/direction and functions; 4 direction frames first on a direction change
  *   1-5   writing a configuration value (3 frames and a pause)
  *   10+   the name, one character per 4 steps
+ * DCC slots (LOK_DCC): dcc_slot_job and dcc_slot_refresh in page $3C (signal/dcc.c).
  *========================================================================*/
 
 #include "../include/hcs12.h"
@@ -26,6 +27,7 @@
 #include "../include/rom_tables.h"
 #include "../include/str.h"
 #include "../include/track_cmd.h"
+#include "../include/page3c.h"
 
 /* the value the mfx CV 1 write sends */
 static const u8 mfx_cv1_value[] = { 0xC6 };
@@ -88,6 +90,11 @@ next_slot:
 service:
     if (e->protocol == LOK_MFX)
         goto mfx;
+    if (e->protocol == LOK_DCC) {
+        if (dcc_slot_job(slot))
+            return 1;
+        goto next_slot;
+    }
     if (e->protocol != LOK_MM) {
         pkt_slot = ++slot;
         goto check;
@@ -394,7 +401,8 @@ mfx_done:
  * cycles through 16 phases (mm_phase): speed in phases 1, 5, 9, 13, F1-F4 in 2, 6, 10, 14
  * (LOKP_MM2), F5-F8 in 3, 7, 11, 15 (LOKP_MM2 and LOKP_F5_F8), nothing
  * in 0, 4, 8, 12, and moves on to the next slot every 4 phases; an mfx slot sends one
- * speed and functions frame. Returns 0 (and starts over) after the last slot. */
+ * speed and functions frame; a DCC slot one packet of its turn (dcc_slot_refresh), then the
+ * next slot. Returns 0 (and starts over) after the last slot. */
 u16 lok_packets_refresh(void)
 {
     lok_record_t *e;
@@ -420,6 +428,13 @@ u16 lok_packets_refresh(void)
             mfx_frame_end();
             refresh_slot++;
             return 1;
+        }
+        if (e->protocol == LOK_DCC) {
+            refresh_slot = s + 1;
+            if (dcc_slot_refresh(s))
+                return 1;
+            s++;
+            continue;
         }
         if (e->protocol != LOK_MM) {
             refresh_slot = ++s;

@@ -220,6 +220,11 @@ extern u8  ee_counter_record;               /* 0x13C8: eeprom_record entry saved
 extern u16 ee_counter_addr;                 /* 0x13D5: next record of the EEPROM ring (EE_RECORDS) */
 extern u16 eeprom_record[3][2];             /* 0x13C9: newest EEPROM record of each kind (1-3) */
 
+/*--- DCC (signal/dcc.c); the original has none of these: after the soft registers ---*/
+extern u16 dcc_cv;                          /* a CV write on the main: the CV (1-1024) */
+extern u8  dcc_cv_value;                    /* its value */
+extern u16 dcc_cv_address;                  /* the decoder's address */
+
 /* Start-up code (sys/crt0.c) */
 extern void crt_restart(void) __attribute__((noreturn));      /* 0x403C: restart the application */
 extern void enter_bootloader(void) __attribute__((noreturn)); /* 0x407C: hand over to the bootloader */

@@ -192,7 +192,7 @@ static void drive(void)
         ui_enter_mode(2);
 }
 
-/* menu_top 1, menu_item 2: a new locomotive by address */
+/* menu_top 1, menu_item 2 (ADRESSE, MM) and 3 (DCC): a new locomotive by address */
 static void new_by_address(void)
 {
     u8 sub = menu_sub;
@@ -207,9 +207,14 @@ static void new_by_address(void)
     }
     switch (sub) {
     case 1:
-        menu_value = 3;
+        if (menu_item == 3) {
+            menu_value = LOK_DCC;
+            menu_value4 = 0;                    /* 128 speed steps */
+        } else {
+            menu_value = LOK_MM;
+            menu_value4 = LOKP_MM1_REVERSE | LOKP_MM2;
+        }
         menu_value2 = 1;
-        menu_value4 = 3;
         menu_value3 = 3;
         menu_sub = 3;
         /* fall through */
@@ -476,7 +481,7 @@ static void menus(void)
     case 1:                                     /* new locomotive */
         sub = menu_sub;
         if (sub == 0) {
-            menu_item = (u8)ui_knob_adjust(item, 2, 1, sub);
+            menu_item = (u8)ui_knob_adjust(item, 3, 1, sub);
             if (KEY(KEY_ESC))
                 menu_back();
             else if (KEY(KEY_OK | KEY_KNOB))
@@ -485,7 +490,7 @@ static void menus(void)
         }
         if (item == 1)                          /* DATENBANK: nothing to choose from */
             menu_back();
-        else if (item == 2)
+        else
             new_by_address();
         return;
     case 2:                                     /* change locomotive */

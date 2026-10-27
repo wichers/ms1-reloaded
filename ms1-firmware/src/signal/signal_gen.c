@@ -35,6 +35,8 @@
 #define MFX_HALF        0x12C
 #define MM_LONG         0x444
 #define MM_SHORT        0x09C
+#define DCC_ONE         348             /* a half bit: 58 us */
+#define DCC_ZERO        600             /* 100 us */
 
 #define PAIR(op, d)     ((u16)(op) << 8 | (u8)(d))
 
@@ -281,6 +283,15 @@ void signal_gen_send_buf_executor(u16 count)
             signal_gen_staging_buf_write(e);
             signal_gen_staging_buf_write(e);
             break;
+        case 0x16: case 0x17: case 0x18: case 0x19:
+        case 0x1A: case 0x1B: case 0x1C: case 0x1D:  /* the top 1-8 bits as DCC bits */
+            n = x[-1] - 0x15;
+            for (d = *x; n; n--, d <<= 1) {
+                e = (d & 0x80) ? DCC_ONE : DCC_ZERO;
+                signal_gen_staging_buf_write((u16)track_polarity << 8 | e);
+                signal_gen_staging_buf_write((u16)track_polarity << 8 | e);
+            }
+            break;
         }
         if (++x == SEND_END)
             x = signal_gen_send_buffer;
@@ -369,6 +380,19 @@ static void cmd_step(u8 *e)
         break;
     case 12:
         send_pair(PAIR(0x11, e[2]));
+        break;
+    case CMD_DCC:                       /* a DCC packet: the preamble, then a byte per step */
+        if (pos == 0) {
+            for (n = e[2]; n > 8; n -= 8)
+                send_pair(PAIR(0x1D, 0xFF));
+            send_pair(PAIR(0x15 + n, 0xFF));
+        } else {
+            send_pair(PAIR(0x16, 0x00));            /* the start bit */
+            send_pair(PAIR(0x1D, e[(u8)(pos + 3)]));
+            if ((u8)(pos + 1) == e[1])
+                send_pair(PAIR(0x17, 0xC0));        /* the end bit, and a 1 that ends its
+                                                     * second half with an edge */
+        }
         break;
     /* the original's jump table has no handler for the other types: they write nothing here */
     }

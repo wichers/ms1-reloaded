@@ -1,0 +1,49 @@
+# MM, DCC and mfx on one track: an MM locomotive (ADRESSE 3), driven; a DCC locomotive
+# (NEUE LOK, DCC, address 5), driven, light; OK back to the MM locomotive, slowed down; an mfx
+# decoder registers meanwhile and is read out. MM, DCC and mfx decoders read the track.
+# expect: -t 45 -D mm:3 -D dcc:5 -D 'mfx:7A3F0012,name=BR 185'
+12.0 press knob
+12.15 release knob
+13.0 turn 1
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 turn 10
+18 text
+18.0 press esc
+18.15 release esc
+18.7 press knob
+18.85 release knob
+19.3 text
+19.4 turn 2
+19.9 text
+20.0 press knob
+20.15 release knob
+20.7 turn 4
+21.2 text
+21.3 press knob
+21.45 release knob
+22.0 press knob
+22.15 release knob
+22.6 text
+23.0 turn 8
+24.0 press light
+24.15 release light
+24.6 text
+25.0 press ok
+25.15 release ok
+25.7 turn 1
+26.2 text
+26.4 press ok
+26.55 release ok
+27.0 text
+27.2 turn -10
+28.0 text
+33.0 text
+38.0 text
+43.0 text

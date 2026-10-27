@@ -148,7 +148,7 @@ Printed at the end of the run (`mfx_report`):
 
 | Line | Meaning |
 |---|---|
-| `mfx frames`, `CRC errors`, `stuffing errors`, `sync patterns` | frames with a valid CRC, rejected frames, rule breaks / 2 |
+| `mfx frames`, `CRC errors`, `stuffing errors`, `sync patterns` | frames with a valid CRC, rejected frames, rule breaks / 2. DCC packets on the track count as stuffing errors: DCC's 58 µs halves fall in the half-cell window, so the decoder reads them as cells until the stuffing rule rejects them (`../ms1-firmware/tools/scenarios/dccmix.txt`) |
 | `commands: …` | commands by kind, whatever their address |
 | `half cell`, `full cell` | level lengths in frames (µs) |
 | `central interval` | time between central commands (ms) |

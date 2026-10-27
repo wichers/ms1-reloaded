@@ -7,8 +7,9 @@ standing for the original's image and other *.txt words for scenario files. Per 
 - the function test: difftest with the scenario, every listed function compared call by call;
 - the whole-firmware comparison: the rebuild run as the whole machine (difftest -W) with the
   same options, its text lines, decoder events and CAN frames compared with the original's,
-  times left out and numbers with a fractional part masked (timing-derived values), CAN
-  frames per direction and ID with a frame repeated unchanged counted once;
+  times left out and numbers with a fractional part masked (timing-derived values), decoder
+  events per decoder, CAN frames per direction and ID with a frame repeated unchanged counted
+  once;
 - the call times of each side (difftest -y).
 
 '# expect[ LABEL]: OPTIONS' lines are runs of behaviour the original does not have (DCC): the
@@ -107,19 +108,22 @@ EVENT = re.compile(r"^\s*\d+\.\d+ ((?:mm|mm1|mfx|dcc|dccacc):\S+ .*)$")
 
 
 def observables(text, can_log):
-    """What a scenario shows, without times: text lines, decoder events, the final LCD, then the
-    CAN frames grouped by direction and ID (in order within a group: frames of different IDs
-    interleave by timing), a frame repeated unchanged counted once (how often a state repeats,
-    such as the mfx search's status frame after each search that finds no decoder, is timing)."""
-    out = []
+    """What a scenario shows, without times: text lines and the final LCD, then the decoder
+    events grouped by decoder, then the CAN frames grouped by direction and ID (in order within
+    a group: events of different decoders, frames of different IDs interleave by timing), a
+    frame repeated unchanged counted once (how often a state repeats, such as the mfx search's
+    status frame after each search that finds no decoder, is timing)."""
+    out, events = [], []
     for line in text.splitlines():
         m = EVENT.match(line)
         if m:
-            out.append(re.sub(r"\d+\.\d+", "#", m.group(1)))
+            events.append(re.sub(r"\d+\.\d+", "#", m.group(1)))
         elif line.startswith("t="):
             out.append("lcd " + line.split(" ", 1)[1])
         elif re.match(r"^(original|rebuild) at t=", line):
             out.append("end LCD " + line.rsplit("LCD ", 1)[1])
+    events.sort(key=lambda e: e.split(" ", 1)[0])    # stable: per-decoder order stays
+    out += events
     frames = []
     for line in open(can_log, encoding="utf-8", errors="replace"):
         w = line.split()

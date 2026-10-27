@@ -1,0 +1,24 @@
+lcd "3"
+lcd "NEUE LOK"
+lcd "LOKÄNDERN"
+lcd "ADRESSE"
+lcd "VMAX"
+lcd "VMAX100%"
+lcd "VMAX 95%"
+lcd "3"
+lcd "REG"
+lcd "REG  1"
+lcd "REG"
+lcd "REG  3:00"
+lcd "REG  3:05"
+lcd "3"
+lcd "RESET"
+lcd "RESET?"
+lcd "3"
+lcd "3"
+end LCD "3"
+dcc:3 track voltage on after # ms off
+dcc:3 CV 5 = 243 (POM)
+dcc:3 CV 3 = 5 (POM)
+dcc:3 CV 8 = 8: CVs reset (POM)
+can TX 00000380 [8] 00 00 00 00 00 00 00 00

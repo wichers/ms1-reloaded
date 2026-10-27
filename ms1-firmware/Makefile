@@ -98,6 +98,7 @@ OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(SOURCES))
 # application calls there; linked after the application, against its symbols
 PAGE3C_SOURCES = \
 	src/sys/page3c_entries.c \
+	src/signal/dcc.c \
 
 PAGE3C_OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(PAGE3C_SOURCES))
 

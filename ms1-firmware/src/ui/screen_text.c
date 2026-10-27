@@ -80,8 +80,8 @@ void ui_screen_text(void)
     case 1:                                     /* new locomotive */
         sub = menu_sub;
         if (sub == 0) {
-            str_format(buf, (const u8 *)"%s", LANG(item + 3));
-        } else if (item == 2) {
+            str_format(buf, (const u8 *)"%s", item == 3 ? (const u8 *)"DCC" : LANG(item + 3));
+        } else if (item >= 2) {
             if (sub == 3)
                 str_format(buf, (const u8 *)"A %3D", menu_value2);
             else if (sub == 4)

@@ -17,6 +17,12 @@
 
 #include "hcs12.h"
 
-#define PAGE3C_ENTRIES(X)
+#define PAGE3C_ENTRIES(X) \
+    X(dcc_slot_job) \
+    X(dcc_slot_refresh)
+
+/* signal/dcc.c: DCC locomotives on the track */
+u16 dcc_slot_job(u16 slot) __attribute__((far));
+u16 dcc_slot_refresh(u16 slot) __attribute__((far));
 
 #endif /* PAGE3C_H */

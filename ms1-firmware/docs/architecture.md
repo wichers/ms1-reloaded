@@ -168,13 +168,16 @@ in `signal_gen_cmd_buf_consumer`, 0xC81D).
 | 8 | none | opcode 0x0E with byte 2 |
 | 9 | `mm_write_*` | an MM double packet (4.7), by step: 0, 4 pause (0x0E); 1, 3, 5, 7 eight bits (0x0F); 2, 6 two bits (0x10) |
 | 12 | none | opcode 0x11 with byte 2 |
+| 6 (`CMD_DCC`) | `src/signal/dcc.c` (4.9) | a DCC packet {6, steps, preamble bits, byte count, bytes with the XOR byte}: step 0 the preamble (opcode 0x1D with 0xFF per 8 ones, then the remainder), then a byte per step (0x16 with 0, the start bit; 0x1D with the byte), the last with the end bit and one more 1 (0x17 with 0xC0) |
 
-No code writes the other types; their jump table entries are not handlers.
+No code writes the other types; the original's jump table entries for them are not handlers.
 
 **Switching protocol.** The consumer keeps the last type in `signal_gen_prev_cmd_type`
 (0x129B). Types 1, 2, 12 and 13 do not change it. When an mfx entry (4, 5) is followed by
 anything but 3-5, `signal_gen_filter_aux_cmds` inserts two sync patterns (0x0B, 4). When an MM
-entry (9) is followed by anything but 8-10, an MM pause (0x0E, 0x3C) is inserted.
+entry (9) is followed by anything but 8-10, an MM pause (0x0E, 0x3C) is inserted. A DCC
+packet after either gets the same; DCC needs nothing before the next protocol, since its
+last 1 ends the end bit with an edge.
 
 ### 4.3 Send-buffer opcodes
 
@@ -197,6 +200,7 @@ levels.
 | 0x13 | one edge, then 2 × 2d µs at that level (the same entry twice) |
 | 0x14 | d µs without an edge (the level continues) |
 | 0x15 | 2 × 2d µs without an edge |
+| 0x16-0x1D | the top 1-8 bits of d as DCC bits: two entries each, an edge before each, 58 µs (348 ticks) for a 1, 100 µs (600 ticks) for a 0 (4.9) |
 
 ### 4.4 Staging entries and the track outputs
 
@@ -236,7 +240,8 @@ nonzero, it gives each free entry to the first of these that writes one:
    still reaches `mfx_registration_process`.
 2. `mfx_registration_process` (0x4B8F): the mfx engine (4.8).
 3. `lok_packets_refresh` (0x4922): the periodic refresh, one packet per call, slot by slot.
-   MM slots cycle through phases (`mm_phase`); mfx slots get one drive-and-functions frame.
+   MM slots cycle through phases (`mm_phase`); mfx slots get one drive-and-functions frame;
+   DCC slots one packet of their turn (4.9).
 4. `track_filler` (0x5952) when none of them writes: it steps `track_filler_state` and
    alternates the mfx central frame (this device's UID from `flash_uid_hi`/`flash_uid_lo`, and
    `mfx_reg_counter`) with an MM idle packet.
@@ -334,6 +339,32 @@ nothing sets either of them, in the original too, so they stay 0.
   name, `EE_MFX_UID` holds an mfx UID (`eeprom_save_task` writes `mfx_uid_hi`/`mfx_uid_lo`
   there). The decoded answers go into the slot record (`mfx_read_buf`,
   `src/signal/mfx_register.c`); CAN only sees the resulting slot changes.
+
+### 4.9 DCC
+
+`src/signal/dcc.c`, in page $3C (`src/include/page3c.h`): `lok_packets_next` hands a DCC slot
+(`LOK_DCC`) to `dcc_slot_job`, `lok_packets_refresh` to `dcc_slot_refresh`. Each call writes
+one packet as a type-6 entry (4.2); the packet formats, the jobs and the refresh are in the
+file's header.
+
+- **Packets** (RCN-211, RCN-212, RCN-214): a 16-bit preamble (`DCC_PREAMBLE`); the address in
+  one byte (1-127) or two (0xC0 | high, low: above 127 or with `LOKP_DCC_LONG`); speed in 128,
+  28 or 14 steps (`LOKP_DCC_STEPS`) from the slot's 0-127; the function groups F0-F4, F5-F8,
+  F9-F12, F13-F20; CV writes on the main (POM), each sent twice.
+- **Spacing:** when the entry before is for the same decoder, an idle packet comes first, so
+  two packets to one decoder are at least 5 ms apart.
+- **Jobs** (`track_pending`): VMAX, ACC, DEC, REG (`prog_cv`, `prog_value`) and RESET as POM
+  writes of CV5, CV3, CV4, the CV and CV8 = 8 (RESET then sets the entry to `default_address`,
+  as for MM); then speed and direction; then the groups of the changed functions. An address
+  change only changes the entry.
+- **Refresh:** a slot's speed and its used function groups (a function with a key or one that
+  is on) in turn, one packet per call (`mm_phase`), then the next slot.
+- **Signal** (measured with `../ms1-emu`'s DCC decoder, `tools/scenarios/dcc.txt`): halves
+  57.5-58.5 µs and 99.6-100.4 µs, the two halves of a 1 within 0.9 µs; at least 9.8 ms
+  between packets to one decoder; the track interrupt's slack and the staging ring as with
+  MM and mfx (README *Interrupt timing*).
+- **New locomotive:** NEUE LOK → DCC (`menu_item` 3) asks for the address (1-9999) and the
+  symbol as ADRESSE does for MM, with 128 speed steps.
 
 ## 5. Locomotive slots
 

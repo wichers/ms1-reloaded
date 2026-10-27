@@ -7,7 +7,8 @@
  * RAM layout (build/ms1.ld), so the original's RAM map - and its RAM contents, for the
  * differential tests - is reproduced. Variables at 0x1000-0x102F are the original's .data
  * (initial values copied from flash by the start-up code), the rest is .bss up to the GCC
- * soft registers at 0x1BB7.
+ * soft registers at 0x1BB7. Variables the original does not have are defined without an
+ * address, at the end: the linker puts them after the soft registers.
  *========================================================================*/
 
 #include "include/hcs12.h"
@@ -190,3 +191,8 @@ RAM(0x1BAF) volatile u16 rtc_day_counter;
 RAM(0x1BB1) volatile u16 rtc_day_minutes;
 RAM(0x1BB3) volatile u16 rtc_minute_ms;
 RAM(0x1BB5) volatile u16 rtc_ms_counter;
+
+/* Variables the original does not have: after the soft registers */
+u16 dcc_cv;
+u8  dcc_cv_value;
+u16 dcc_cv_address;

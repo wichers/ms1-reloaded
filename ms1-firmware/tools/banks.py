@@ -10,7 +10,9 @@ everything these call or read, followed through the objects' relocations.
 place    reads the application's and page $3C's objects (objdump -h -r -t) and writes the
          linker script template (from tools/ramlayout.py) with @FIXED_TEXT@ filled in: those
          functions' sections, kept and placed first from 0x4000 on (gcc/ms1.ld checks that
-         they end below the window and that read-only data starts above it).
+         they end below the window and that read-only data starts above it); and an EXTERN
+         of every application symbol page $3C uses, which the application's link would
+         otherwise drop when nothing else uses it (--gc-sections).
 entries  writes the application's symbols of the page-$3C entry table: each name's JMP at
          0x8000 + offset in the linker's banked form 0x100000 + offset, so GCC's far call
          carries page $3C (src/sys/page3c_entries.c).
@@ -90,7 +92,7 @@ def place(tool, template_path, page3c, app):
     app_glob, p3c_glob = global_table(apps), global_table(p3cs)
 
     # the roots: the trampolines' targets, and what page-$3C code calls in the application
-    roots = []
+    roots, extern = [], set()
     for o in apps:
         for _, _, sym in o.relocs.get(".tramp", []):
             node = resolve(o, sym, app_glob)
@@ -103,6 +105,7 @@ def place(tool, template_path, page3c, app):
             for _, _, sym in rel:
                 if resolve(o, sym, p3c_glob) is None and sym in app_glob:
                     roots.append((app_glob[sym], "page $3C"))
+                    extern.add(sym)
 
     reason, todo = {}, list(roots)
     while todo:
@@ -128,6 +131,9 @@ def place(tool, template_path, page3c, app):
     if MARKER not in template:
         sys.exit(f"banks: {MARKER} missing from {template_path}")
     sys.stdout.write(template.replace(MARKER, "\n".join(lines).lstrip()))
+    if extern:
+        sys.stdout.write("\n/* What page-$3C code uses of the application (tools/banks.py) */\n"
+                         f"EXTERN({' '.join(sorted(extern))})\n")
 
 
 def entries(tool, path):

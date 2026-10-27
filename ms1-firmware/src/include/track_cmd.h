@@ -9,6 +9,10 @@
  * written, track_cmd_free the room left.
  *========================================================================*/
 
+/* entry types the writers outside signal_gen.c use (the others: docs/architecture.md, 4.2) */
+#define CMD_DCC     6           /* a DCC packet: {6, steps, preamble bits, byte count, bytes};
+                                 * signal/dcc.c */
+
 /* the generator (signal/signal_gen.c) */
 void signal_gen_init(void);                                             /* 0xC58E */
 void signal_gen_send_buf_executor(u16 count);                           /* 0xC614 */

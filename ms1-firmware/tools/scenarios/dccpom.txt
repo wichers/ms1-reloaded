@@ -1,0 +1,67 @@
+# A DCC locomotive's settings written on the main (POM): NEUE LOK, DCC, address 3; then
+# LOKÄNDERN: VMAX 95 % (CV5), REG CV3 = 5, RESET (CV8 = 8). A DCC decoder (-D dcc:3) reads
+# the track.
+# expect: -t 37 -D dcc:3
+12.0 press knob
+12.15 release knob
+13.0 turn 2
+13.5 press knob
+13.65 release knob
+14.5 turn 2
+15.0 press knob
+15.15 release knob
+16.0 press knob
+16.15 release knob
+17 text
+17.0 press esc
+17.15 release esc
+17.5 text
+17.8 turn 1
+18.3 text
+18.5 press knob
+18.65 release knob
+19.0 text
+19.2 turn 2
+19.7 text
+19.9 press knob
+20.05 release knob
+20.5 text
+20.6 turn -3
+21.2 text
+21.3 press ok
+21.45 release ok
+22.0 text
+23.0 press esc
+23.15 release esc
+23.7 turn 1
+24.4 press knob
+24.55 release knob
+25.1 turn -2
+25.6 text
+25.8 press knob
+25.95 release knob
+26.4 text
+26.5 turn 2
+27.0 text
+27.2 press knob
+27.35 release knob
+27.8 text
+27.9 turn 5
+28.5 text
+28.6 press ok
+28.75 release ok
+29.3 text
+30.0 press esc
+30.15 release esc
+30.7 turn 1
+31.4 press knob
+31.55 release knob
+32.1 turn -1
+32.6 text
+32.8 press knob
+32.95 release knob
+33.5 text
+34.0 press ok
+34.15 release ok
+35.0 text
+36.5 text

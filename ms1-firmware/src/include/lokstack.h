@@ -27,6 +27,10 @@
 #define LOKP_F5_F8         0x0004      /* MM: functions f5-f8 (on the next address) */
 #define LOKP_PROGRAMMABLE  0x0010      /* MM: the decoder takes programming (address, CVs) */
 #define LOKP_VOLUME        0x1000      /* a volume can be set */
+#define LOKP_DCC_STEPS     0x0003      /* DCC: the speed steps, 0 128 (signal/dcc.c) */
+#define LOKP_DCC_28        0x0001      /* DCC: 28 speed steps */
+#define LOKP_DCC_14        0x0002      /* DCC: 14 speed steps */
+#define LOKP_DCC_LONG      0x0004      /* DCC: the long address form, also below 128 */
 
 /* the bytes of a word field */
 #define HI8(w)  (((u8 *)&(w))[0])
