@@ -84,8 +84,9 @@ byte at 0xFF1B set to 0x10 (`tools/mkimage.py` does so when the check fails, and
 | `Makefile` | sources, flags (`-m68hcs12 -mshort -O1 -fomit-frame-pointer`, per-function sections, `--gc-sections`), `UNCALLED` (functions the original has but nothing calls, kept with `-u`) |
 | `src/sys/crt0.c` | start-up, in the `.crt0` section at 0x4000, laid out as the original's 0x4000-0x40A2 (MMC, PLL, then `crt_restart` = the original's 0x403C: .data copy, .bss clear, stack, `main(1, {"main"})`; `enter_bootloader`) |
 | `src/sys/vectors.c` | interrupt trampolines 0xF740-0xF7FF: the bootloader's vectors point at 0xF740 + 3n; unused vectors stop in `unexpected_interrupt` (BGND) |
-| `gcc/ms1.ld` | linker script template: memory map (the application up to 0xF67F); symbols for the bootloader's flash metadata words the code reads by name (`docs/bootloader.md`); INCLUDEs `build/page3c_symbols.ld` |
-| `gcc/page3c.ld`, `tools/lokdb.py` | page $3C, linked on its own: the locomotive database (`third_party/lokdb.tsv`, turned into the page's format by `tools/lokdb.py asm`) and its accessors (`src/lok/lokdb.c`) |
+| `gcc/ms1.ld` | linker script template: memory map (the application up to 0xF67F), the fixed-flash code first (`@FIXED_TEXT@`, checked to end below the window, read-only data above it); symbols for the bootloader's flash metadata words the code reads by name (`docs/bootloader.md`); INCLUDEs `build/page3c_symbols.ld` |
+| `gcc/page3c.ld`, `src/include/page3c.h`, `tools/lokdb.py` | page $3C, linked after the application against its symbols, at the linker's banked address 0x100000: the entry table (`src/sys/page3c_entries.c`) at 0x8000, the functions behind it, the locomotive database (`third_party/lokdb.tsv`, turned into the page's format by `tools/lokdb.py asm`) |
+| `tools/banks.py` | the code that must stay in fixed flash, placed first in `build/ms1.ld` (`place`); the application's addresses of the page-$3C entry table, `build/page3c_symbols.ld` (`entries`) |
 | `gcc/ident.ld` | the identification area of a release (`src/sys/ident.c`), linked on its own: 0xF700-0xF73F, its strings from 0xF680 |
 | `tools/releases.py` | the versions: RAM layout, the per-version files |
 | `tools/ramlayout.py` | writes `build/ms1.ld` from the template, placing every RAM variable at its address (below) |
@@ -96,15 +97,23 @@ byte at 0xFF1B set to 0x10 (`tools/mkimage.py` does so when the check fails, and
 | `third_party/` | the original's parts the build uses: the locomotive database, the update file loader ([third_party/README.md](third_party/README.md)) |
 
 **Image layout.** The application (code, read-only data, the .data image) takes
-0x4000-0xF67F; page $3D is mapped into the 0x8000 window for good, as in the original. Two
-parts are linked on their own: page $3C, the locomotive database and its accessors, which the
-application's `lokdb_count`/`lokdb_read` (`src/lok/lokdb_access.c`) reach with `CALL` (their addresses come from that
-link, `build/page3c_symbols.ld`); and per release the identification area 0xF700-0xF73F with its
-strings from 0xF680 (`src/sys/ident.c`), which the bootloader and the CAN identification read by
-address (`docs/bootloader.md`). `tools/mkimage.py` puts the parts together, with `ORIGINAL`'s
-0xF800-0xFFFF (bootloader, flash metadata, vectors) for the `.s19` images, and sets the word
-at 0xF73E so that the bootloader's CRC-16 over page $3C and 0x4000-0xF7FF comes out 0, as the
-original does. The original's read-only tables the code uses are C with the original's
+0x4000-0xF67F; page $3D is mapped into the 0x8000 window, as in the original, except while the
+application runs code in page $3C. Two parts are linked on their own:
+- page $3C (`src/include/page3c.h`), linked after the application against its symbols. The
+  application calls its functions only through the entry table at 0x8000, a JMP per function,
+  with GCC's far calls (`CALL`/`RTC`); `tools/banks.py entries` gives it the table's addresses
+  (`build/page3c_symbols.ld`). While page $3C is in the window, interrupts stay on: the
+  interrupt handlers, the application's functions page-$3C code calls and what these call lie
+  in fixed flash, first from 0x4000 on (`tools/banks.py place`, computed from the objects'
+  relocations; `gcc/ms1.ld` checks that they end below the window);
+- per release the identification area 0xF700-0xF73F with its strings from 0xF680
+  (`src/sys/ident.c`), which the bootloader and the CAN identification read by address
+  (`docs/bootloader.md`).
+
+`tools/mkimage.py` puts the parts together, with `ORIGINAL`'s 0xF800-0xFFFF (bootloader, flash
+metadata, vectors) for the `.s19` images, and sets the word at 0xF73E so that the bootloader's
+CRC-16 over page $3C and 0x4000-0xF7FF comes out 0, as the original does. The original's
+read-only tables the code uses are C with the original's
 contents: the menu texts (`src/ui/lang.c`) and display tables (`src/ui/lcd_tables.c`) global,
 the others `static` in the file that reads them.
 
@@ -135,7 +144,7 @@ Makefile writes them as `$(B)/mc9s12d64.inc`) and `ASM_NUM`, a C constant's valu
 assembly string. The main loop's code is C, also where GCC's takes longer than the
 original's assembly (`difftest -y`): it is not time-critical. The other
 inline assembly: `delay_short` (a timed loop, `src/sys/delay.c`),
-`lokdb_count`/`lokdb_read` (the masked `CALL`s of page $3C), `IRQ_SAVE`/`IRQ_RESTORE`
+the page-$3C entry table (`src/sys/page3c_entries.c`), `IRQ_SAVE`/`IRQ_RESTORE`
 (`src/include/hcs12.h`), the start-up code and the trampolines (`src/sys/crt0.c`,
 `src/sys/vectors.c`). `docs/architecture.md` lists the interrupt handlers.
 
@@ -175,8 +184,9 @@ the files group them by what they do.
 | `src/signal/track_monitor.c` | track current, overload shutdown, operating counters |
 | `src/lok/lokstack.c` | slot lookups, CAN objects of a slot, address conflicts, unique names |
 | `src/lok/lok_functions.c` | a locomotive's functions: CAN object numbers and keys |
-| `src/lok/lokdb.c` | the locomotive database accessors in page $3C (linked on their own, `gcc/page3c.ld`) |
+| `src/lok/lokdb.c` | the locomotive database accessors, in page $3C (`gcc/page3c.ld`) |
 | `src/lok/lokdb_access.c` | the application's calls of those accessors |
+| `src/sys/page3c_entries.c` | the page-$3C entry table (`src/include/page3c.h`) |
 | `src/ui/ui_control.c` | the UI state machine: knob, keys, menus |
 | `src/ui/ui_mode.c` | switching the operating mode |
 | `src/ui/screen_text.c`, `lcd_text.c` | the text line: composing it per screen, placing and scrolling it; menu levels |
@@ -189,7 +199,7 @@ the files group them by what they do.
 | `src/lib/str.c` | string and number formatting, display character set conversion |
 | `src/lib/runtime.c` | the original's compiler helper the C code calls by name |
 | `src/hal/gpio_buttons.c`, `serial_debug.c`, `eeprom.c` | key reads and scan; SCI0 debug output (`DEBUG=1`); the EEPROM's erase and program commands |
-| `src/include/` | `hcs12.h` (integer types, registers, interrupt masking), `asm.h` (*Inline assembly*), `lokstack.h` (slot records and states), `track_cmd.h` (the signal generator, command buffer writers), `lcd.h`, `ui.h`, `mcan.h` (also the CAN0 driver), `delay.h`, `globals.h` (RAM variables), `rom_tables.h` (the shared tables, the bootloader's metadata words), `str.h` |
+| `src/include/` | `hcs12.h` (integer types, registers, interrupt masking), `asm.h` (*Inline assembly*), `page3c.h` (the functions in page $3C), `lokstack.h` (slot records and states), `track_cmd.h` (the signal generator, command buffer writers), `lcd.h`, `ui.h`, `mcan.h` (also the CAN0 driver), `delay.h`, `globals.h` (RAM variables), `rom_tables.h` (the shared tables, the bootloader's metadata words), `str.h` |
 
 ## Hardware Overview
 
@@ -214,7 +224,7 @@ the files group them by what they do.
 | Main ROM | `0x4000–0xBFFF` | Application code; `0x8000–0xBFFF` is page $3D, mapped for good |
 | Fixed ROM | `0xC000–0xF7FF` | Application code and data up to `0xF67F`, the identification strings and area (`0xF680–0xF73F`), interrupt trampolines (`0xF740–0xF7FF`) |
 | Bootloader | `0xF800–0xFFFF` | Start-up check, CAN update protocol, flash metadata (`0xFF00–0xFF7F`), 64 vectors (`0xFF80–0xFFFF`) pointing at the trampolines (`docs/bootloader.md`) |
-| Paged ROM (0x3C) | `0x3C8000+` | Locomotive database and its accessors (`lokdb_p3c_count`, `lokdb_p3c_read`: `CALL` from `src/lok/lokdb_access.c`) |
+| Paged ROM (0x3C) | `0x3C8000+` | The entry table at 0x8000, the functions behind it (`src/include/page3c.h`), the locomotive database |
 
 ### Data Structures
 

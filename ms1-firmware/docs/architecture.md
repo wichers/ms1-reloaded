@@ -108,9 +108,13 @@ loop):
 | `can0_error_isr` (0xDD10) | `src/can/can0.c` | CAN0 receiver overrun | clears the overrun flag |
 | `unexpected_interrupt` | `src/sys/vectors.c` | every other vector | stops (BGND) |
 
+The handlers, and what they call, lie in fixed flash, as in the original: an interrupt may
+come while the application runs code in page $3C, with page $3C in the window
+(`src/include/page3c.h`; `tools/banks.py` places them).
+
 Code that masks interrupts itself: `crt_restart`, `enter_bootloader`, `app_main_init`,
 `can_controller_full_init`, the ring update in `can_tx_enqueue_frame`, `encoder_set_count`,
-`lokdb_count`/`lokdb_read` (the page-$3C database calls), `erase_and_restart`.
+`erase_and_restart`.
 `lcd_pump_start` calls `isr_spi0_lcd` as a subroutine by building an interrupt frame.
 
 `delay_short(n)` and `delay_long(n)` are busy waits of about n ms and n s.

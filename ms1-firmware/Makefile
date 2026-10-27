@@ -96,6 +96,14 @@ SOURCES = \
 
 OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(SOURCES))
 
+# flash page $3C (include/page3c.h, gcc/page3c.ld): its entry table, the code the application
+# calls there, the locomotive database; linked after the application, against its symbols
+PAGE3C_SOURCES = \
+	src/sys/page3c_entries.c \
+	src/lok/lokdb.c \
+
+PAGE3C_OBJS = $(patsubst src/%.c,$(B)/obj/%.o,$(PAGE3C_SOURCES)) $(B)/page3c/lokdb.o
+
 # the flashable images, with a device dump's bootloader
 ifneq ($(wildcard $(ORIGINAL)),)
 FLASHABLE = $(foreach r,$(RELEASES),$(B)/$(r).s19) $(B)/ms1.s19
@@ -107,7 +115,7 @@ all: $(B)/app.s19 $(B)/ms1.sym images
 images: $(foreach r,$(RELEASES),$(B)/$(r).bin $(B)/$(r).bci) $(FLASHABLE)
 
 # a change of flags here recompiles everything
-$(OBJS) $(B)/obj/lok/lokdb.o: Makefile
+$(OBJS) $(PAGE3C_OBJS): Makefile
 
 $(B)/obj/%.o: src/%.c | $(B)/mc9s12d64.inc
 	@mkdir -p $(dir $@)
@@ -118,9 +126,7 @@ $(B)/mc9s12d64.inc: gcc/mc9s12d64.h
 	@mkdir -p $(dir $@)
 	sed -n 's/^#define \([A-Z0-9_]*\) *_REG\(8\|16\)(\(0x[0-9A-F]*\)).*/\t.equ\t\1,\3/p' $< > $@
 
-# page $3C: the locomotive database (third_party/lokdb.tsv) and its accessors
-# (src/lok/lokdb.c), linked on their own; page3c.ld gives the application the accessors'
-# addresses for its far calls (page3c_symbols.ld)
+# page $3C: the locomotive database (third_party/lokdb.tsv)
 $(B)/page3c/lokdb.s: third_party/lokdb.tsv tools/lokdb.py
 	@mkdir -p $(dir $@)
 	$(PYTHON) tools/lokdb.py asm $< $@
@@ -128,14 +134,24 @@ $(B)/page3c/lokdb.s: third_party/lokdb.tsv tools/lokdb.py
 $(B)/page3c/lokdb.o: $(B)/page3c/lokdb.s
 	$(AS) -m68hcs12 -o $@ $<
 
-$(B)/page3c.elf: $(B)/page3c/lokdb.o $(B)/obj/lok/lokdb.o gcc/page3c.ld
-	$(CC) -m68hcs12 -mshort -nostdlib -T gcc/page3c.ld -o $@ $(B)/page3c/lokdb.o $(B)/obj/lok/lokdb.o
+# page $3C, linked against the application's symbols (its RAM variables, the fixed-flash
+# functions it calls), but for the entry-table names the page defines itself
+$(B)/app_symbols.elf: $(B)/ms1.elf $(B)/page3c_symbols.ld
+	sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\) = .*/\1/p' $(B)/page3c_symbols.ld > $@.names
+	$(OBJCOPY) --strip-symbols=$@.names $< $@
+	rm $@.names
+
+$(B)/page3c.elf: $(PAGE3C_OBJS) gcc/page3c.ld $(B)/app_symbols.elf
+	$(CC) -m68hcs12 -mshort -nostdlib -T gcc/page3c.ld -Wl,--just-symbols=$(B)/app_symbols.elf \
+		-Wl,-Map,$(B)/page3c.map -o $@ $(PAGE3C_OBJS)
 
 $(B)/page3c.bin: $(B)/page3c.elf
-	$(OBJCOPY) -O binary -j .page3c --gap-fill 0xff --pad-to 0xc000 $< $@
+	$(OBJCOPY) -O binary -j .page3c --gap-fill 0xff --pad-to 0x104000 $< $@
 
-$(B)/page3c_symbols.ld: $(B)/page3c.elf
-	$(NM) $< | awk '$$3 ~ /^lokdb_p3c_/ {print $$3 " = 0x" $$1 ";"}' > $@
+# the application's addresses of the page-$3C entry table
+$(B)/page3c_symbols.ld: $(B)/obj/sys/page3c_entries.o tools/banks.py
+	$(PYTHON) tools/banks.py entries $(OBJDUMP) $< > $@.tmp
+	mv $@.tmp $@
 
 # the identification area of each release (src/sys/ident.c; c0... the 60651's), linked on its own
 $(B)/ident/%.o: src/sys/ident.c Makefile
@@ -148,8 +164,12 @@ $(B)/ident/%.elf: $(B)/ident/%.o gcc/ident.ld
 $(B)/ident/%.s19: $(B)/ident/%.elf
 	$(OBJCOPY) -O srec -j .ident_strings -j .ident $< $@
 
-$(B)/ms1.ld: gcc/ms1.ld tools/ramlayout.py tools/releases.py $(OBJS)
-	$(OBJDUMP) -h $(OBJS) | $(PYTHON) tools/ramlayout.py --release $(RELEASE) gcc/ms1.ld > $@.tmp
+# the RAM placements (tools/ramlayout.py), then the code that must stay in fixed flash
+# (tools/banks.py)
+$(B)/ms1.ld: gcc/ms1.ld tools/ramlayout.py tools/releases.py tools/banks.py $(OBJS) $(PAGE3C_OBJS)
+	$(OBJDUMP) -h $(OBJS) | $(PYTHON) tools/ramlayout.py --release $(RELEASE) gcc/ms1.ld > $@.ram
+	$(PYTHON) tools/banks.py place $(OBJDUMP) $@.ram --page3c $(PAGE3C_OBJS) --app $(OBJS) > $@.tmp
+	rm $@.ram
 	mv $@.tmp $@
 
 $(B)/ms1.elf: $(OBJS) $(B)/ms1.ld $(B)/page3c_symbols.ld
@@ -187,4 +207,4 @@ clean:
 
 .PHONY: all images clean
 
--include $(OBJS:.o=.d)
+-include $(patsubst %.o,%.d,$(OBJS) $(filter $(B)/obj/%,$(PAGE3C_OBJS)))

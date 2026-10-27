@@ -25,4 +25,5 @@ Outside this directory, `src/` has the original's contents where the firmware mu
 - **Update file loader:** code, not edited here; `../tools/bci.py loader` takes it from an
   update file again.
 - **Locomotive database:** edit `third_party/lokdb.tsv`; entries can be added, changed or
-  removed. Page $3C holds the database and its two accessors (`src/lok/lokdb.c`) in 16 KiB.
+  removed. Page $3C holds the database in 16 KiB, with its entry table and two accessors
+  (`src/include/page3c.h`, `src/lok/lokdb.c`).
